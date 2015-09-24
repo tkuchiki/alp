@@ -83,22 +83,30 @@ func LoadFile(filename string) (f *os.File, err error) {
 	return f, err
 }
 
+func Round(f float64) string {
+	return fmt.Sprintf("%.3f", f)
+}
+
 func Output(ps Profiles) {
 	if *tsv {
 		fmt.Printf("Count\tMin\tMax\tSum\tAvg\tMax(Body)\tMin(Body)\tSum(Body)\tAvg(Body)\tMethod\tUri%v", eol)
 
 		for _, p := range ps {
-			fmt.Printf("%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v%v", p.Cnt, p.Min, p.Max, p.Sum, p.Avg,
-				p.MinBody, p.MaxBody, p.SumBody, p.AvgBody, p.Method, p.Uri, eol)
+			fmt.Printf("%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v%v",
+				p.Cnt, Round(p.Min), Round(p.Max), Round(p.Sum), Round(p.Avg),
+				Round(p.MinBody), Round(p.MaxBody), Round(p.SumBody), Round(p.AvgBody),
+				p.Method, p.Uri, eol)
 		}
 	} else {
 		table := tablewriter.NewWriter(os.Stdout)
-		table.SetHeader([]string{"Count", "Min", "Max", "Sum", "Avg", "Max(Body)", "Min(Body)", "Sum(Body)", "Avg(Body)", "Method", "Uri"})
+		table.SetHeader([]string{"Count", "Min", "Max", "Sum", "Avg",
+			"Max(Body)", "Min(Body)", "Sum(Body)", "Avg(Body)",
+			"Method", "Uri"})
 		for _, p := range ps {
 			data := []string{
-				fmt.Sprint(p.Cnt), fmt.Sprint(p.Min), fmt.Sprint(p.Max), fmt.Sprint(p.Sum), fmt.Sprint(p.Avg),
-				fmt.Sprint(p.MinBody), fmt.Sprint(p.MaxBody), fmt.Sprint(p.SumBody), fmt.Sprint(p.AvgBody), p.Method, p.Uri,
-			}
+				fmt.Sprint(p.Cnt), Round(p.Min), Round(p.Max), Round(p.Sum), Round(p.Avg),
+				Round(p.MinBody), Round(p.MaxBody), Round(p.SumBody), Round(p.AvgBody),
+				p.Method, p.Uri}
 			table.Append(data)
 		}
 		table.Render()
@@ -205,7 +213,7 @@ func SortBySumBody(ps Profiles, reverse bool) {
 }
 
 var (
-	file         = kingpin.Flag("file", "Config file").Short('f').Required().String()
+	file         = kingpin.Flag("file", "access log file").Short('f').Required().String()
 	max          = kingpin.Flag("max", "sort by max response time").Bool()
 	min          = kingpin.Flag("min", "sort by min response time").Bool()
 	avg          = kingpin.Flag("avg", "sort by avg response time").Bool()
@@ -222,7 +230,7 @@ var (
 	tsv          = kingpin.Flag("tsv", "tsv format (default: table)").Bool()
 	restimeLabel = kingpin.Flag("restime-label", "apptime label").Default("apptime").String()
 	bodyLabel    = kingpin.Flag("body-label", "size label").Default("size").String()
-	methodLabel  = kingpin.Flag("method-label", "_method label").Default("method").String()
+	methodLabel  = kingpin.Flag("method-label", "method label").Default("method").String()
 	uriLabel     = kingpin.Flag("uri-label", "uri label").Default("uri").String()
 
 	eol = "\n"
