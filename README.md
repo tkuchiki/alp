@@ -1,6 +1,6 @@
 # alp
 
-alp is Access Log Profiler for Labeled Tab-separated Values(LTSV).
+alp is Access Log Profiler for Labeled Tab-separated Values(LTSV).  
 (See: [Labeled Tab-separated Values](http://ltsv.org))
 
 # Installation
@@ -50,9 +50,7 @@ See "Labels for Web server's Log" of http://ltsv.org .
 
 ## Sample
 
-nginx 
-
-sample log file
+[sample log file](./access.log)
 
 ### Basic
 
