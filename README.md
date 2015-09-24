@@ -6,9 +6,9 @@ alp is Access Log Profiler for Labeled Tab-separated Values(LTSV).
 # Installation
 
 ```
-curl -sLO https://github.com/tkuchiki/alp/releases/download/VERSION/alp-linux-amd64.zip
-unzip alp-linux-amd64.zip
-mv alp-linux-amd64 /usr/local/bin/alp
+curl -sLO https://github.com/tkuchiki/alp/releases/download/VERSION/alp_linux_amd64.zip
+unzip alp_linux_amd64.zip
+mv alp_linux_amd64 /usr/local/bin/alp
 ```
 
 # Usage
