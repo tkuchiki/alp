@@ -233,12 +233,14 @@ var (
 	methodLabel  = kingpin.Flag("method-label", "method label").Default("method").String()
 	uriLabel     = kingpin.Flag("uri-label", "uri label").Default("uri").String()
 	limit        = kingpin.Flag("limit", "set an upper limit of the target uri").Default("5000").Int()
+	include      = kingpin.Flag("include", "don't exclude uri matching PATTERN").PlaceHolder("PATTERN").String()
+	exclude      = kingpin.Flag("exclude", "exclude uri matching PATTERN").PlaceHolder("PATTERN").String()
 
 	eol = "\n"
 )
 
 func main() {
-	kingpin.Version("0.0.2")
+	kingpin.Version("0.0.3")
 	kingpin.Parse()
 
 	f, err := LoadFile(*file)
@@ -321,6 +323,22 @@ func main() {
 		} else {
 			uri = u.Path
 			index = fmt.Sprintf("%s_%s", line[*methodLabel], u.Path)
+		}
+
+		if *include != "" {
+			if ok, err := regexp.Match(*include, []byte(uri)); !ok && err == nil {
+				continue
+			} else if err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		if *exclude != "" {
+			if ok, err := regexp.Match(*exclude, []byte(uri)); ok && err == nil {
+				continue
+			} else if err != nil {
+				log.Fatal(err)
+			}
 		}
 
 		if _, ok := uriHints[index]; ok {
