@@ -213,7 +213,7 @@ func SortBySumBody(ps Profiles, reverse bool) {
 }
 
 var (
-	file         = kingpin.Flag("file", "access log file").Short('f').Required().String()
+	file         = kingpin.Flag("file", "access log file").Short('f').String()
 	max          = kingpin.Flag("max", "sort by max response time").Bool()
 	min          = kingpin.Flag("min", "sort by min response time").Bool()
 	avg          = kingpin.Flag("avg", "sort by avg response time").Bool()
@@ -240,14 +240,20 @@ var (
 )
 
 func main() {
-	kingpin.Version("0.0.3")
+	kingpin.Version("0.0.4")
 	kingpin.Parse()
 
-	f, err := LoadFile(*file)
-	defer f.Close()
+	var f *os.File
+	var err error
 
-	if err != nil {
-		log.Fatal(err)
+	if *file != "" {
+		f, err = LoadFile(*file)
+		defer f.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		f = os.Stdin
 	}
 
 	if runtime.GOOS == "windows" {
