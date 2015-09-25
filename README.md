@@ -41,6 +41,8 @@ Flags:
                        method label
   --uri-label="uri"    uri label
   --limit=5000         set an upper limit of the target uri
+  --include=PATTERN    don't exclude uri matching PATTERN
+  --exclude=PATTERN    exclude uri matching PATTERN
   --version            Show application version.
 
 ```
