@@ -232,6 +232,7 @@ var (
 	sizeLabel    = kingpin.Flag("size-label", "size label").Default("size").String()
 	methodLabel  = kingpin.Flag("method-label", "method label").Default("method").String()
 	uriLabel     = kingpin.Flag("uri-label", "uri label").Default("uri").String()
+	limit        = kingpin.Flag("limit", "set an upper limit of the target uri").Default("5000").Int()
 
 	eol = "\n"
 )
@@ -283,7 +284,7 @@ func main() {
 	var index string
 	var accessLog Profiles
 	uriHints := make(map[string]int)
-	len := 0
+	length := 0
 	cursor := 0
 
 	r := ltsv.NewReader(f)
@@ -325,10 +326,14 @@ func main() {
 		if _, ok := uriHints[index]; ok {
 			cursor = uriHints[index]
 		} else {
-			uriHints[index] = len
-			cursor = len
-			len++
+			uriHints[index] = length
+			cursor = length
+			length++
 			accessLog = append(accessLog, Profile{Uri: uri})
+		}
+
+		if len(uriHints) > *limit {
+			log.Fatal(fmt.Sprintf("Too many uri (%d or less)", *limit))
 		}
 
 		if accessLog[cursor].Max < resTime {

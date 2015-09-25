@@ -40,6 +40,7 @@ Flags:
   --method-label="method"
                        method label
   --uri-label="uri"    uri label
+  --limit=5000         set an upper limit of the target uri
   --version            Show application version.
 
 ```
