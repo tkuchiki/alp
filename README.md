@@ -13,6 +13,8 @@ mv alp_linux_amd64 /usr/local/bin/alp
 
 # Usage
 
+Read from stdin or an input file(`-f`).  
+
 ```
 $ ./alp --help                                                                                        
 usage: alp --file=FILE [<flags>]
