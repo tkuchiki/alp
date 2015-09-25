@@ -228,8 +228,8 @@ var (
 	reverse      = kingpin.Flag("reverse", "reverse the result of comparisons").Short('r').Bool()
 	queryString  = kingpin.Flag("query-string", "include query string").Short('q').Bool()
 	tsv          = kingpin.Flag("tsv", "tsv format (default: table)").Bool()
-	restimeLabel = kingpin.Flag("restime-label", "apptime label").Default("apptime").String()
-	bodyLabel    = kingpin.Flag("body-label", "size label").Default("size").String()
+	apptimeLabel = kingpin.Flag("apptime-label", "apptime label").Default("apptime").String()
+	sizeLabel    = kingpin.Flag("size-label", "size label").Default("size").String()
 	methodLabel  = kingpin.Flag("method-label", "method label").Default("method").String()
 	uriLabel     = kingpin.Flag("uri-label", "uri label").Default("uri").String()
 
@@ -295,12 +295,12 @@ func main() {
 			log.Fatal(err)
 		}
 
-		resTime, err := strconv.ParseFloat(line[*restimeLabel], 64)
+		resTime, err := strconv.ParseFloat(line[*apptimeLabel], 64)
 		if err != nil {
 			continue
 		}
 
-		bodySize, err := strconv.ParseFloat(line[*bodyLabel], 64)
+		bodySize, err := strconv.ParseFloat(line[*sizeLabel], 64)
 		if err != nil {
 			continue
 		}
