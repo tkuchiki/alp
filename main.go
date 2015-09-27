@@ -89,7 +89,9 @@ func Round(f float64) string {
 
 func Output(ps Profiles) {
 	if *tsv {
-		fmt.Printf("Count\tMin\tMax\tSum\tAvg\tMax(Body)\tMin(Body)\tSum(Body)\tAvg(Body)\tMethod\tUri%v", eol)
+		if !*noHeaders {
+			fmt.Printf("Count\tMin\tMax\tSum\tAvg\tMax(Body)\tMin(Body)\tSum(Body)\tAvg(Body)\tMethod\tUri%v", eol)
+		}
 
 		for _, p := range ps {
 			fmt.Printf("%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v%v",
@@ -235,6 +237,7 @@ var (
 	limit        = kingpin.Flag("limit", "set an upper limit of the target uri").Default("5000").Int()
 	include      = kingpin.Flag("include", "don't exclude uri matching PATTERN").PlaceHolder("PATTERN").String()
 	exclude      = kingpin.Flag("exclude", "exclude uri matching PATTERN").PlaceHolder("PATTERN").String()
+	noHeaders    = kingpin.Flag("noheaders", "print no header line at all (only --tsv)").Bool()
 
 	eol = "\n"
 )
