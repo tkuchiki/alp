@@ -226,30 +226,31 @@ func SetCursor(index string, uri string) {
 }
 
 var (
-	file         = kingpin.Flag("file", "access log file").Short('f').String()
-	max          = kingpin.Flag("max", "sort by max response time").Bool()
-	min          = kingpin.Flag("min", "sort by min response time").Bool()
-	avg          = kingpin.Flag("avg", "sort by avg response time").Bool()
-	sum          = kingpin.Flag("sum", "sort by sum response time").Bool()
-	cnt          = kingpin.Flag("cnt", "sort by count").Bool()
-	sortUri      = kingpin.Flag("uri", "sort by uri").Bool()
-	method       = kingpin.Flag("method", "sort by method").Bool()
-	maxBody      = kingpin.Flag("max-body", "sort by max body size").Bool()
-	minBody      = kingpin.Flag("min-body", "sort by min body size").Bool()
-	avgBody      = kingpin.Flag("avg-body", "sort by avg body size").Bool()
-	sumBody      = kingpin.Flag("sum-body", "sort by sum body size").Bool()
-	reverse      = kingpin.Flag("reverse", "reverse the result of comparisons").Short('r').Bool()
-	queryString  = kingpin.Flag("query-string", "include query string").Short('q').Bool()
-	tsv          = kingpin.Flag("tsv", "tsv format (default: table)").Bool()
-	apptimeLabel = kingpin.Flag("apptime-label", "apptime label").Default("apptime").String()
-	sizeLabel    = kingpin.Flag("size-label", "size label").Default("size").String()
-	methodLabel  = kingpin.Flag("method-label", "method label").Default("method").String()
-	uriLabel     = kingpin.Flag("uri-label", "uri label").Default("uri").String()
-	limit        = kingpin.Flag("limit", "set an upper limit of the target uri").Default("5000").Int()
-	includes     = kingpin.Flag("includes", "don't exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
-	excludes     = kingpin.Flag("excludes", "exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
-	noHeaders    = kingpin.Flag("noheaders", "print no header line at all (only --tsv)").Bool()
-	aggregates   = kingpin.Flag("aggregates", "aggregate uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
+	alp          = kingpin.New("alp", "Access Log Profiler for LTSV (read from file or stdin).")
+	file         = alp.Flag("file", "access log file").Short('f').String()
+	max          = alp.Flag("max", "sort by max response time").Bool()
+	min          = alp.Flag("min", "sort by min response time").Bool()
+	avg          = alp.Flag("avg", "sort by avg response time").Bool()
+	sum          = alp.Flag("sum", "sort by sum response time").Bool()
+	cnt          = alp.Flag("cnt", "sort by count").Bool()
+	sortUri      = alp.Flag("uri", "sort by uri").Bool()
+	method       = alp.Flag("method", "sort by method").Bool()
+	maxBody      = alp.Flag("max-body", "sort by max body size").Bool()
+	minBody      = alp.Flag("min-body", "sort by min body size").Bool()
+	avgBody      = alp.Flag("avg-body", "sort by avg body size").Bool()
+	sumBody      = alp.Flag("sum-body", "sort by sum body size").Bool()
+	reverse      = alp.Flag("reverse", "reverse the result of comparisons").Short('r').Bool()
+	queryString  = alp.Flag("query-string", "include query string").Short('q').Bool()
+	tsv          = alp.Flag("tsv", "tsv format (default: table)").Bool()
+	apptimeLabel = alp.Flag("apptime-label", "apptime label").Default("apptime").String()
+	sizeLabel    = alp.Flag("size-label", "size label").Default("size").String()
+	methodLabel  = alp.Flag("method-label", "method label").Default("method").String()
+	uriLabel     = alp.Flag("uri-label", "uri label").Default("uri").String()
+	limit        = alp.Flag("limit", "set an upper limit of the target uri").Default("5000").Int()
+	includes     = alp.Flag("includes", "don't exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
+	excludes     = alp.Flag("excludes", "exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
+	noHeaders    = alp.Flag("noheaders", "print no header line at all (only --tsv)").Bool()
+	aggregates   = alp.Flag("aggregates", "aggregate uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
 
 	eol = "\n"
 
@@ -262,8 +263,8 @@ var (
 )
 
 func main() {
-	kingpin.Version("0.0.5")
-	kingpin.Parse()
+	alp.Version("0.0.5")
+	alp.Parse(os.Args[1:])
 
 	var f *os.File
 	var err error
