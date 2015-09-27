@@ -214,6 +214,17 @@ func SortBySumBody(ps Profiles, reverse bool) {
 	Output(ps)
 }
 
+func SetCursor(index string, uri string) {
+	if _, ok := uriHints[index]; ok {
+		cursor = uriHints[index]
+	} else {
+		uriHints[index] = length
+		cursor = length
+		length++
+		accessLog = append(accessLog, Profile{Uri: uri})
+	}
+}
+
 var (
 	file         = kingpin.Flag("file", "access log file").Short('f').String()
 	max          = kingpin.Flag("max", "sort by max response time").Bool()
@@ -238,8 +249,16 @@ var (
 	include      = kingpin.Flag("include", "don't exclude uri matching PATTERN").PlaceHolder("PATTERN").String()
 	exclude      = kingpin.Flag("exclude", "exclude uri matching PATTERN").PlaceHolder("PATTERN").String()
 	noHeaders    = kingpin.Flag("noheaders", "print no header line at all (only --tsv)").Bool()
+	aggregates   = kingpin.Flag("aggregates", "aggregate uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
 
 	eol = "\n"
+
+	uri       string
+	index     string
+	accessLog Profiles
+	uriHints      = make(map[string]int)
+	length    int = 0
+	cursor    int = 0
 )
 
 func main() {
@@ -290,13 +309,6 @@ func main() {
 	} else {
 		sortKey = "max"
 	}
-
-	var uri string
-	var index string
-	var accessLog Profiles
-	uriHints := make(map[string]int)
-	length := 0
-	cursor := 0
 
 	r := ltsv.NewReader(f)
 	for {
@@ -350,13 +362,23 @@ func main() {
 			}
 		}
 
-		if _, ok := uriHints[index]; ok {
-			cursor = uriHints[index]
-		} else {
-			uriHints[index] = length
-			cursor = length
-			length++
-			accessLog = append(accessLog, Profile{Uri: uri})
+		isMatched := false
+		if *aggregates != "" {
+			aggregatePatterns := strings.Split(*aggregates, ",")
+			for _, pattern := range aggregatePatterns {
+				if ok, err := regexp.Match(pattern, []byte(uri)); ok && err == nil {
+					isMatched = true
+					index = fmt.Sprintf("%s_%s", line[*methodLabel], pattern)
+					uri = pattern
+					SetCursor(index, uri)
+				} else if err != nil {
+					log.Fatal(err)
+				}
+			}
+		}
+
+		if !isMatched {
+			SetCursor(index, uri)
 		}
 
 		if len(uriHints) > *limit {
