@@ -246,8 +246,8 @@ var (
 	methodLabel  = kingpin.Flag("method-label", "method label").Default("method").String()
 	uriLabel     = kingpin.Flag("uri-label", "uri label").Default("uri").String()
 	limit        = kingpin.Flag("limit", "set an upper limit of the target uri").Default("5000").Int()
-	include      = kingpin.Flag("include", "don't exclude uri matching PATTERN").PlaceHolder("PATTERN").String()
-	exclude      = kingpin.Flag("exclude", "exclude uri matching PATTERN").PlaceHolder("PATTERN").String()
+	includes     = kingpin.Flag("includes", "don't exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
+	excludes     = kingpin.Flag("excludes", "exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
 	noHeaders    = kingpin.Flag("noheaders", "print no header line at all (only --tsv)").Bool()
 	aggregates   = kingpin.Flag("aggregates", "aggregate uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
 
@@ -311,6 +311,7 @@ func main() {
 	}
 
 	r := ltsv.NewReader(f)
+Loop:
 	for {
 		line, err := r.Read()
 		if err == io.EOF {
@@ -333,6 +334,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		if *queryString {
 			v := url.Values{}
 			values := u.Query()
@@ -346,19 +348,30 @@ func main() {
 			index = fmt.Sprintf("%s_%s", line[*methodLabel], u.Path)
 		}
 
-		if *include != "" {
-			if ok, err := regexp.Match(*include, []byte(uri)); !ok && err == nil {
-				continue
-			} else if err != nil {
-				log.Fatal(err)
+		if *includes != "" {
+			isnotMatched := true
+			includePatterns := strings.Split(*includes, ",")
+			for _, pattern := range includePatterns {
+				if ok, err := regexp.Match(pattern, []byte(uri)); ok && err == nil {
+					isnotMatched = false
+				} else if err != nil {
+					log.Fatal(err)
+				}
+			}
+
+			if isnotMatched {
+				continue Loop
 			}
 		}
 
-		if *exclude != "" {
-			if ok, err := regexp.Match(*exclude, []byte(uri)); ok && err == nil {
-				continue
-			} else if err != nil {
-				log.Fatal(err)
+		if *excludes != "" {
+			excludePatterns := strings.Split(*excludes, ",")
+			for _, pattern := range excludePatterns {
+				if ok, err := regexp.Match(pattern, []byte(uri)); ok && err == nil {
+					continue Loop
+				} else if err != nil {
+					log.Fatal(err)
+				}
 			}
 		}
 
