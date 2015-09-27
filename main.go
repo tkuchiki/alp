@@ -262,7 +262,7 @@ var (
 )
 
 func main() {
-	kingpin.Version("0.0.4")
+	kingpin.Version("0.0.5")
 	kingpin.Parse()
 
 	var f *os.File
