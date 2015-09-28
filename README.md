@@ -16,8 +16,10 @@ mv alp_linux_amd64 /usr/local/bin/alp
 Read from stdin or an input file(`-f`).  
 
 ```
-$ ./alp --help                                                                                        
-usage: alp --file=FILE [<flags>]
+$ ./alp --help
+usage: alp [<flags>]
+
+Access Log Profiler for LTSV (read from file or stdin).
 
 Flags:
   --help               Show context-sensitive help (also try --help-long and --help-man).
@@ -36,22 +38,53 @@ Flags:
   -r, --reverse        reverse the result of comparisons
   -q, --query-string   include query string
   --tsv                tsv format (default: table)
-  --restime-label="apptime"
+  --apptime-label="apptime"
                        apptime label
-  --body-label="size"  size label
+  --size-label="size"  size label
   --method-label="method"
                        method label
   --uri-label="uri"    uri label
   --limit=5000         set an upper limit of the target uri
-  --include=PATTERN    don't exclude uri matching PATTERN
-  --exclude=PATTERN    exclude uri matching PATTERN
+  --includes=PATTERN,...
+                       don't exclude uri matching PATTERN (comma separated)
+  --excludes=PATTERN,...
+                       exclude uri matching PATTERN (comma separated)
+  --noheaders          print no header line at all (only --tsv)
+  --aggregates=PATTERN,...
+                       aggregate uri matching PATTERN (comma separated)
   --version            Show application version.
 
 ```
 
-## Log Format
+## Log format
 
 See "Labels for Web server's Log" of http://ltsv.org .
+
+### Apache
+
+```
+LogFormat "time:%t\tforwardedfor:%{X-Forwarded-For}i\thost:%h\treq:%r\tstatus:%>s\tmethod:%m\turi:%U%q\tsize:%B\treferer:%{Referer}i\tua:%{User-Agent}i\treqtime_microsec:%D\tapptime:%D\tcache:%{X-Cache}o\truntime:%{X-Runtime}o\tvhost:%{Host}i" ltsv
+```
+
+### Nginx
+
+```
+log_format ltsv "time:$time_local"
+                "\thost:$remote_addr"
+                "\tforwardedfor:$http_x_forwarded_for"
+                "\treq:$request"
+                "\tstatus:$status"
+                "\tmethod:$request_method"
+                "\turi:$request_uri"
+                "\tsize:$body_bytes_sent"
+                "\treferer:$http_referer"
+                "\tua:$http_user_agent"
+                "\treqtime:$request_time"
+                "\tcache:$upstream_http_x_cache"
+                "\truntime:$upstream_http_x_runtime"
+                "\tapptime:$upstream_response_time"
+                "\tvhost:$host";
+```
 
 ## Sample
 
