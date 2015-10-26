@@ -9,8 +9,6 @@ import (
 	"log"
 	"net/url"
 	"os"
-	"os/user"
-	"path/filepath"
 	"regexp"
 	"runtime"
 	"sort"
@@ -59,29 +57,6 @@ func (s ByMaxBody) Less(i, j int) bool { return s.Profiles[i].MaxBody < s.Profil
 func (s ByMinBody) Less(i, j int) bool { return s.Profiles[i].MinBody < s.Profiles[j].MinBody }
 func (s BySumBody) Less(i, j int) bool { return s.Profiles[i].SumBody < s.Profiles[j].SumBody }
 func (s ByAvgBody) Less(i, j int) bool { return s.Profiles[i].AvgBody < s.Profiles[j].AvgBody }
-
-func AbsPath(fname string) (f string, err error) {
-	var fpath string
-	matched, _ := regexp.Match("^~/", []byte(fname))
-	if matched {
-		usr, _ := user.Current()
-		fpath = strings.Replace(fname, "~", usr.HomeDir, 1)
-	} else {
-		fpath, err = filepath.Abs(fname)
-	}
-
-	return fpath, err
-}
-
-func LoadFile(filename string) (f *os.File, err error) {
-	fpath, err := AbsPath(filename)
-	if err != nil {
-		return f, err
-	}
-	f, err = os.Open(fpath)
-
-	return f, err
-}
 
 func Round(f float64) string {
 	return fmt.Sprintf("%.3f", f)
@@ -226,31 +201,30 @@ func SetCursor(index string, uri string) {
 }
 
 var (
-	alp          = kingpin.New("alp", "Access Log Profiler for LTSV (read from file or stdin).")
-	file         = alp.Flag("file", "access log file").Short('f').String()
-	max          = alp.Flag("max", "sort by max response time").Bool()
-	min          = alp.Flag("min", "sort by min response time").Bool()
-	avg          = alp.Flag("avg", "sort by avg response time").Bool()
-	sum          = alp.Flag("sum", "sort by sum response time").Bool()
-	cnt          = alp.Flag("cnt", "sort by count").Bool()
-	sortUri      = alp.Flag("uri", "sort by uri").Bool()
-	method       = alp.Flag("method", "sort by method").Bool()
-	maxBody      = alp.Flag("max-body", "sort by max body size").Bool()
-	minBody      = alp.Flag("min-body", "sort by min body size").Bool()
-	avgBody      = alp.Flag("avg-body", "sort by avg body size").Bool()
-	sumBody      = alp.Flag("sum-body", "sort by sum body size").Bool()
-	reverse      = alp.Flag("reverse", "reverse the result of comparisons").Short('r').Bool()
-	queryString  = alp.Flag("query-string", "include query string").Short('q').Bool()
-	tsv          = alp.Flag("tsv", "tsv format (default: table)").Bool()
-	apptimeLabel = alp.Flag("apptime-label", "apptime label").Default("apptime").String()
-	sizeLabel    = alp.Flag("size-label", "size label").Default("size").String()
-	methodLabel  = alp.Flag("method-label", "method label").Default("method").String()
-	uriLabel     = alp.Flag("uri-label", "uri label").Default("uri").String()
-	limit        = alp.Flag("limit", "set an upper limit of the target uri").Default("5000").Int()
-	includes     = alp.Flag("includes", "don't exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
-	excludes     = alp.Flag("excludes", "exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
-	noHeaders    = alp.Flag("noheaders", "print no header line at all (only --tsv)").Bool()
-	aggregates   = alp.Flag("aggregates", "aggregate uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
+	file         = kingpin.Flag("file", "access log file").Short('f').String()
+	max          = kingpin.Flag("max", "sort by max response time").Bool()
+	min          = kingpin.Flag("min", "sort by min response time").Bool()
+	avg          = kingpin.Flag("avg", "sort by avg response time").Bool()
+	sum          = kingpin.Flag("sum", "sort by sum response time").Bool()
+	cnt          = kingpin.Flag("cnt", "sort by count").Bool()
+	sortUri      = kingpin.Flag("uri", "sort by uri").Bool()
+	method       = kingpin.Flag("method", "sort by method").Bool()
+	maxBody      = kingpin.Flag("max-body", "sort by max body size").Bool()
+	minBody      = kingpin.Flag("min-body", "sort by min body size").Bool()
+	avgBody      = kingpin.Flag("avg-body", "sort by avg body size").Bool()
+	sumBody      = kingpin.Flag("sum-body", "sort by sum body size").Bool()
+	reverse      = kingpin.Flag("reverse", "reverse the result of comparisons").Short('r').Bool()
+	queryString  = kingpin.Flag("query-string", "include query string").Short('q').Bool()
+	tsv          = kingpin.Flag("tsv", "tsv format (default: table)").Bool()
+	apptimeLabel = kingpin.Flag("apptime-label", "apptime label").Default("apptime").String()
+	sizeLabel    = kingpin.Flag("size-label", "size label").Default("size").String()
+	methodLabel  = kingpin.Flag("method-label", "method label").Default("method").String()
+	uriLabel     = kingpin.Flag("uri-label", "uri label").Default("uri").String()
+	limit        = kingpin.Flag("limit", "set an upper limit of the target uri").Default("5000").Int()
+	includes     = kingpin.Flag("includes", "don't exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
+	excludes     = kingpin.Flag("excludes", "exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
+	noHeaders    = kingpin.Flag("noheaders", "print no header line at all (only --tsv)").Bool()
+	aggregates   = kingpin.Flag("aggregates", "aggregate uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
 
 	eol = "\n"
 
@@ -263,14 +237,15 @@ var (
 )
 
 func main() {
-	alp.Version("0.0.5")
-	alp.Parse(os.Args[1:])
+	kingpin.CommandLine.Help = "Access Log Profiler for LTSV (read from file or stdin)."
+	kingpin.Version("0.0.6")
+	kingpin.Parse()
 
 	var f *os.File
 	var err error
 
 	if *file != "" {
-		f, err = LoadFile(*file)
+		f, err = os.Open(*file)
 		defer f.Close()
 		if err != nil {
 			log.Fatal(err)
@@ -278,6 +253,8 @@ func main() {
 	} else {
 		f = os.Stdin
 	}
+
+	accessLog = make(Profiles, 0, *limit)
 
 	if runtime.GOOS == "windows" {
 		eol = "\r\n"
@@ -309,6 +286,33 @@ func main() {
 		sortKey = "sumBody"
 	} else {
 		sortKey = "max"
+	}
+
+	var includeRegexps []*regexp.Regexp
+	if *includes != "" {
+		includePatterns := strings.Split(*includes, ",")
+		includeRegexps = make([]*regexp.Regexp, 0, len(includePatterns))
+		for _, pattern := range includePatterns {
+			includeRegexps = append(includeRegexps, regexp.MustCompile(pattern))
+		}
+	}
+
+	var excludeRegexps []*regexp.Regexp
+	if *excludes != "" {
+		excludePatterns := strings.Split(*excludes, ",")
+		excludeRegexps = make([]*regexp.Regexp, 0, len(excludePatterns))
+		for _, pattern := range excludePatterns {
+			excludeRegexps = append(excludeRegexps, regexp.MustCompile(pattern))
+		}
+	}
+
+	var aggregateRegexps []*regexp.Regexp
+	if *aggregates != "" {
+		aggregatePatterns := strings.Split(*aggregates, ",")
+		aggregateRegexps = make([]*regexp.Regexp, 0, len(aggregatePatterns))
+		for _, pattern := range aggregatePatterns {
+			aggregateRegexps = append(aggregateRegexps, regexp.MustCompile(pattern))
+		}
 	}
 
 	r := ltsv.NewReader(f)
@@ -351,9 +355,8 @@ Loop:
 
 		if *includes != "" {
 			isnotMatched := true
-			includePatterns := strings.Split(*includes, ",")
-			for _, pattern := range includePatterns {
-				if ok, err := regexp.Match(pattern, []byte(uri)); ok && err == nil {
+			for _, re := range includeRegexps {
+				if ok := re.Match([]byte(uri)); ok && err == nil {
 					isnotMatched = false
 				} else if err != nil {
 					log.Fatal(err)
@@ -366,9 +369,8 @@ Loop:
 		}
 
 		if *excludes != "" {
-			excludePatterns := strings.Split(*excludes, ",")
-			for _, pattern := range excludePatterns {
-				if ok, err := regexp.Match(pattern, []byte(uri)); ok && err == nil {
+			for _, re := range excludeRegexps {
+				if ok := re.Match([]byte(uri)); ok && err == nil {
 					continue Loop
 				} else if err != nil {
 					log.Fatal(err)
@@ -378,10 +380,10 @@ Loop:
 
 		isMatched := false
 		if *aggregates != "" {
-			aggregatePatterns := strings.Split(*aggregates, ",")
-			for _, pattern := range aggregatePatterns {
-				if ok, err := regexp.Match(pattern, []byte(uri)); ok && err == nil {
+			for _, re := range aggregateRegexps {
+				if ok := re.Match([]byte(uri)); ok && err == nil {
 					isMatched = true
+					pattern := re.String()
 					index = fmt.Sprintf("%s_%s", line[*methodLabel], pattern)
 					uri = pattern
 					SetCursor(index, uri)
@@ -422,33 +424,38 @@ Loop:
 		accessLog[cursor].SumBody += bodySize
 	}
 
-	for i, _ := range accessLog {
-		accessLog[i].Avg = accessLog[i].Sum / float64(accessLog[i].Cnt)
-		accessLog[i].AvgBody = accessLog[i].SumBody / float64(accessLog[i].Cnt)
+	var profiles Profiles = make(Profiles, length)
+	for i := 0; i < length; i++ {
+		profiles[i] = accessLog[i]
+	}
+
+	for i, _ := range profiles {
+		profiles[i].Avg = profiles[i].Sum / float64(profiles[i].Cnt)
+		profiles[i].AvgBody = profiles[i].SumBody / float64(profiles[i].Cnt)
 	}
 
 	switch sortKey {
 	case "max":
-		SortByMax(accessLog, *reverse)
+		SortByMax(profiles, *reverse)
 	case "min":
-		SortByMin(accessLog, *reverse)
+		SortByMin(profiles, *reverse)
 	case "avg":
-		SortByAvg(accessLog, *reverse)
+		SortByAvg(profiles, *reverse)
 	case "sum":
-		SortBySum(accessLog, *reverse)
+		SortBySum(profiles, *reverse)
 	case "cnt":
-		SortByCnt(accessLog, *reverse)
+		SortByCnt(profiles, *reverse)
 	case "uri":
-		SortByUri(accessLog, *reverse)
+		SortByUri(profiles, *reverse)
 	case "method":
-		SortByMethod(accessLog, *reverse)
+		SortByMethod(profiles, *reverse)
 	case "maxBody":
-		SortByMaxBody(accessLog, *reverse)
+		SortByMaxBody(profiles, *reverse)
 	case "minBody":
-		SortByMinBody(accessLog, *reverse)
+		SortByMinBody(profiles, *reverse)
 	case "avgBody":
-		SortByAvgBody(accessLog, *reverse)
+		SortByAvgBody(profiles, *reverse)
 	case "sumBody":
-		SortBySumBody(accessLog, *reverse)
+		SortBySumBody(profiles, *reverse)
 	}
 }
