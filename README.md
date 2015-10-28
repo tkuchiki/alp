@@ -22,38 +22,39 @@ usage: alp [<flags>]
 Access Log Profiler for LTSV (read from file or stdin).
 
 Flags:
-  --help               Show context-sensitive help (also try --help-long and --help-man).
-  -f, --file=FILE      access log file
-  --max                sort by max response time
-  --min                sort by min response time
-  --avg                sort by avg response time
-  --sum                sort by sum response time
-  --cnt                sort by count
-  --uri                sort by uri
-  --method             sort by method
-  --max-body           sort by max body size
-  --min-body           sort by min body size
-  --avg-body           sort by avg body size
-  --sum-body           sort by sum body size
-  -r, --reverse        reverse the result of comparisons
-  -q, --query-string   include query string
-  --tsv                tsv format (default: table)
-  --apptime-label="apptime"
-                       apptime label
-  --size-label="size"  size label
-  --method-label="method"
-                       method label
-  --uri-label="uri"    uri label
-  --limit=5000         set an upper limit of the target uri
-  --includes=PATTERN,...
-                       don't exclude uri matching PATTERN (comma separated)
-  --excludes=PATTERN,...
-                       exclude uri matching PATTERN (comma separated)
-  --noheaders          print no header line at all (only --tsv)
-  --aggregates=PATTERN,...
-                       aggregate uri matching PATTERN (comma separated)
-  --version            Show application version.
-
+      --help                     Show context-sensitive help (also try --help-long and --help-man).
+  -f, --file=FILE                access log file
+      --max                      sort by max response time
+      --min                      sort by min response time
+      --avg                      sort by avg response time
+      --sum                      sort by sum response time
+      --cnt                      sort by count
+      --uri                      sort by uri
+      --method                   sort by method
+      --max-body                 sort by max body size
+      --min-body                 sort by min body size
+      --avg-body                 sort by avg body size
+      --sum-body                 sort by sum body size
+  -r, --reverse                  reverse the result of comparisons
+  -q, --query-string             include query string
+      --tsv                      tsv format (default: table)
+      --apptime-label="apptime"  apptime label
+      --size-label="size"        size label
+      --method-label="method"    method label
+      --uri-label="uri"          uri label
+      --time-label="time"        time label
+      --limit=5000               set an upper limit of the target uri
+      --includes=PATTERN,...     don't exclude uri matching PATTERN (comma separated)
+      --excludes=PATTERN,...     exclude uri matching PATTERN (comma separated)
+      --noheaders                print no header line at all (only --tsv)
+      --aggregates=PATTERN,...   aggregate uri matching PATTERN (comma separated)
+      --start-time=TIME          since the start time
+      --end-time=TIME            end time earlier
+      --start-time-duration=TIME_DURATION
+                                 since the start time (now - time.Duration)
+      --end-time-duration=TIME_DURATION
+                                 end time earlier (now - time.Duration)
+      --version                  Show application version.
 ```
 
 ## Log format
@@ -149,7 +150,7 @@ $ ./alp -f access.log --tsv --noheaders
 3	0.057	0.234	0.391	0.130	12	34	80	26.667	POST	/foo/bar
 ```
 
-## Include
+### Include
 
 ```
 $ ./alp -f access.log
@@ -174,7 +175,7 @@ $ ./alp -f access.log --includes "foo,\d+"
 +-------+-------+-------+-------+-------+-----------+-----------+-----------+-----------+--------+-------------------+
 ```
 
-## Exclude
+### Exclude
 
 ```
 $ ./alp -f access.log
@@ -219,4 +220,63 @@ $ ./alp -f access.log --aggregates "/diary/entry/\d+"
 | 1     | 0.234 | 0.234 | 0.234 | 0.234 |    34.000 |    34.000 |    34.000 |    34.000 | POST   | /hoge/piyo       |
 | 2     | 0.135 | 0.432 | 0.567 | 0.283 |    15.000 |    30.000 |    45.000 |    22.500 | GET    | /diary/entry/\d+ |
 +-------+-------+-------+-------+-------+-----------+-----------+-----------+-----------+--------+------------------+
+```
+
+### Time
+
+[sample log file](./access2.log)
+
+```
+$ ./alp -f access2.log --start-time "2015-10-28T11:54:39+09:00"
++-------+-------+-------+-------+-------+-----------+-----------+-----------+-----------+--------+-------------------+
+| COUNT |  MIN  |  MAX  |  SUM  |  AVG  | MAX(BODY) | MIN(BODY) | SUM(BODY) | AVG(BODY) | METHOD |        URI        |
++-------+-------+-------+-------+-------+-----------+-----------+-----------+-----------+--------+-------------------+
+| 1     | 0.135 | 0.135 | 0.135 | 0.135 |    15.000 |    15.000 |    15.000 |    15.000 | GET    | /diary/entry/1234 |
+| 1     | 0.234 | 0.234 | 0.234 | 0.234 |    15.000 |    15.000 |    15.000 |    15.000 | GET    | /foo/bar          |
+| 1     | 0.432 | 0.432 | 0.432 | 0.432 |    30.000 |    30.000 |    30.000 |    30.000 | GET    | /diary/entry/5678 |
++-------+-------+-------+-------+-------+-----------+-----------+-----------+-----------+--------+-------------------+
+
+$ ./alp -f access2.log --end-time "2015-10-28 11:45:39+09:00"
++-------+-------+-------+-------+-------+-----------+-----------+-----------+-----------+--------+----------+
+| COUNT |  MIN  |  MAX  |  SUM  |  AVG  | MAX(BODY) | MIN(BODY) | SUM(BODY) | AVG(BODY) | METHOD |   URI    |
++-------+-------+-------+-------+-------+-----------+-----------+-----------+-----------+--------+----------+
+| 1     | 0.123 | 0.123 | 0.123 | 0.123 |    56.000 |    56.000 |    56.000 |    56.000 | GET    | /foo/bar |
+| 3     | 0.057 | 0.234 | 0.391 | 0.130 |    12.000 |    34.000 |    80.000 |    26.667 | POST   | /foo/bar |
++-------+-------+-------+-------+-------+-----------+-----------+-----------+-----------+--------+----------+
+
+$ ./alp -f access2.log --start-time "2015-10-28T11:45:39+09:00" --end-time "2015-10-28 11:55:39+09:00"
++-------+-------+-------+-------+-------+-----------+-----------+-----------+-----------+--------+------------+
+| COUNT |  MIN  |  MAX  |  SUM  |  AVG  | MAX(BODY) | MIN(BODY) | SUM(BODY) | AVG(BODY) | METHOD |    URI     |
++-------+-------+-------+-------+-------+-----------+-----------+-----------+-----------+--------+------------+
+| 2     | 0.057 | 0.100 | 0.157 | 0.079 |    12.000 |    34.000 |    46.000 |    23.000 | POST   | /foo/bar   |
+| 1     | 0.123 | 0.123 | 0.123 | 0.123 |    56.000 |    56.000 |    56.000 |    56.000 | GET    | /foo/bar   |
+| 1     | 0.234 | 0.234 | 0.234 | 0.234 |    34.000 |    34.000 |    34.000 |    34.000 | POST   | /hoge/piyo |
++-------+-------+-------+-------+-------+-----------+-----------+-----------+-----------+--------+------------+
+```
+
+#### Duration
+
+Use time.Duration.
+Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+
+```
+$ LANG=C date
+Wed Oct 28 11:55:39 JST 2015
+
+$ ./alp -f access2.log --start-time-duration 1m # from 2015-10-28T11:54:39+09:00
++-------+-------+-------+-------+-------+-----------+-----------+-----------+-----------+--------+-------------------+
+| COUNT |  MIN  |  MAX  |  SUM  |  AVG  | MAX(BODY) | MIN(BODY) | SUM(BODY) | AVG(BODY) | METHOD |        URI        |
++-------+-------+-------+-------+-------+-----------+-----------+-----------+-----------+--------+-------------------+
+| 1     | 0.135 | 0.135 | 0.135 | 0.135 |    15.000 |    15.000 |    15.000 |    15.000 | GET    | /diary/entry/1234 |
+| 1     | 0.234 | 0.234 | 0.234 | 0.234 |    15.000 |    15.000 |    15.000 |    15.000 | GET    | /foo/bar          |
+| 1     | 0.432 | 0.432 | 0.432 | 0.432 |    30.000 |    30.000 |    30.000 |    30.000 | GET    | /diary/entry/5678 |
++-------+-------+-------+-------+-------+-----------+-----------+-----------+-----------+--------+-------------------+
+
+$ ./alp -f access2.log --end-time-duration 10m # to 2015-10-28T11:45:39+09:00
++-------+-------+-------+-------+-------+-----------+-----------+-----------+-----------+--------+----------+
+| COUNT |  MIN  |  MAX  |  SUM  |  AVG  | MAX(BODY) | MIN(BODY) | SUM(BODY) | AVG(BODY) | METHOD |   URI    |
++-------+-------+-------+-------+-------+-----------+-----------+-----------+-----------+--------+----------+
+| 1     | 0.123 | 0.123 | 0.123 | 0.123 |    56.000 |    56.000 |    56.000 |    56.000 | GET    | /foo/bar |
+| 3     | 0.057 | 0.234 | 0.391 | 0.130 |    12.000 |    34.000 |    80.000 |    26.667 | POST   | /foo/bar |
++-------+-------+-------+-------+-------+-----------+-----------+-----------+-----------+--------+----------+
 ```
