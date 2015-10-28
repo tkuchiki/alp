@@ -256,7 +256,7 @@ $ ./alp -f access2.log --start-time "2015-10-28T11:45:39+09:00" --end-time "2015
 
 #### Duration
 
-Use time.Duration.
+Use time.Duration.  
 Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
 
 ```
