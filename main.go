@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/najeira/ltsv"
 	"github.com/olekukonko/tablewriter"
+	"github.com/tkuchiki/parsetime"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"io"
 	"log"
@@ -14,6 +15,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Profile struct {
@@ -200,31 +202,60 @@ func SetCursor(index string, uri string) {
 	}
 }
 
+func TimeCmp(startTimeNano int64, endTimeNano int64, timeNano int64) bool {
+	if startTimeNano > 0 && endTimeNano == 0 {
+		return startTimeNano <= timeNano
+	} else if endTimeNano > 0 && startTimeNano == 0 {
+		return endTimeNano >= timeNano
+	} else if startTimeNano > 0 && endTimeNano > 0 {
+		return startTimeNano <= timeNano && endTimeNano >= timeNano
+	}
+
+	return false
+}
+
+func TimeDurationSub(duration string) (t time.Time, err error) {
+	var d time.Duration
+	d, err = time.ParseDuration(duration)
+	if err != nil {
+		return t, err
+	}
+
+	t = time.Now().Add(-1 * d)
+
+	return t, err
+}
+
 var (
-	file         = kingpin.Flag("file", "access log file").Short('f').String()
-	max          = kingpin.Flag("max", "sort by max response time").Bool()
-	min          = kingpin.Flag("min", "sort by min response time").Bool()
-	avg          = kingpin.Flag("avg", "sort by avg response time").Bool()
-	sum          = kingpin.Flag("sum", "sort by sum response time").Bool()
-	cnt          = kingpin.Flag("cnt", "sort by count").Bool()
-	sortUri      = kingpin.Flag("uri", "sort by uri").Bool()
-	method       = kingpin.Flag("method", "sort by method").Bool()
-	maxBody      = kingpin.Flag("max-body", "sort by max body size").Bool()
-	minBody      = kingpin.Flag("min-body", "sort by min body size").Bool()
-	avgBody      = kingpin.Flag("avg-body", "sort by avg body size").Bool()
-	sumBody      = kingpin.Flag("sum-body", "sort by sum body size").Bool()
-	reverse      = kingpin.Flag("reverse", "reverse the result of comparisons").Short('r').Bool()
-	queryString  = kingpin.Flag("query-string", "include query string").Short('q').Bool()
-	tsv          = kingpin.Flag("tsv", "tsv format (default: table)").Bool()
-	apptimeLabel = kingpin.Flag("apptime-label", "apptime label").Default("apptime").String()
-	sizeLabel    = kingpin.Flag("size-label", "size label").Default("size").String()
-	methodLabel  = kingpin.Flag("method-label", "method label").Default("method").String()
-	uriLabel     = kingpin.Flag("uri-label", "uri label").Default("uri").String()
-	limit        = kingpin.Flag("limit", "set an upper limit of the target uri").Default("5000").Int()
-	includes     = kingpin.Flag("includes", "don't exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
-	excludes     = kingpin.Flag("excludes", "exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
-	noHeaders    = kingpin.Flag("noheaders", "print no header line at all (only --tsv)").Bool()
-	aggregates   = kingpin.Flag("aggregates", "aggregate uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
+	file              = kingpin.Flag("file", "access log file").Short('f').String()
+	max               = kingpin.Flag("max", "sort by max response time").Bool()
+	min               = kingpin.Flag("min", "sort by min response time").Bool()
+	avg               = kingpin.Flag("avg", "sort by avg response time").Bool()
+	sum               = kingpin.Flag("sum", "sort by sum response time").Bool()
+	cnt               = kingpin.Flag("cnt", "sort by count").Bool()
+	sortUri           = kingpin.Flag("uri", "sort by uri").Bool()
+	method            = kingpin.Flag("method", "sort by method").Bool()
+	maxBody           = kingpin.Flag("max-body", "sort by max body size").Bool()
+	minBody           = kingpin.Flag("min-body", "sort by min body size").Bool()
+	avgBody           = kingpin.Flag("avg-body", "sort by avg body size").Bool()
+	sumBody           = kingpin.Flag("sum-body", "sort by sum body size").Bool()
+	reverse           = kingpin.Flag("reverse", "reverse the result of comparisons").Short('r').Bool()
+	queryString       = kingpin.Flag("query-string", "include query string").Short('q').Bool()
+	tsv               = kingpin.Flag("tsv", "tsv format (default: table)").Bool()
+	apptimeLabel      = kingpin.Flag("apptime-label", "apptime label").Default("apptime").String()
+	sizeLabel         = kingpin.Flag("size-label", "size label").Default("size").String()
+	methodLabel       = kingpin.Flag("method-label", "method label").Default("method").String()
+	uriLabel          = kingpin.Flag("uri-label", "uri label").Default("uri").String()
+	timeLabel         = kingpin.Flag("time-label", "time label").Default("time").String()
+	limit             = kingpin.Flag("limit", "set an upper limit of the target uri").Default("5000").Int()
+	includes          = kingpin.Flag("includes", "don't exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
+	excludes          = kingpin.Flag("excludes", "exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
+	noHeaders         = kingpin.Flag("noheaders", "print no header line at all (only --tsv)").Bool()
+	aggregates        = kingpin.Flag("aggregates", "aggregate uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
+	startTime         = kingpin.Flag("start-time", "since the start time").PlaceHolder("TIME").String()
+	endTime           = kingpin.Flag("end-time", "end time earlier").PlaceHolder("TIME").String()
+	startTimeDuration = kingpin.Flag("start-time-duration", "since the start time (now - time.Duration)").PlaceHolder("TIME_DURATION").String()
+	endTimeDuration   = kingpin.Flag("end-time-duration", "end time earlier (now - time.Duration)").PlaceHolder("TIME_DURATION").String()
 
 	eol = "\n"
 
@@ -238,7 +269,7 @@ var (
 
 func main() {
 	kingpin.CommandLine.Help = "Access Log Profiler for LTSV (read from file or stdin)."
-	kingpin.Version("0.0.6")
+	kingpin.Version("0.0.7")
 	kingpin.Parse()
 
 	var f *os.File
@@ -315,6 +346,40 @@ func main() {
 		}
 	}
 
+	var sTimeNano int64
+	if *startTime != "" {
+		sTime, err := parsetime.Parse(*startTime)
+		if err != nil {
+			log.Fatal(err)
+		}
+		sTimeNano = sTime.UnixNano()
+	}
+
+	if *startTimeDuration != "" {
+		sTime, err := TimeDurationSub(*startTimeDuration)
+		if err != nil {
+			log.Fatal(err)
+		}
+		sTimeNano = sTime.UnixNano()
+	}
+
+	var eTimeNano int64
+	if *endTime != "" {
+		eTime, err := parsetime.Parse(*endTime)
+		if err != nil {
+			log.Fatal(err)
+		}
+		eTimeNano = eTime.UnixNano()
+	}
+
+	if *endTimeDuration != "" {
+		eTime, err := TimeDurationSub(*endTimeDuration)
+		if err != nil {
+			log.Fatal(err)
+		}
+		eTimeNano = eTime.UnixNano()
+	}
+
 	r := ltsv.NewReader(f)
 Loop:
 	for {
@@ -333,6 +398,17 @@ Loop:
 		bodySize, err := strconv.ParseFloat(line[*sizeLabel], 64)
 		if err != nil {
 			continue
+		}
+
+		if sTimeNano != 0 || eTimeNano != 0 {
+			t, err := parsetime.Log(line[*timeLabel])
+			if err != nil {
+				continue
+			}
+			timeNano := t.UnixNano()
+			if !TimeCmp(sTimeNano, eTimeNano, timeNano) {
+				continue
+			}
 		}
 
 		u, err := url.Parse(line[*uriLabel])
@@ -424,38 +500,33 @@ Loop:
 		accessLog[cursor].SumBody += bodySize
 	}
 
-	var profiles Profiles = make(Profiles, length)
-	for i := 0; i < length; i++ {
-		profiles[i] = accessLog[i]
-	}
-
-	for i, _ := range profiles {
-		profiles[i].Avg = profiles[i].Sum / float64(profiles[i].Cnt)
-		profiles[i].AvgBody = profiles[i].SumBody / float64(profiles[i].Cnt)
+	for i, _ := range accessLog {
+		accessLog[i].Avg = accessLog[i].Sum / float64(accessLog[i].Cnt)
+		accessLog[i].AvgBody = accessLog[i].SumBody / float64(accessLog[i].Cnt)
 	}
 
 	switch sortKey {
 	case "max":
-		SortByMax(profiles, *reverse)
+		SortByMax(accessLog, *reverse)
 	case "min":
-		SortByMin(profiles, *reverse)
+		SortByMin(accessLog, *reverse)
 	case "avg":
-		SortByAvg(profiles, *reverse)
+		SortByAvg(accessLog, *reverse)
 	case "sum":
-		SortBySum(profiles, *reverse)
+		SortBySum(accessLog, *reverse)
 	case "cnt":
-		SortByCnt(profiles, *reverse)
+		SortByCnt(accessLog, *reverse)
 	case "uri":
-		SortByUri(profiles, *reverse)
+		SortByUri(accessLog, *reverse)
 	case "method":
-		SortByMethod(profiles, *reverse)
+		SortByMethod(accessLog, *reverse)
 	case "maxBody":
-		SortByMaxBody(profiles, *reverse)
+		SortByMaxBody(accessLog, *reverse)
 	case "minBody":
-		SortByMinBody(profiles, *reverse)
+		SortByMinBody(accessLog, *reverse)
 	case "avgBody":
-		SortByAvgBody(profiles, *reverse)
+		SortByAvgBody(accessLog, *reverse)
 	case "sumBody":
-		SortBySumBody(profiles, *reverse)
+		SortBySumBody(accessLog, *reverse)
 	}
 }
