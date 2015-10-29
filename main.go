@@ -6,7 +6,9 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"github.com/tkuchiki/parsetime"
 	"gopkg.in/alecthomas/kingpin.v2"
+	"gopkg.in/yaml.v2"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -14,7 +16,6 @@ import (
 	"runtime"
 	"sort"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -60,13 +61,33 @@ func (s ByMinBody) Less(i, j int) bool { return s.Profiles[i].MinBody < s.Profil
 func (s BySumBody) Less(i, j int) bool { return s.Profiles[i].SumBody < s.Profiles[j].SumBody }
 func (s ByAvgBody) Less(i, j int) bool { return s.Profiles[i].AvgBody < s.Profiles[j].AvgBody }
 
+const (
+	ApptimeLabel = "apptime"
+	SizeLabel    = "size"
+	MethodLabel  = "method"
+	UriLabel     = "uri"
+	TimeLabel    = "time"
+	Limit        = 5000
+)
+
+func LoadYAML(filename string) (config Config, err error) {
+	buf, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return config, err
+	}
+
+	err = yaml.Unmarshal(buf, &config)
+
+	return config, err
+}
+
 func Round(f float64) string {
 	return fmt.Sprintf("%.3f", f)
 }
 
-func Output(ps Profiles) {
-	if *tsv {
-		if !*noHeaders {
+func Output(ps Profiles, c Config) {
+	if c.Tsv {
+		if !c.NoHeaders {
 			fmt.Printf("Count\tMin\tMax\tSum\tAvg\tMax(Body)\tMin(Body)\tSum(Body)\tAvg(Body)\tMethod\tUri%v", eol)
 		}
 
@@ -92,103 +113,103 @@ func Output(ps Profiles) {
 	}
 }
 
-func SortByMax(ps Profiles, reverse bool) {
-	if reverse {
+func SortByMax(ps Profiles, c Config) {
+	if c.Reverse {
 		sort.Sort(sort.Reverse(ByMax{ps}))
 	} else {
 		sort.Sort(ByMax{ps})
 	}
-	Output(ps)
+	Output(ps, c)
 }
 
-func SortByMin(ps Profiles, reverse bool) {
-	if reverse {
+func SortByMin(ps Profiles, c Config) {
+	if c.Reverse {
 		sort.Sort(sort.Reverse(ByMin{ps}))
 	} else {
 		sort.Sort(ByMin{ps})
 	}
-	Output(ps)
+	Output(ps, c)
 }
 
-func SortByAvg(ps Profiles, reverse bool) {
-	if reverse {
+func SortByAvg(ps Profiles, c Config) {
+	if c.Reverse {
 		sort.Sort(sort.Reverse(ByAvg{ps}))
 	} else {
 		sort.Sort(ByAvg{ps})
 	}
-	Output(ps)
+	Output(ps, c)
 }
 
-func SortBySum(ps Profiles, reverse bool) {
-	if reverse {
+func SortBySum(ps Profiles, c Config) {
+	if c.Reverse {
 		sort.Sort(sort.Reverse(BySum{ps}))
 	} else {
 		sort.Sort(BySum{ps})
 	}
-	Output(ps)
+	Output(ps, c)
 }
 
-func SortByCnt(ps Profiles, reverse bool) {
-	if reverse {
+func SortByCnt(ps Profiles, c Config) {
+	if c.Reverse {
 		sort.Sort(sort.Reverse(ByCnt{ps}))
 	} else {
 		sort.Sort(ByCnt{ps})
 	}
-	Output(ps)
+	Output(ps, c)
 }
 
-func SortByUri(ps Profiles, reverse bool) {
-	if reverse {
+func SortByUri(ps Profiles, c Config) {
+	if c.Reverse {
 		sort.Sort(sort.Reverse(ByUri{ps}))
 	} else {
 		sort.Sort(ByUri{ps})
 	}
-	Output(ps)
+	Output(ps, c)
 }
 
-func SortByMethod(ps Profiles, reverse bool) {
-	if reverse {
+func SortByMethod(ps Profiles, c Config) {
+	if c.Reverse {
 		sort.Sort(sort.Reverse(ByMethod{ps}))
 	} else {
 		sort.Sort(ByMethod{ps})
 	}
-	Output(ps)
+	Output(ps, c)
 }
 
-func SortByMaxBody(ps Profiles, reverse bool) {
-	if reverse {
+func SortByMaxBody(ps Profiles, c Config) {
+	if c.Reverse {
 		sort.Sort(sort.Reverse(ByMaxBody{ps}))
 	} else {
 		sort.Sort(ByMaxBody{ps})
 	}
-	Output(ps)
+	Output(ps, c)
 }
 
-func SortByMinBody(ps Profiles, reverse bool) {
-	if reverse {
+func SortByMinBody(ps Profiles, c Config) {
+	if c.Reverse {
 		sort.Sort(sort.Reverse(ByMinBody{ps}))
 	} else {
 		sort.Sort(ByMinBody{ps})
 	}
-	Output(ps)
+	Output(ps, c)
 }
 
-func SortByAvgBody(ps Profiles, reverse bool) {
-	if reverse {
+func SortByAvgBody(ps Profiles, c Config) {
+	if c.Reverse {
 		sort.Sort(sort.Reverse(ByAvgBody{ps}))
 	} else {
 		sort.Sort(ByAvgBody{ps})
 	}
-	Output(ps)
+	Output(ps, c)
 }
 
-func SortBySumBody(ps Profiles, reverse bool) {
-	if reverse {
+func SortBySumBody(ps Profiles, c Config) {
+	if c.Reverse {
 		sort.Sort(sort.Reverse(BySumBody{ps}))
 	} else {
 		sort.Sort(BySumBody{ps})
 	}
-	Output(ps)
+	Output(ps, c)
 }
 
 func SetCursor(index string, uri string) {
@@ -227,6 +248,7 @@ func TimeDurationSub(duration string) (t time.Time, err error) {
 }
 
 var (
+	config            = kingpin.Flag("config", "config file").Short('c').String()
 	file              = kingpin.Flag("file", "access log file").Short('f').String()
 	max               = kingpin.Flag("max", "sort by max response time").Bool()
 	min               = kingpin.Flag("min", "sort by min response time").Bool()
@@ -242,12 +264,12 @@ var (
 	reverse           = kingpin.Flag("reverse", "reverse the result of comparisons").Short('r').Bool()
 	queryString       = kingpin.Flag("query-string", "include query string").Short('q').Bool()
 	tsv               = kingpin.Flag("tsv", "tsv format (default: table)").Bool()
-	apptimeLabel      = kingpin.Flag("apptime-label", "apptime label").Default("apptime").String()
-	sizeLabel         = kingpin.Flag("size-label", "size label").Default("size").String()
-	methodLabel       = kingpin.Flag("method-label", "method label").Default("method").String()
-	uriLabel          = kingpin.Flag("uri-label", "uri label").Default("uri").String()
-	timeLabel         = kingpin.Flag("time-label", "time label").Default("time").String()
-	limit             = kingpin.Flag("limit", "set an upper limit of the target uri").Default("5000").Int()
+	apptimeLabel      = kingpin.Flag("apptime-label", "apptime label").Default(ApptimeLabel).String()
+	sizeLabel         = kingpin.Flag("size-label", "size label").Default(SizeLabel).String()
+	methodLabel       = kingpin.Flag("method-label", "method label").Default(MethodLabel).String()
+	uriLabel          = kingpin.Flag("uri-label", "uri label").Default(UriLabel).String()
+	timeLabel         = kingpin.Flag("time-label", "time label").Default(TimeLabel).String()
+	limit             = kingpin.Flag("limit", "set an upper limit of the target uri").Default(fmt.Sprint(Limit)).Int()
 	includes          = kingpin.Flag("includes", "don't exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
 	excludes          = kingpin.Flag("excludes", "exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
 	noHeaders         = kingpin.Flag("noheaders", "print no header line at all (only --tsv)").Bool()
@@ -269,14 +291,78 @@ var (
 
 func main() {
 	kingpin.CommandLine.Help = "Access Log Profiler for LTSV (read from file or stdin)."
-	kingpin.Version("0.0.7")
+	kingpin.Version("0.1.0")
 	kingpin.Parse()
 
 	var f *os.File
 	var err error
+	var c Config
 
-	if *file != "" {
-		f, err = os.Open(*file)
+	if *config != "" {
+		c, err = LoadYAML(*config)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	option := Config{
+		File:              *file,
+		Reverse:           *reverse,
+		QueryString:       *queryString,
+		Tsv:               *tsv,
+		ApptimeLabel:      *apptimeLabel,
+		SizeLabel:         *sizeLabel,
+		MethodLabel:       *methodLabel,
+		UriLabel:          *uriLabel,
+		TimeLabel:         *timeLabel,
+		Limit:             *limit,
+		IncludesStr:       *includes,
+		ExcludesStr:       *excludes,
+		NoHeaders:         *noHeaders,
+		AggregatesStr:     *aggregates,
+		StartTime:         *startTime,
+		EndTime:           *endTime,
+		StartTimeDuration: *startTimeDuration,
+		EndTimeDuration:   *endTimeDuration,
+	}
+
+	if *max {
+		c.Sort = "max"
+	} else if *min {
+		c.Sort = "min"
+	} else if *avg {
+		c.Sort = "avg"
+	} else if *sum {
+		c.Sort = "sum"
+	} else if *cnt {
+		c.Sort = "cnt"
+	} else if *sortUri {
+		c.Sort = "uri"
+	} else if *method {
+		c.Sort = "method"
+	} else if *maxBody {
+		c.Sort = "max-body"
+	} else if *minBody {
+		c.Sort = "min-body"
+	} else if *avgBody {
+		c.Sort = "avg-body"
+	} else if *sumBody {
+		c.Sort = "sum-body"
+	} else {
+		if c.Sort == "" {
+			c.Sort = "max"
+		}
+	}
+
+	c = SetConfig(c, option)
+
+	fileinfo, err := os.Stdin.Stat()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if fileinfo.Size() == 0 {
+		f, err = os.Open(c.File)
 		defer f.Close()
 		if err != nil {
 			log.Fatal(err)
@@ -285,78 +371,47 @@ func main() {
 		f = os.Stdin
 	}
 
-	accessLog = make(Profiles, 0, *limit)
+	accessLog = make(Profiles, 0, c.Limit)
 
 	if runtime.GOOS == "windows" {
 		eol = "\r\n"
 	}
 
-	var sortKey string
-
-	if *max {
-		sortKey = "max"
-	} else if *min {
-		sortKey = "min"
-	} else if *avg {
-		sortKey = "avg"
-	} else if *sum {
-		sortKey = "sum"
-	} else if *cnt {
-		sortKey = "cnt"
-	} else if *sortUri {
-		sortKey = "uri"
-	} else if *method {
-		sortKey = "method"
-	} else if *maxBody {
-		sortKey = "maxBody"
-	} else if *minBody {
-		sortKey = "minBody"
-	} else if *avgBody {
-		sortKey = "avgBody"
-	} else if *sumBody {
-		sortKey = "sumBody"
-	} else {
-		sortKey = "max"
-	}
-
 	var includeRegexps []*regexp.Regexp
-	if *includes != "" {
-		includePatterns := strings.Split(*includes, ",")
-		includeRegexps = make([]*regexp.Regexp, 0, len(includePatterns))
-		for _, pattern := range includePatterns {
+	if len(c.Includes) > 0 {
+		includeRegexps = make([]*regexp.Regexp, 0, len(c.Includes))
+		for _, pattern := range c.Includes {
 			includeRegexps = append(includeRegexps, regexp.MustCompile(pattern))
 		}
 	}
 
 	var excludeRegexps []*regexp.Regexp
-	if *excludes != "" {
-		excludePatterns := strings.Split(*excludes, ",")
-		excludeRegexps = make([]*regexp.Regexp, 0, len(excludePatterns))
-		for _, pattern := range excludePatterns {
+	if len(c.Excludes) > 0 {
+		excludeRegexps = make([]*regexp.Regexp, 0, len(c.Excludes))
+		for _, pattern := range c.Excludes {
 			excludeRegexps = append(excludeRegexps, regexp.MustCompile(pattern))
 		}
 	}
 
 	var aggregateRegexps []*regexp.Regexp
-	if *aggregates != "" {
-		aggregatePatterns := strings.Split(*aggregates, ",")
-		aggregateRegexps = make([]*regexp.Regexp, 0, len(aggregatePatterns))
-		for _, pattern := range aggregatePatterns {
+	if len(c.Aggregates) > 0 {
+		aggregateRegexps = make([]*regexp.Regexp, 0, len(c.Aggregates))
+		for _, pattern := range c.Aggregates {
 			aggregateRegexps = append(aggregateRegexps, regexp.MustCompile(pattern))
 		}
 	}
 
 	var sTimeNano int64
-	if *startTime != "" {
-		sTime, err := parsetime.Parse(*startTime)
+	if c.StartTime != "" {
+		sTime, err := parsetime.Parse(c.StartTime)
 		if err != nil {
 			log.Fatal(err)
 		}
 		sTimeNano = sTime.UnixNano()
 	}
 
-	if *startTimeDuration != "" {
-		sTime, err := TimeDurationSub(*startTimeDuration)
+	if c.StartTimeDuration != "" {
+		sTime, err := TimeDurationSub(c.StartTimeDuration)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -364,16 +419,16 @@ func main() {
 	}
 
 	var eTimeNano int64
-	if *endTime != "" {
-		eTime, err := parsetime.Parse(*endTime)
+	if c.EndTime != "" {
+		eTime, err := parsetime.Parse(c.EndTime)
 		if err != nil {
 			log.Fatal(err)
 		}
 		eTimeNano = eTime.UnixNano()
 	}
 
-	if *endTimeDuration != "" {
-		eTime, err := TimeDurationSub(*endTimeDuration)
+	if c.EndTimeDuration != "" {
+		eTime, err := TimeDurationSub(c.EndTimeDuration)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -390,18 +445,18 @@ Loop:
 			log.Fatal(err)
 		}
 
-		resTime, err := strconv.ParseFloat(line[*apptimeLabel], 64)
+		resTime, err := strconv.ParseFloat(line[c.ApptimeLabel], 64)
 		if err != nil {
 			continue
 		}
 
-		bodySize, err := strconv.ParseFloat(line[*sizeLabel], 64)
+		bodySize, err := strconv.ParseFloat(line[c.SizeLabel], 64)
 		if err != nil {
 			continue
 		}
 
 		if sTimeNano != 0 || eTimeNano != 0 {
-			t, err := parsetime.Log(line[*timeLabel])
+			t, err := parsetime.Log(line[c.TimeLabel])
 			if err != nil {
 				continue
 			}
@@ -411,25 +466,25 @@ Loop:
 			}
 		}
 
-		u, err := url.Parse(line[*uriLabel])
+		u, err := url.Parse(line[c.UriLabel])
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		if *queryString {
+		if c.QueryString {
 			v := url.Values{}
 			values := u.Query()
 			for q, _ := range values {
 				v.Set(q, "xxx")
 			}
 			uri = fmt.Sprintf("%s?%s", u.Path, v.Encode())
-			index = fmt.Sprintf("%s_%s?%s", line[*methodLabel], u.Path, v.Encode())
+			index = fmt.Sprintf("%s_%s?%s", line[c.MethodLabel], u.Path, v.Encode())
 		} else {
 			uri = u.Path
-			index = fmt.Sprintf("%s_%s", line[*methodLabel], u.Path)
+			index = fmt.Sprintf("%s_%s", line[c.MethodLabel], u.Path)
 		}
 
-		if *includes != "" {
+		if len(c.Includes) > 0 {
 			isnotMatched := true
 			for _, re := range includeRegexps {
 				if ok := re.Match([]byte(uri)); ok && err == nil {
@@ -444,7 +499,7 @@ Loop:
 			}
 		}
 
-		if *excludes != "" {
+		if len(c.Excludes) > 0 {
 			for _, re := range excludeRegexps {
 				if ok := re.Match([]byte(uri)); ok && err == nil {
 					continue Loop
@@ -455,12 +510,12 @@ Loop:
 		}
 
 		isMatched := false
-		if *aggregates != "" {
+		if len(c.Aggregates) > 0 {
 			for _, re := range aggregateRegexps {
 				if ok := re.Match([]byte(uri)); ok && err == nil {
 					isMatched = true
 					pattern := re.String()
-					index = fmt.Sprintf("%s_%s", line[*methodLabel], pattern)
+					index = fmt.Sprintf("%s_%s", line[c.MethodLabel], pattern)
 					uri = pattern
 					SetCursor(index, uri)
 				} else if err != nil {
@@ -473,8 +528,8 @@ Loop:
 			SetCursor(index, uri)
 		}
 
-		if len(uriHints) > *limit {
-			log.Fatal(fmt.Sprintf("Too many uri (%d or less)", *limit))
+		if len(uriHints) > c.Limit {
+			log.Fatal(fmt.Sprintf("Too many uri (%d or less)", c.Limit))
 		}
 
 		if accessLog[cursor].Max < resTime {
@@ -487,7 +542,7 @@ Loop:
 
 		accessLog[cursor].Cnt++
 		accessLog[cursor].Sum += resTime
-		accessLog[cursor].Method = line[*methodLabel]
+		accessLog[cursor].Method = line[c.MethodLabel]
 
 		if accessLog[cursor].MaxBody < bodySize {
 			accessLog[cursor].MaxBody = bodySize
@@ -505,28 +560,28 @@ Loop:
 		accessLog[i].AvgBody = accessLog[i].SumBody / float64(accessLog[i].Cnt)
 	}
 
-	switch sortKey {
+	switch c.Sort {
 	case "max":
-		SortByMax(accessLog, *reverse)
+		SortByMax(accessLog, c)
 	case "min":
-		SortByMin(accessLog, *reverse)
+		SortByMin(accessLog, c)
 	case "avg":
-		SortByAvg(accessLog, *reverse)
+		SortByAvg(accessLog, c)
 	case "sum":
-		SortBySum(accessLog, *reverse)
+		SortBySum(accessLog, c)
 	case "cnt":
-		SortByCnt(accessLog, *reverse)
+		SortByCnt(accessLog, c)
 	case "uri":
-		SortByUri(accessLog, *reverse)
+		SortByUri(accessLog, c)
 	case "method":
-		SortByMethod(accessLog, *reverse)
-	case "maxBody":
-		SortByMaxBody(accessLog, *reverse)
-	case "minBody":
-		SortByMinBody(accessLog, *reverse)
-	case "avgBody":
-		SortByAvgBody(accessLog, *reverse)
-	case "sumBody":
-		SortBySumBody(accessLog, *reverse)
+		SortByMethod(accessLog, c)
+	case "max-body":
+		SortByMaxBody(accessLog, c)
+	case "min-body":
+		SortByMinBody(accessLog, c)
+	case "avg-body":
+		SortByAvgBody(accessLog, c)
+	case "sum-body":
+		SortBySumBody(accessLog, c)
 	}
 }
