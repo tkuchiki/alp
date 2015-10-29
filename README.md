@@ -23,6 +23,7 @@ Access Log Profiler for LTSV (read from file or stdin).
 
 Flags:
       --help                     Show context-sensitive help (also try --help-long and --help-man).
+  -c, --config=CONFIG            config file
   -f, --file=FILE                access log file
       --max                      sort by max response time
       --min                      sort by min response time
@@ -86,6 +87,10 @@ log_format ltsv "time:$time_local"
                 "\tapptime:$upstream_response_time"
                 "\tvhost:$host";
 ```
+
+## Config
+
+[sample config file](./example/config.yml)
 
 ## Sample
 
