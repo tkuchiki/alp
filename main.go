@@ -27,22 +27,22 @@ type Percentail struct {
 type Percentails []Percentail
 
 type Profile struct {
-	Uri         string
-	Cnt         int
-	Max         float64
-	Min         float64
-	Sum         float64
-	Avg         float64
-	Method      string
-	MaxBody     float64
-	MinBody     float64
-	SumBody     float64
-	AvgBody     float64
-	Percentails []Percentail
-	P1          float64
-	P50         float64
-	P99         float64
-	Stddev      float64
+	Uri         string       `yaml:"uri"`
+	Cnt         int          `yaml:"cnt"`
+	Max         float64      `yaml:"max"`
+	Min         float64      `yaml:"min"`
+	Sum         float64      `yaml:"sum"`
+	Avg         float64      `yaml:"anv"`
+	Method      string       `yaml:"method"`
+	MaxBody     float64      `yaml:"max_body"`
+	MinBody     float64      `yaml:"min_body"`
+	SumBody     float64      `yaml:"sum_body"`
+	AvgBody     float64      `yaml:"avg_body"`
+	Percentails []Percentail `yaml:"percentails"`
+	P1          float64      `yaml:"p1"`
+	P50         float64      `yaml:"p50"`
+	P99         float64      `yaml:"p99"`
+	Stddev      float64      `yaml:"stddev"`
 }
 
 type Profiles []Profile
@@ -107,6 +107,28 @@ func LoadYAML(filename string) (config Config, err error) {
 	err = yaml.Unmarshal(buf, &config)
 
 	return config, err
+}
+
+func DumpProfiles(filename string, ps Profiles) (err error) {
+	buf, err := yaml.Marshal(&ps)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(filename, buf, os.ModePerm)
+
+	return err
+}
+
+func LoadProfiles(filename string) (ps Profiles, err error) {
+	buf, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return ps, err
+	}
+
+	err = yaml.Unmarshal(buf, &ps)
+
+	return ps, err
 }
 
 func Round(f float64) string {
@@ -279,6 +301,41 @@ func SortByStddev(ps Profiles, c Config) {
 	Output(ps, c)
 }
 
+func SortProfiles(accessLog Profiles, c Config) {
+	switch c.Sort {
+	case "max":
+		SortByMax(accessLog, c)
+	case "min":
+		SortByMin(accessLog, c)
+	case "avg":
+		SortByAvg(accessLog, c)
+	case "sum":
+		SortBySum(accessLog, c)
+	case "cnt":
+		SortByCnt(accessLog, c)
+	case "uri":
+		SortByUri(accessLog, c)
+	case "method":
+		SortByMethod(accessLog, c)
+	case "max-body":
+		SortByMaxBody(accessLog, c)
+	case "min-body":
+		SortByMinBody(accessLog, c)
+	case "avg-body":
+		SortByAvgBody(accessLog, c)
+	case "sum-body":
+		SortBySumBody(accessLog, c)
+	case "p1":
+		SortByP1(accessLog, c)
+	case "p50":
+		SortByP50(accessLog, c)
+	case "p99":
+		SortByP99(accessLog, c)
+	case "stddev":
+		SortByStddev(accessLog, c)
+	}
+}
+
 func SetCursor(index string, uri string) {
 	if _, ok := uriHints[index]; ok {
 		cursor = uriHints[index]
@@ -335,6 +392,8 @@ func RequestTimeStddev(requests Percentails, sum, avg float64) (stddev float64) 
 var (
 	config            = kingpin.Flag("config", "config file").Short('c').String()
 	file              = kingpin.Flag("file", "access log file").Short('f').String()
+	dump              = kingpin.Flag("dump", "dump profile data").Short('d').String()
+	load              = kingpin.Flag("load", "load profile data").Short('l').String()
 	max               = kingpin.Flag("max", "sort by max response time").Bool()
 	min               = kingpin.Flag("min", "sort by min response time").Bool()
 	avg               = kingpin.Flag("avg", "sort by avg response time").Bool()
@@ -452,6 +511,16 @@ func main() {
 	}
 
 	c = SetConfig(c, option)
+
+	if *load != "" {
+		accessLog, err = LoadProfiles(*load)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		SortProfiles(accessLog, c)
+		return
+	}
 
 	fileinfo, err := os.Stdin.Stat()
 	if err != nil {
@@ -668,36 +737,12 @@ Loop:
 		accessLog[i].Stddev = RequestTimeStddev(accessLog[i].Percentails, accessLog[i].Sum, accessLog[i].Avg)
 	}
 
-	switch c.Sort {
-	case "max":
-		SortByMax(accessLog, c)
-	case "min":
-		SortByMin(accessLog, c)
-	case "avg":
-		SortByAvg(accessLog, c)
-	case "sum":
-		SortBySum(accessLog, c)
-	case "cnt":
-		SortByCnt(accessLog, c)
-	case "uri":
-		SortByUri(accessLog, c)
-	case "method":
-		SortByMethod(accessLog, c)
-	case "max-body":
-		SortByMaxBody(accessLog, c)
-	case "min-body":
-		SortByMinBody(accessLog, c)
-	case "avg-body":
-		SortByAvgBody(accessLog, c)
-	case "sum-body":
-		SortBySumBody(accessLog, c)
-	case "p1":
-		SortByP1(accessLog, c)
-	case "p50":
-		SortByP50(accessLog, c)
-	case "p99":
-		SortByP99(accessLog, c)
-	case "stddev":
-		SortByStddev(accessLog, c)
+	SortProfiles(accessLog, c)
+
+	if *dump != "" {
+		err = DumpProfiles(*dump, accessLog)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
