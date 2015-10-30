@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/url"
 	"os"
 	"regexp"
@@ -19,18 +20,29 @@ import (
 	"time"
 )
 
+type Percentail struct {
+	RequestTime float64
+}
+
+type Percentails []Percentail
+
 type Profile struct {
-	Uri     string
-	Cnt     int
-	Max     float64
-	Min     float64
-	Sum     float64
-	Avg     float64
-	Method  string
-	MaxBody float64
-	MinBody float64
-	SumBody float64
-	AvgBody float64
+	Uri         string
+	Cnt         int
+	Max         float64
+	Min         float64
+	Sum         float64
+	Avg         float64
+	Method      string
+	MaxBody     float64
+	MinBody     float64
+	SumBody     float64
+	AvgBody     float64
+	Percentails []Percentail
+	P1          float64
+	P50         float64
+	P99         float64
+	Stddev      float64
 }
 
 type Profiles []Profile
@@ -45,6 +57,10 @@ type ByMaxBody struct{ Profiles }
 type ByMinBody struct{ Profiles }
 type BySumBody struct{ Profiles }
 type ByAvgBody struct{ Profiles }
+type ByP1 struct{ Profiles }
+type ByP50 struct{ Profiles }
+type ByP99 struct{ Profiles }
+type ByStddev struct{ Profiles }
 
 func (s Profiles) Len() int      { return len(s) }
 func (s Profiles) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
@@ -60,6 +76,18 @@ func (s ByMaxBody) Less(i, j int) bool { return s.Profiles[i].MaxBody < s.Profil
 func (s ByMinBody) Less(i, j int) bool { return s.Profiles[i].MinBody < s.Profiles[j].MinBody }
 func (s BySumBody) Less(i, j int) bool { return s.Profiles[i].SumBody < s.Profiles[j].SumBody }
 func (s ByAvgBody) Less(i, j int) bool { return s.Profiles[i].AvgBody < s.Profiles[j].AvgBody }
+func (s ByP1) Less(i, j int) bool      { return s.Profiles[i].P1 < s.Profiles[j].P1 }
+func (s ByP50) Less(i, j int) bool     { return s.Profiles[i].P50 < s.Profiles[j].P50 }
+func (s ByP99) Less(i, j int) bool     { return s.Profiles[i].P99 < s.Profiles[j].P99 }
+func (s ByStddev) Less(i, j int) bool  { return s.Profiles[i].Stddev < s.Profiles[j].Stddev }
+
+type ByRequestTime struct{ Percentails }
+
+func (s Percentails) Len() int      { return len(s) }
+func (s Percentails) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s ByRequestTime) Less(i, j int) bool {
+	return s.Percentails[i].RequestTime < s.Percentails[j].RequestTime
+}
 
 const (
 	ApptimeLabel = "apptime"
@@ -88,23 +116,26 @@ func Round(f float64) string {
 func Output(ps Profiles, c Config) {
 	if c.Tsv {
 		if !c.NoHeaders {
-			fmt.Printf("Count\tMin\tMax\tSum\tAvg\tMax(Body)\tMin(Body)\tSum(Body)\tAvg(Body)\tMethod\tUri%v", eol)
+			fmt.Printf("Count\tMin\tMax\tSum\tAvg\tP1\tP50\tP99\tStddev\tMax(Body)\tMin(Body)\tSum(Body)\tAvg(Body)\tMethod\tUri%v", eol)
 		}
 
 		for _, p := range ps {
 			fmt.Printf("%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v%v",
 				p.Cnt, Round(p.Min), Round(p.Max), Round(p.Sum), Round(p.Avg),
+				Round(p.P1), Round(p.P50), Round(p.P99), Round(p.Stddev),
 				Round(p.MinBody), Round(p.MaxBody), Round(p.SumBody), Round(p.AvgBody),
 				p.Method, p.Uri, eol)
 		}
 	} else {
 		table := tablewriter.NewWriter(os.Stdout)
 		table.SetHeader([]string{"Count", "Min", "Max", "Sum", "Avg",
+			"P1", "P50", "P99", "Stddev",
 			"Max(Body)", "Min(Body)", "Sum(Body)", "Avg(Body)",
 			"Method", "Uri"})
 		for _, p := range ps {
 			data := []string{
 				fmt.Sprint(p.Cnt), Round(p.Min), Round(p.Max), Round(p.Sum), Round(p.Avg),
+				Round(p.P1), Round(p.P50), Round(p.P99), Round(p.Stddev),
 				Round(p.MinBody), Round(p.MaxBody), Round(p.SumBody), Round(p.AvgBody),
 				p.Method, p.Uri}
 			table.Append(data)
@@ -212,6 +243,42 @@ func SortBySumBody(ps Profiles, c Config) {
 	Output(ps, c)
 }
 
+func SortByP1(ps Profiles, c Config) {
+	if c.Reverse {
+		sort.Sort(sort.Reverse(ByP1{ps}))
+	} else {
+		sort.Sort(ByP1{ps})
+	}
+	Output(ps, c)
+}
+
+func SortByP50(ps Profiles, c Config) {
+	if c.Reverse {
+		sort.Sort(sort.Reverse(ByP50{ps}))
+	} else {
+		sort.Sort(ByP50{ps})
+	}
+	Output(ps, c)
+}
+
+func SortByP99(ps Profiles, c Config) {
+	if c.Reverse {
+		sort.Sort(sort.Reverse(ByP99{ps}))
+	} else {
+		sort.Sort(ByP99{ps})
+	}
+	Output(ps, c)
+}
+
+func SortByStddev(ps Profiles, c Config) {
+	if c.Reverse {
+		sort.Sort(sort.Reverse(ByStddev{ps}))
+	} else {
+		sort.Sort(ByStddev{ps})
+	}
+	Output(ps, c)
+}
+
 func SetCursor(index string, uri string) {
 	if _, ok := uriHints[index]; ok {
 		cursor = uriHints[index]
@@ -247,6 +314,24 @@ func TimeDurationSub(duration string) (t time.Time, err error) {
 	return t, err
 }
 
+func LenPercentail(l int, n int) (pLen int) {
+	pLen = (l * n / 100) - 1
+	if pLen < 0 {
+		pLen = 0
+	}
+
+	return pLen
+}
+
+func RequestTimeStddev(requests Percentails, sum, avg float64) (stddev float64) {
+	n := float64(len(requests))
+	for _, r := range requests {
+		stddev += (r.RequestTime - avg) * (r.RequestTime - avg)
+	}
+
+	return math.Sqrt(stddev / n)
+}
+
 var (
 	config            = kingpin.Flag("config", "config file").Short('c').String()
 	file              = kingpin.Flag("file", "access log file").Short('f').String()
@@ -261,6 +346,10 @@ var (
 	minBody           = kingpin.Flag("min-body", "sort by min body size").Bool()
 	avgBody           = kingpin.Flag("avg-body", "sort by avg body size").Bool()
 	sumBody           = kingpin.Flag("sum-body", "sort by sum body size").Bool()
+	p1                = kingpin.Flag("p1", "sort by 1 percentail response time").Bool()
+	p50               = kingpin.Flag("p50", "sort by 50 percentail response time").Bool()
+	p99               = kingpin.Flag("p99", "sort by 99 percentail response time").Bool()
+	stddev            = kingpin.Flag("stddev", "sort by standard deviation response time").Bool()
 	reverse           = kingpin.Flag("reverse", "reverse the result of comparisons").Short('r').Bool()
 	queryString       = kingpin.Flag("query-string", "include query string").Short('q').Bool()
 	tsv               = kingpin.Flag("tsv", "tsv format (default: table)").Bool()
@@ -291,7 +380,7 @@ var (
 
 func main() {
 	kingpin.CommandLine.Help = "Access Log Profiler for LTSV (read from file or stdin)."
-	kingpin.Version("0.1.1")
+	kingpin.Version("0.2")
 	kingpin.Parse()
 
 	var f *os.File
@@ -348,6 +437,14 @@ func main() {
 		c.Sort = "avg-body"
 	} else if *sumBody {
 		c.Sort = "sum-body"
+	} else if *p1 {
+		c.Sort = "p1"
+	} else if *p50 {
+		c.Sort = "p50"
+	} else if *p99 {
+		c.Sort = "p99"
+	} else if *stddev {
+		c.Sort = "stddev"
 	} else {
 		if c.Sort == "" {
 			c.Sort = "max"
@@ -543,6 +640,7 @@ Loop:
 		accessLog[cursor].Cnt++
 		accessLog[cursor].Sum += resTime
 		accessLog[cursor].Method = line[c.MethodLabel]
+		accessLog[cursor].Percentails = append(accessLog[cursor].Percentails, Percentail{RequestTime: resTime})
 
 		if accessLog[cursor].MaxBody < bodySize {
 			accessLog[cursor].MaxBody = bodySize
@@ -556,8 +654,18 @@ Loop:
 	}
 
 	for i, _ := range accessLog {
+		sort.Sort(ByRequestTime{accessLog[i].Percentails})
 		accessLog[i].Avg = accessLog[i].Sum / float64(accessLog[i].Cnt)
 		accessLog[i].AvgBody = accessLog[i].SumBody / float64(accessLog[i].Cnt)
+
+		p1Len := LenPercentail(len(accessLog[i].Percentails), 1)
+		accessLog[i].P1 = accessLog[i].Percentails[p1Len].RequestTime
+		p50Len := LenPercentail(len(accessLog[i].Percentails), 50)
+		accessLog[i].P50 = accessLog[i].Percentails[p50Len].RequestTime
+		p99Len := LenPercentail(len(accessLog[i].Percentails), 99)
+		accessLog[i].P99 = accessLog[i].Percentails[p99Len].RequestTime
+
+		accessLog[i].Stddev = RequestTimeStddev(accessLog[i].Percentails, accessLog[i].Sum, accessLog[i].Avg)
 	}
 
 	switch c.Sort {
@@ -583,5 +691,13 @@ Loop:
 		SortByAvgBody(accessLog, c)
 	case "sum-body":
 		SortBySumBody(accessLog, c)
+	case "p1":
+		SortByP1(accessLog, c)
+	case "p50":
+		SortByP50(accessLog, c)
+	case "p99":
+		SortByP99(accessLog, c)
+	case "stddev":
+		SortByStddev(accessLog, c)
 	}
 }
