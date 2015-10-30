@@ -439,7 +439,7 @@ var (
 
 func main() {
 	kingpin.CommandLine.Help = "Access Log Profiler for LTSV (read from file or stdin)."
-	kingpin.Version("0.2")
+	kingpin.Version("0.2.1")
 	kingpin.Parse()
 
 	var f *os.File
