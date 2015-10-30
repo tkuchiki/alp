@@ -1,6 +1,6 @@
 ---
 file:          # access.log
-sort:          # max|min|avg|sum|cnt|uri|method|max-body|min-body|avg-body|sum-body
+sort:          # max|min|avg|sum|cnt|uri|method|max-body|min-body|avg-body|sum-body|p1|p50|p99|stddev
 reverse:       # boolean
 query_string:  # boolean
 tsv:           # boolean
