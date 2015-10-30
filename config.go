@@ -46,27 +46,27 @@ func SetConfig(config Config, arg Config) Config {
 		config.Tsv = arg.Tsv
 	}
 
-	if config.ApptimeLabel == "" {
+	if config.ApptimeLabel == "" || (config.ApptimeLabel != "" && arg.ApptimeLabel != ApptimeLabel) {
 		config.ApptimeLabel = arg.ApptimeLabel
 	}
 
-	if config.SizeLabel == "" {
+	if config.SizeLabel == "" || (config.SizeLabel != "" && arg.SizeLabel != SizeLabel) {
 		config.SizeLabel = arg.SizeLabel
 	}
 
-	if config.MethodLabel == "" {
+	if config.MethodLabel == "" || (config.MethodLabel != "" && arg.MethodLabel != MethodLabel) {
 		config.MethodLabel = arg.MethodLabel
 	}
 
-	if config.UriLabel == "" {
+	if config.UriLabel == "" || (config.UriLabel != "" && arg.UriLabel != UriLabel) {
 		config.UriLabel = arg.UriLabel
 	}
 
-	if config.TimeLabel == "" {
+	if config.TimeLabel == "" || (config.TimeLabel != "" && arg.TimeLabel != TimeLabel) {
 		config.TimeLabel = arg.TimeLabel
 	}
 
-	if config.Limit == 0 {
+	if config.Limit == 0 || (config.Limit != 0 && arg.Limit != Limit) {
 		config.Limit = arg.Limit
 	}
 
