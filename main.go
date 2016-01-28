@@ -138,7 +138,7 @@ func Round(f float64) string {
 func Output(ps Profiles, c Config) {
 	if c.Tsv {
 		if !c.NoHeaders {
-			fmt.Printf("Count\tMin\tMax\tSum\tAvg\tP1\tP50\tP99\tStddev\tMax(Body)\tMin(Body)\tSum(Body)\tAvg(Body)\tMethod\tUri%v", eol)
+			fmt.Printf("Count\tMin\tMax\tSum\tAvg\tP1\tP50\tP99\tStddev\tMin(Body)\tMax(Body)\tSum(Body)\tAvg(Body)\tMethod\tUri%v", eol)
 		}
 
 		for _, p := range ps {
@@ -152,7 +152,7 @@ func Output(ps Profiles, c Config) {
 		table := tablewriter.NewWriter(os.Stdout)
 		table.SetHeader([]string{"Count", "Min", "Max", "Sum", "Avg",
 			"P1", "P50", "P99", "Stddev",
-			"Max(Body)", "Min(Body)", "Sum(Body)", "Avg(Body)",
+			"Min(Body)", "Max(Body)", "Sum(Body)", "Avg(Body)",
 			"Method", "Uri"})
 		for _, p := range ps {
 			data := []string{
