@@ -527,7 +527,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if fileinfo.Size() == 0 {
+	if fileinfo.Mode()&os.ModeNamedPipe == 0 {
 		f, err = os.Open(c.File)
 		defer f.Close()
 		if err != nil {
