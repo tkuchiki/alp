@@ -439,7 +439,7 @@ var (
 
 func main() {
 	kingpin.CommandLine.Help = "Access Log Profiler for LTSV (read from file or stdin)."
-	kingpin.Version("0.2.2")
+	kingpin.Version("0.2.3")
 	kingpin.Parse()
 
 	var f *os.File
@@ -632,7 +632,7 @@ Loop:
 			}
 		}
 
-		u, err := url.Parse(line[c.UriLabel])
+		u, err := url.Parse(url.QueryEscape(line[c.UriLabel]))
 		if err != nil {
 			log.Fatal(err)
 		}
