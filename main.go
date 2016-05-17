@@ -14,7 +14,6 @@ import (
 	"net/url"
 	"os"
 	"regexp"
-	"runtime"
 	"sort"
 	"strconv"
 	"time"
@@ -138,15 +137,17 @@ func Round(f float64) string {
 func Output(ps Profiles, c Config) {
 	if c.Tsv {
 		if !c.NoHeaders {
-			fmt.Printf("Count\tMin\tMax\tSum\tAvg\tP1\tP50\tP99\tStddev\tMin(Body)\tMax(Body)\tSum(Body)\tAvg(Body)\tMethod\tUri", eol)
+			fmt.Printf("Count\tMin\tMax\tSum\tAvg\tP1\tP50\tP99\tStddev\tMin(Body)\tMax(Body)\tSum(Body)\tAvg(Body)\tMethod\tUri")
+			fmt.Println("")
 		}
 
 		for _, p := range ps {
-			fmt.Printf("%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v%v",
+			fmt.Printf("%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v",
 				p.Cnt, Round(p.Min), Round(p.Max), Round(p.Sum), Round(p.Avg),
 				Round(p.P1), Round(p.P50), Round(p.P99), Round(p.Stddev),
 				Round(p.MinBody), Round(p.MaxBody), Round(p.SumBody), Round(p.AvgBody),
-				p.Method, p.Uri, eol)
+				p.Method, p.Uri)
+			fmt.Println("")
 		}
 	} else {
 		table := tablewriter.NewWriter(os.Stdout)
@@ -428,8 +429,6 @@ var (
 	startTimeDuration = kingpin.Flag("start-time-duration", "since the start time (now - time.Duration)").PlaceHolder("TIME_DURATION").String()
 	endTimeDuration   = kingpin.Flag("end-time-duration", "end time earlier (now - time.Duration)").PlaceHolder("TIME_DURATION").String()
 
-	eol = "\n"
-
 	uri       string
 	index     string
 	accessLog Profiles
@@ -539,10 +538,6 @@ func main() {
 	}
 
 	accessLog = make(Profiles, 0, c.Limit)
-
-	if runtime.GOOS == "windows" {
-		eol = "\r\n"
-	}
 
 	var includeRegexps []*regexp.Regexp
 	if len(c.Includes) > 0 {
