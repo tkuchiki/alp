@@ -138,7 +138,7 @@ func Round(f float64) string {
 func Output(ps Profiles, c Config) {
 	if c.Tsv {
 		if !c.NoHeaders {
-			fmt.Printf("Count\tMin\tMax\tSum\tAvg\tP1\tP50\tP99\tStddev\tMin(Body)\tMax(Body)\tSum(Body)\tAvg(Body)\tMethod\tUri%v", eol)
+			fmt.Printf("Count\tMin\tMax\tSum\tAvg\tP1\tP50\tP99\tStddev\tMin(Body)\tMax(Body)\tSum(Body)\tAvg(Body)\tMethod\tUri", eol)
 		}
 
 		for _, p := range ps {
@@ -418,6 +418,7 @@ var (
 	uriLabel          = kingpin.Flag("uri-label", "uri label").Default(UriLabel).String()
 	timeLabel         = kingpin.Flag("time-label", "time label").Default(TimeLabel).String()
 	limit             = kingpin.Flag("limit", "set an upper limit of the target uri").Default(fmt.Sprint(Limit)).Int()
+	location          = kingpin.Flag("location", "location name").String()
 	includes          = kingpin.Flag("includes", "don't exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
 	excludes          = kingpin.Flag("excludes", "exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
 	noHeaders         = kingpin.Flag("noheaders", "print no header line at all (only --tsv)").Bool()
@@ -439,7 +440,7 @@ var (
 
 func main() {
 	kingpin.CommandLine.Help = "Access Log Profiler for LTSV (read from file or stdin)."
-	kingpin.Version("0.2.3")
+	kingpin.Version("0.2.4")
 	kingpin.Parse()
 
 	var f *os.File
@@ -567,9 +568,12 @@ func main() {
 		}
 	}
 
+	var p parsetime.ParseTime
+	p, err = parsetime.NewParseTime(*location)
+
 	var sTimeNano int64
 	if c.StartTime != "" {
-		sTime, err := parsetime.Parse(c.StartTime)
+		sTime, err := p.Parse(c.StartTime)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -586,7 +590,7 @@ func main() {
 
 	var eTimeNano int64
 	if c.EndTime != "" {
-		eTime, err := parsetime.Parse(c.EndTime)
+		eTime, err := p.Parse(c.EndTime)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -622,7 +626,7 @@ Loop:
 		}
 
 		if sTimeNano != 0 || eTimeNano != 0 {
-			t, err := parsetime.Log(line[c.TimeLabel])
+			t, err := p.Parse(line[c.TimeLabel])
 			if err != nil {
 				continue
 			}
