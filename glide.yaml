@@ -1,0 +1,7 @@
+package: alp
+import:
+- package: github.com/najeira/ltsv
+- package: github.com/olekukonko/tablewriter
+- package: github.com/tkuchiki/parsetime
+- package: gopkg.in/alecthomas/kingpin.v2
+- package: gopkg.in/yaml.v2
