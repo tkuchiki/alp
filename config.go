@@ -1,6 +1,9 @@
 package main
 
 import (
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"os"
 	"strings"
 )
 
@@ -103,4 +106,37 @@ func SetConfig(config Config, arg Config) Config {
 	}
 
 	return config
+}
+
+func LoadYAML(filename string) (config Config, err error) {
+	buf, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return config, err
+	}
+
+	err = yaml.Unmarshal(buf, &config)
+
+	return config, err
+}
+
+func DumpProfiles(filename string, ps Profiles) (err error) {
+	buf, err := yaml.Marshal(&ps)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(filename, buf, os.ModePerm)
+
+	return err
+}
+
+func LoadProfiles(filename string) (ps Profiles, err error) {
+	buf, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return ps, err
+	}
+
+	err = yaml.Unmarshal(buf, &ps)
+
+	return ps, err
 }
