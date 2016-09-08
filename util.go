@@ -5,6 +5,7 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"math"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -96,4 +97,15 @@ func RequestTimeStddev(requests Percentails, sum, avg float64) (stddev float64) 
 	}
 
 	return math.Sqrt(stddev / n)
+}
+
+func Split(val, sep string) []string {
+	strs := strings.Split(val, sep)
+	trimedStrs := make([]string, 0, len(strs))
+
+	for _, s := range strs {
+		trimedStrs = append(trimedStrs, strings.Trim(s, " "))
+	}
+
+	return trimedStrs
 }

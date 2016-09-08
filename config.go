@@ -4,32 +4,37 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
-	"strings"
 )
 
 type Config struct {
-	File              string   `yaml:"file"`
-	Sort              string   `yaml:"sort"`
-	Reverse           bool     `yaml:"reverse"`
-	QueryString       bool     `yaml:"query_string"`
-	Tsv               bool     `yaml:"tsv"`
-	ApptimeLabel      string   `yaml:"apptime_label"`
-	SizeLabel         string   `yaml:"size_label"`
-	MethodLabel       string   `yaml:"method_label"`
-	UriLabel          string   `yaml:"uri_label"`
-	TimeLabel         string   `yaml:"time_label"`
-	Limit             int      `yaml:"limit"`
-	Includes          []string `yaml:"includes"`
-	Excludes          []string `yaml:"excludes"`
-	NoHeaders         bool     `yaml:no_headers`
-	Aggregates        []string `yaml:"aggregates"`
-	StartTime         string   `yaml:"start_time"`
-	EndTime           string   `yaml:"end_time"`
-	StartTimeDuration string   `yaml:"start_time_duration"`
-	EndTimeDuration   string   `yaml:"end_time_duration"`
-	IncludesStr       string
-	ExcludesStr       string
-	AggregatesStr     string
+	File               string   `yaml:"file"`
+	Sort               string   `yaml:"sort"`
+	Reverse            bool     `yaml:"reverse"`
+	QueryString        bool     `yaml:"query_string"`
+	Tsv                bool     `yaml:"tsv"`
+	ApptimeLabel       string   `yaml:"apptime_label"`
+	ReqtimeLabel       string   `yaml:"reqtime_label"`
+	StatusLabel        string   `yaml:"status_label"`
+	SizeLabel          string   `yaml:"size_label"`
+	MethodLabel        string   `yaml:"method_label"`
+	UriLabel           string   `yaml:"uri_label"`
+	TimeLabel          string   `yaml:"time_label"`
+	Limit              int      `yaml:"limit"`
+	Includes           []string `yaml:"includes"`
+	Excludes           []string `yaml:"excludes"`
+	IncludeStatuses    []string `yaml:"include_statuses"`
+	ExcludeStatuses    []string `yaml:"exclude_statuses"`
+	NoHeaders          bool     `yaml:no_headers`
+	Aggregates         []string `yaml:"aggregates"`
+	StartTime          string   `yaml:"start_time"`
+	EndTime            string   `yaml:"end_time"`
+	StartTimeDuration  string   `yaml:"start_time_duration"`
+	EndTimeDuration    string   `yaml:"end_time_duration"`
+	IncludesStr        string
+	ExcludesStr        string
+	IncludeStatusesStr string
+	ExcludeStatusesStr string
+	AggregatesStr      string
 }
 
 func SetConfig(config Config, arg Config) Config {
@@ -53,6 +58,14 @@ func SetConfig(config Config, arg Config) Config {
 		config.ApptimeLabel = arg.ApptimeLabel
 	}
 
+	if config.ReqtimeLabel == "" || (config.ReqtimeLabel != "" && arg.ReqtimeLabel != ReqtimeLabel) {
+		config.ReqtimeLabel = arg.ReqtimeLabel
+	}
+
+	if config.StatusLabel == "" || (config.StatusLabel != "" && arg.StatusLabel != StatusLabel) {
+		config.StatusLabel = arg.StatusLabel
+	}
+
 	if config.SizeLabel == "" || (config.SizeLabel != "" && arg.SizeLabel != SizeLabel) {
 		config.SizeLabel = arg.SizeLabel
 	}
@@ -74,11 +87,19 @@ func SetConfig(config Config, arg Config) Config {
 	}
 
 	if arg.IncludesStr != "" {
-		config.Includes = strings.Split(arg.IncludesStr, ",")
+		config.Includes = Split(arg.IncludesStr, ",")
 	}
 
 	if arg.ExcludesStr != "" {
-		config.Excludes = strings.Split(arg.ExcludesStr, ",")
+		config.Excludes = Split(arg.ExcludesStr, ",")
+	}
+
+	if arg.IncludeStatusesStr != "" {
+		config.IncludeStatuses = Split(arg.IncludeStatusesStr, ",")
+	}
+
+	if arg.ExcludeStatusesStr != "" {
+		config.ExcludeStatuses = Split(arg.ExcludeStatusesStr, ",")
 	}
 
 	if arg.NoHeaders {
@@ -86,7 +107,7 @@ func SetConfig(config Config, arg Config) Config {
 	}
 
 	if arg.AggregatesStr != "" {
-		config.Aggregates = strings.Split(arg.AggregatesStr, ",")
+		config.Aggregates = Split(arg.AggregatesStr, ",")
 	}
 
 	if arg.StartTime != "" {

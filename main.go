@@ -16,6 +16,8 @@ import (
 
 const (
 	ApptimeLabel = "apptime"
+	ReqtimeLabel = "reqtime"
+	StatusLabel  = "status"
 	SizeLabel    = "size"
 	MethodLabel  = "method"
 	UriLabel     = "uri"
@@ -47,6 +49,8 @@ var (
 	queryString       = kingpin.Flag("query-string", "include query string").Short('q').Bool()
 	tsv               = kingpin.Flag("tsv", "tsv format (default: table)").Bool()
 	apptimeLabel      = kingpin.Flag("apptime-label", "apptime label").Default(ApptimeLabel).String()
+	reqtimeLabel      = kingpin.Flag("reqtime-label", "reqtime label").Default(ReqtimeLabel).String()
+	statusLabel       = kingpin.Flag("status-label", "status label").Default(StatusLabel).String()
 	sizeLabel         = kingpin.Flag("size-label", "size label").Default(SizeLabel).String()
 	methodLabel       = kingpin.Flag("method-label", "method label").Default(MethodLabel).String()
 	uriLabel          = kingpin.Flag("uri-label", "uri label").Default(UriLabel).String()
@@ -55,6 +59,8 @@ var (
 	location          = kingpin.Flag("location", "location name").String()
 	includes          = kingpin.Flag("includes", "don't exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
 	excludes          = kingpin.Flag("excludes", "exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
+	includeStatuses   = kingpin.Flag("include-statuses", "don't exclude status code matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
+	excludeStatuses   = kingpin.Flag("exclude-statuses", "exclude uri status code PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
 	noHeaders         = kingpin.Flag("noheaders", "print no header line at all (only --tsv)").Bool()
 	aggregates        = kingpin.Flag("aggregates", "aggregate uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").String()
 	startTime         = kingpin.Flag("start-time", "since the start time").PlaceHolder("TIME").String()
@@ -72,7 +78,7 @@ var (
 
 func main() {
 	kingpin.CommandLine.Help = "Access Log Profiler for LTSV (read from file or stdin)."
-	kingpin.Version("0.2.4")
+	kingpin.Version("0.3.0")
 	kingpin.Parse()
 
 	var f *os.File
@@ -87,24 +93,28 @@ func main() {
 	}
 
 	option := Config{
-		File:              *file,
-		Reverse:           *reverse,
-		QueryString:       *queryString,
-		Tsv:               *tsv,
-		ApptimeLabel:      *apptimeLabel,
-		SizeLabel:         *sizeLabel,
-		MethodLabel:       *methodLabel,
-		UriLabel:          *uriLabel,
-		TimeLabel:         *timeLabel,
-		Limit:             *limit,
-		IncludesStr:       *includes,
-		ExcludesStr:       *excludes,
-		NoHeaders:         *noHeaders,
-		AggregatesStr:     *aggregates,
-		StartTime:         *startTime,
-		EndTime:           *endTime,
-		StartTimeDuration: *startTimeDuration,
-		EndTimeDuration:   *endTimeDuration,
+		File:               *file,
+		Reverse:            *reverse,
+		QueryString:        *queryString,
+		Tsv:                *tsv,
+		ApptimeLabel:       *apptimeLabel,
+		ReqtimeLabel:       *reqtimeLabel,
+		StatusLabel:        *statusLabel,
+		SizeLabel:          *sizeLabel,
+		MethodLabel:        *methodLabel,
+		UriLabel:           *uriLabel,
+		TimeLabel:          *timeLabel,
+		Limit:              *limit,
+		IncludesStr:        *includes,
+		ExcludesStr:        *excludes,
+		IncludeStatusesStr: *includeStatuses,
+		ExcludeStatusesStr: *excludeStatuses,
+		NoHeaders:          *noHeaders,
+		AggregatesStr:      *aggregates,
+		StartTime:          *startTime,
+		EndTime:            *endTime,
+		StartTimeDuration:  *startTimeDuration,
+		EndTimeDuration:    *endTimeDuration,
 	}
 
 	if *max {
@@ -176,7 +186,11 @@ func main() {
 	if len(c.Includes) > 0 {
 		includeRegexps = make([]*regexp.Regexp, 0, len(c.Includes))
 		for _, pattern := range c.Includes {
-			includeRegexps = append(includeRegexps, regexp.MustCompile(pattern))
+			re, rerr := regexp.Compile(pattern)
+			if rerr != nil {
+				log.Fatal(err)
+			}
+			includeRegexps = append(includeRegexps, re)
 		}
 	}
 
@@ -184,7 +198,35 @@ func main() {
 	if len(c.Excludes) > 0 {
 		excludeRegexps = make([]*regexp.Regexp, 0, len(c.Excludes))
 		for _, pattern := range c.Excludes {
-			excludeRegexps = append(excludeRegexps, regexp.MustCompile(pattern))
+			re, rerr := regexp.Compile(pattern)
+			if rerr != nil {
+				log.Fatal(err)
+			}
+			excludeRegexps = append(excludeRegexps, re)
+		}
+	}
+
+	var includeStatusRegexps []*regexp.Regexp
+	if len(c.IncludeStatuses) > 0 {
+		includeRegexps = make([]*regexp.Regexp, 0, len(c.Includes))
+		for _, pattern := range c.IncludeStatuses {
+			re, rerr := regexp.Compile(pattern)
+			if rerr != nil {
+				log.Fatal(err)
+			}
+			includeStatusRegexps = append(includeStatusRegexps, re)
+		}
+	}
+
+	var excludeStatusRegexps []*regexp.Regexp
+	if len(c.ExcludeStatuses) > 0 {
+		excludeRegexps = make([]*regexp.Regexp, 0, len(c.Excludes))
+		for _, pattern := range c.ExcludeStatuses {
+			re, rerr := regexp.Compile(pattern)
+			if rerr != nil {
+				log.Fatal(err)
+			}
+			excludeStatusRegexps = append(excludeStatusRegexps, re)
 		}
 	}
 
@@ -192,7 +234,11 @@ func main() {
 	if len(c.Aggregates) > 0 {
 		aggregateRegexps = make([]*regexp.Regexp, 0, len(c.Aggregates))
 		for _, pattern := range c.Aggregates {
-			aggregateRegexps = append(aggregateRegexps, regexp.MustCompile(pattern))
+			re, rerr := regexp.Compile(pattern)
+			if rerr != nil {
+				log.Fatal(err)
+			}
+			aggregateRegexps = append(aggregateRegexps, re)
 		}
 	}
 
@@ -245,7 +291,13 @@ Loop:
 
 		resTime, err := strconv.ParseFloat(line[c.ApptimeLabel], 64)
 		if err != nil {
-			continue
+			var reqTime float64
+			reqTime, err = strconv.ParseFloat(line[c.ReqtimeLabel], 64)
+			if err != nil {
+				continue
+			}
+
+			resTime = reqTime
 		}
 
 		bodySize, err := strconv.ParseFloat(line[c.SizeLabel], 64)
@@ -300,6 +352,31 @@ Loop:
 		if len(c.Excludes) > 0 {
 			for _, re := range excludeRegexps {
 				if ok := re.Match([]byte(uri)); ok && err == nil {
+					continue Loop
+				} else if err != nil {
+					log.Fatal(err)
+				}
+			}
+		}
+
+		if len(c.IncludeStatuses) > 0 {
+			isnotMatched := true
+			for _, re := range includeStatusRegexps {
+				if ok := re.Match([]byte(line[c.StatusLabel])); ok && err == nil {
+					isnotMatched = false
+				} else if err != nil {
+					log.Fatal(err)
+				}
+			}
+
+			if isnotMatched {
+				continue Loop
+			}
+		}
+
+		if len(c.ExcludeStatuses) > 0 {
+			for _, re := range excludeStatusRegexps {
+				if ok := re.Match([]byte(line[c.StatusLabel])); ok && err == nil {
 					continue Loop
 				} else if err != nil {
 					log.Fatal(err)
