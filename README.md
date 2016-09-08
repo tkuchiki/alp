@@ -5,11 +5,7 @@ alp is Access Log Profiler for Labeled Tab-separated Values(LTSV).
 
 # Installation
 
-```
-curl -sLO https://github.com/tkuchiki/alp/releases/download/VERSION/alp_linux_amd64.zip
-unzip alp_linux_amd64.zip
-mv alp_linux_amd64 /usr/local/bin/alp
-```
+Download from https://github.com/tkuchiki/alp/releases
 
 # Usage
 
@@ -46,14 +42,20 @@ Flags:
   -q, --query-string             include query string
       --tsv                      tsv format (default: table)
       --apptime-label="apptime"  apptime label
+      --reqtime-label="reqtime"  reqtime label
+      --status-label="status"    status label
       --size-label="size"        size label
       --method-label="method"    method label
       --uri-label="uri"          uri label
       --time-label="time"        time label
-      --location=LOCATION        location name
       --limit=5000               set an upper limit of the target uri
+      --location=LOCATION        location name
       --includes=PATTERN,...     don't exclude uri matching PATTERN (comma separated)
       --excludes=PATTERN,...     exclude uri matching PATTERN (comma separated)
+      --include-statuses=PATTERN,...
+                                 don't exclude status code matching PATTERN (comma separated)
+      --exclude-statuses=PATTERN,...
+                                 exclude uri status code PATTERN (comma separated)
       --noheaders                print no header line at all (only --tsv)
       --aggregates=PATTERN,...   aggregate uri matching PATTERN (comma separated)
       --start-time=TIME          since the start time
@@ -214,7 +216,7 @@ $ ./alp -f access.log --tsv --noheaders
 3	0.057	0.234	0.391	0.130	12	34	80	26.667	POST	/foo/bar
 ```
 
-### Include
+### Include URI
 
 ```
 $ ./alp -f access.log
@@ -239,7 +241,7 @@ $ ./alp -f access.log --includes "foo,\d+"
 +-------+-------+-------+-------+-------+-----------+-----------+-----------+-----------+--------+-------------------+
 ```
 
-### Exclude
+### Exclude URI
 
 ```
 $ ./alp -f access.log
@@ -259,6 +261,48 @@ $ ./alp -f access.log --excludes "foo,\d+"
 +-------+-------+-------+-------+-------+-----------+-----------+-----------+-----------+--------+------------+
 | 1     | 0.234 | 0.234 | 0.234 | 0.234 |    34.000 |    34.000 |    34.000 |    34.000 | POST   | /hoge/piyo |
 +-------+-------+-------+-------+-------+-----------+-----------+-----------+-----------+--------+------------+
+```
+
+## Include Status Code
+
+```
+$ cat access3.log | ./alp
++-------+-------+--------+--------+--------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+--------+------------------------------+
+| COUNT |  MIN  |  MAX   |  SUM   |  AVG   |  P1   |  P50  |  P99  | STDDEV | MIN(BODY) | MAX(BODY) | SUM(BODY) | AVG(BODY) | METHOD |             URI              |
++-------+-------+--------+--------+--------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+--------+------------------------------+
+|     1 | 0.057 |  0.057 |  0.057 |  0.057 | 0.057 | 0.057 | 0.057 |  0.000 |    12.000 |    12.000 |    12.000 |    12.000 | POST   | /foo/bar?token=xxx&uuid=1234 |
+|     1 | 0.123 |  0.123 |  0.123 |  0.123 | 0.123 | 0.123 | 0.123 |  0.000 |    56.000 |    56.000 |    56.000 |    56.000 | GET    | /foo/bar?token=zzz           |
+|     2 | 0.100 | 60.000 | 60.100 | 30.050 | 0.100 | 0.100 | 0.100 | 29.950 |    34.000 |    34.000 |    68.000 |    34.000 | POST   | /foo/bar?token=yyy           |
++-------+-------+--------+--------+--------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+--------+------------------------------+
+
+$ cat access3.log | ./alp --include-statuses 200
++-------+-------+-------+-------+-------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+--------+------------------------------+
+| COUNT |  MIN  |  MAX  |  SUM  |  AVG  |  P1   |  P50  |  P99  | STDDEV | MIN(BODY) | MAX(BODY) | SUM(BODY) | AVG(BODY) | METHOD |             URI              |
++-------+-------+-------+-------+-------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+--------+------------------------------+
+|     1 | 0.057 | 0.057 | 0.057 | 0.057 | 0.057 | 0.057 | 0.057 |  0.000 |    12.000 |    12.000 |    12.000 |    12.000 | POST   | /foo/bar?token=xxx&uuid=1234 |
+|     1 | 0.100 | 0.100 | 0.100 | 0.100 | 0.100 | 0.100 | 0.100 |  0.000 |    34.000 |    34.000 |    34.000 |    34.000 | POST   | /foo/bar?token=yyy           |
+|     1 | 0.123 | 0.123 | 0.123 | 0.123 | 0.123 | 0.123 | 0.123 |  0.000 |    56.000 |    56.000 |    56.000 |    56.000 | GET    | /foo/bar?token=zzz           |
++-------+-------+-------+-------+-------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+--------+------------------------------+
+```
+
+### Exclude Status
+
+```
+$ cat access3.log | ./alp
++-------+-------+--------+--------+--------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+--------+------------------------------+
+| COUNT |  MIN  |  MAX   |  SUM   |  AVG   |  P1   |  P50  |  P99  | STDDEV | MIN(BODY) | MAX(BODY) | SUM(BODY) | AVG(BODY) | METHOD |             URI              |
++-------+-------+--------+--------+--------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+--------+------------------------------+
+|     1 | 0.057 |  0.057 |  0.057 |  0.057 | 0.057 | 0.057 | 0.057 |  0.000 |    12.000 |    12.000 |    12.000 |    12.000 | POST   | /foo/bar?token=xxx&uuid=1234 |
+|     1 | 0.123 |  0.123 |  0.123 |  0.123 | 0.123 | 0.123 | 0.123 |  0.000 |    56.000 |    56.000 |    56.000 |    56.000 | GET    | /foo/bar?token=zzz           |
+|     2 | 0.100 | 60.000 | 60.100 | 30.050 | 0.100 | 0.100 | 0.100 | 29.950 |    34.000 |    34.000 |    68.000 |    34.000 | POST   | /foo/bar?token=yyy           |
++-------+-------+--------+--------+--------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+--------+------------------------------+
+
+$ cat access3.log | ./alp --exclude-statuses 20[0-9]
++-------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+--------+--------------------+
+| COUNT |  MIN   |  MAX   |  SUM   |  AVG   |   P1   |  P50   |  P99   | STDDEV | MIN(BODY) | MAX(BODY) | SUM(BODY) | AVG(BODY) | METHOD |        URI         |
++-------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+--------+--------------------+
+|     1 | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 |  0.000 |    34.000 |    34.000 |    34.000 |    34.000 | POST   | /foo/bar?token=yyy |
++-------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+--------+--------------------+
 ```
 
 ### Aggregate
