@@ -1,20 +1,24 @@
 ---
-file:          # access.log
-sort:          # max|min|avg|sum|cnt|uri|method|max-body|min-body|avg-body|sum-body|p1|p50|p99|stddev
-reverse:       # boolean
-query_string:  # boolean
-tsv:           # boolean
-apptime_label: # apptime
-size_label:    # size
-method_label:  # method
-uri_label:     # uri
-time_label:    # time
-limit:         # 5000
-includes:      # array
-excludes:      # array
-no_headers:    # boolean
-aggregates:    # array
-start_time:    # 2006-01-02T15:04:05
-end_time:      # 2006-01-02 15:04:05
+file:                # access.log
+sort:                # max|min|avg|sum|cnt|uri|method|max-body|min-body|avg-body|sum-body|p1|p50|p99|stddev
+reverse:             # boolean
+query_string:        # boolean
+tsv:                 # boolean
+apptime_label:       # apptime
+reqtime_label:       # reqtime
+status_label:        # status code
+size_label:          # size
+method_label:        # method
+uri_label:           # uri
+time_label:          # time
+limit:               # 5000
+includes:            # array
+excludes:            # array
+include_statuses:    # array
+exclude_statuses:    # array
+no_headers:          # boolean
+aggregates:          # array
+start_time:          # 2006-01-02T15:04:05
+end_time:            # 2006-01-02 15:04:05
 start_time_duration: # 1m
 end_time_duration:   # 1h
