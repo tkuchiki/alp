@@ -316,9 +316,9 @@ Loop:
 			}
 		}
 
-		u, err := url.Parse(url.QueryEscape(line[c.UriLabel]))
+		u, err := url.Parse(line[c.UriLabel])
 		if err != nil {
-			log.Fatal(err)
+			continue
 		}
 
 		if c.QueryString {
