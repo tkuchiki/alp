@@ -4,3 +4,4 @@ src/
 tmp/
 cli/alp/*
 !cli/alp/main.go
+vendor
