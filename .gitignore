@@ -1,4 +1,7 @@
+.idea
 pkg/
 src/
 tmp/
-alp
+cli/alp/*
+!cli/alp/main.go
+vendor
