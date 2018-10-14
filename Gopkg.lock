@@ -17,6 +17,12 @@
   revision = "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
 
 [[projects]]
+  name = "github.com/davecgh/go-spew"
+  packages = ["spew"]
+  revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
+  version = "v1.1.1"
+
+[[projects]]
   name = "github.com/mattn/go-runewidth"
   packages = ["."]
   revision = "ce7b0b5c7b45a81508558cd1dba6bb1e4ddb51bb"
@@ -35,6 +41,18 @@
   revision = "be2c049b30ccd4d3fd795d6bf7dce74e42eeedaa"
 
 [[projects]]
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/stretchr/testify"
+  packages = ["assert"]
+  revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
+  version = "v1.2.2"
+
+[[projects]]
   name = "github.com/tkuchiki/go-timezone"
   packages = ["."]
   revision = "8ecb018cca334830e326eb2e501200c182a49a7d"
@@ -42,15 +60,12 @@
 
 [[projects]]
   name = "github.com/tkuchiki/gohttpstats"
-  packages = ["."]
-  revision = "339f57613ab5f23e99595fb575026bd530985bb1"
-  version = "v0.1.5"
-
-[[projects]]
-  name = "github.com/tkuchiki/http-profile-helper"
-  packages = ["."]
-  revision = "f378a0cd97e3a3f49080c5612c3cd52f38150743"
-  version = "v0.1.0"
+  packages = [
+    ".",
+    "parsers"
+  ]
+  revision = "4c2d3c06086b96d607d85da0eb0a8c8280826b70"
+  version = "v0.1.6"
 
 [[projects]]
   name = "github.com/tkuchiki/parsetime"
@@ -73,6 +88,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5820d52d4fc6b97749f907bf34a76ade0eb1115247f8afc4cc36614aaacd4ab1"
+  inputs-digest = "7e672ecbeea90598ff9bd5f86876eeb5bae25d2cc9373084cfdf072613cb0f16"
   solver-name = "gps-cdcl"
   solver-version = 1
