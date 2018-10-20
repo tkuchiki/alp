@@ -7,8 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/tkuchiki/gohttpstats"
+	"github.com/tkuchiki/alp/flag"
 )
 
 func TestRun(t *testing.T) {
@@ -28,21 +27,30 @@ func TestRun(t *testing.T) {
 	ltsvData := strings.Join(data, "\t")
 
 	tmpfile, err := ioutil.TempFile(os.TempDir(), "alp-mock-stdin")
-	assert.Nil(t, err)
-	defer os.Remove(tmpfile.Name())
-	defer tmpfile.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func (){
+		tmpfile.Close()
+		os.Remove(tmpfile.Name())
+	}()
+
 	if _, err := tmpfile.Write([]byte(ltsvData)); err != nil {
-		assert.Nil(t, err)
+		t.Fatal(err)
 	}
 
 	if _, err := tmpfile.Seek(0, 0); err != nil {
-		assert.Nil(t, err)
+		t.Fatal(err)
 	}
 
-	flags := httpstats.NewEmptyFlags()
+	flags := flag.NewEmptyFlags()
 
 	p.SetFlags(flags)
 	p.SetInReader(tmpfile)
+
 	err = p.Run()
-	assert.Nil(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 }

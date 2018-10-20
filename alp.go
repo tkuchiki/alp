@@ -5,17 +5,20 @@ import (
 	"io"
 	"os"
 
+	"github.com/tkuchiki/alp/flag"
 	"github.com/tkuchiki/gohttpstats"
+	"github.com/tkuchiki/gohttpstats/options"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
+
+const version = "0.4.0"
 
 type Profiler struct {
 	outWriter    io.Writer
 	errWriter    io.Writer
 	inReader     *os.File
 	optionParser *kingpin.Application
-	flags        *httpstats.Flags
-	version      string
+	flags        *flag.Flags
 }
 
 func NewProfiler(outw, errw io.Writer) *Profiler {
@@ -24,14 +27,13 @@ func NewProfiler(outw, errw io.Writer) *Profiler {
 		errWriter:    errw,
 		inReader:     os.Stdin,
 		optionParser: kingpin.New("alp", "Access Log Profiler for LTSV (read from file or stdin)."),
-		version:      "0.4.0",
 	}
-	p.flags = httpstats.NewFlags(p.optionParser)
+	p.flags = flag.NewFlags(p.optionParser)
 
 	return p
 }
 
-func (p *Profiler) SetFlags(flags *httpstats.Flags) {
+func (p *Profiler) SetFlags(flags *flag.Flags) {
 	p.flags = flags
 }
 
@@ -53,7 +55,7 @@ func (p *Profiler) Open(filename string) (*os.File, error) {
 }
 
 func (p *Profiler) Run() error {
-	p.optionParser.Version(p.version)
+	p.optionParser.Version(version)
 	p.optionParser.Parse(os.Args[1:])
 
 	var sort string
@@ -91,52 +93,54 @@ func (p *Profiler) Run() error {
 		sort = httpstats.SortMaxResponseTime
 	}
 
-	cliOptions := httpstats.NewCliOptions(&httpstats.Options{
-		File:              *p.flags.File,
-		Sort:              sort,
-		Reverse:           *p.flags.Reverse,
-		QueryString:       *p.flags.QueryString,
-		Tsv:               *p.flags.Tsv,
-		ApptimeLabel:      *p.flags.ApptimeLabel,
-		ReqtimeLabel:      *p.flags.ReqtimeLabel,
-		StatusLabel:       *p.flags.StatusLabel,
-		SizeLabel:         *p.flags.SizeLabel,
-		MethodLabel:       *p.flags.MethodLabel,
-		UriLabel:          *p.flags.UriLabel,
-		TimeLabel:         *p.flags.TimeLabel,
-		Limit:             *p.flags.Limit,
-		NoHeaders:         *p.flags.NoHeaders,
-		StartTime:         *p.flags.StartTime,
-		EndTime:           *p.flags.EndTime,
-		StartTimeDuration: *p.flags.StartTimeDuration,
-		EndTimeDuration:   *p.flags.EndTimeDuration,
-	},
-		*p.flags.Includes, *p.flags.Excludes, *p.flags.IncludeStatuses, *p.flags.ExcludeStatuses, *p.flags.Aggregates)
-
 	var err error
-	var fileOptions *httpstats.Options
+	var options *stats_options.Options
 	if *p.flags.Config != "" {
 		cf, err := os.Open(*p.flags.Config)
 		if err != nil {
 			return err
 		}
-		fileOptions, err = httpstats.LoadOptionsFromReader(cf)
+		defer cf.Close()
+
+		options, err = stats_options.LoadOptionsFromReader(cf)
 		if err != nil {
 			return err
 		}
-		defer cf.Close()
 	} else {
-		fileOptions = &httpstats.Options{}
+		options = stats_options.NewOptions()
 	}
 
-	defaultOptions := httpstats.NewDefaultOptions()
-	options := httpstats.MergeOptions(cliOptions, fileOptions, defaultOptions)
+	options = stats_options.SetOptions(options,
+		stats_options.File(*p.flags.File),
+		stats_options.Sort(sort),
+		stats_options.Reverse(*p.flags.Reverse),
+		stats_options.QueryString(*p.flags.QueryString),
+		stats_options.Tsv(*p.flags.Tsv),
+		stats_options.ApptimeLabel(*p.flags.ApptimeLabel),
+		stats_options.ReqtimeLabel(*p.flags.ReqtimeLabel),
+		stats_options.StatusLabel(*p.flags.StatusLabel),
+		stats_options.SizeLabel(*p.flags.SizeLabel),
+		stats_options.MethodLabel(*p.flags.MethodLabel),
+		stats_options.UriLabel(*p.flags.UriLabel),
+		stats_options.TimeLabel(*p.flags.TimeLabel),
+		stats_options.Limit(*p.flags.Limit),
+		stats_options.NoHeaders(*p.flags.NoHeaders),
+		stats_options.StartTime(*p.flags.StartTime),
+		stats_options.EndTime(*p.flags.EndTime),
+		stats_options.StartTimeDuration(*p.flags.StartTimeDuration),
+		stats_options.EndTimeDuration(*p.flags.EndTimeDuration),
+		stats_options.CSVIncludes(*p.flags.Includes),
+		stats_options.CSVExcludes(*p.flags.Excludes),
+		stats_options.CSVIncludeStatuses(*p.flags.IncludeStatuses),
+		stats_options.CSVExcludeStatuses(*p.flags.ExcludeStatuses),
+		stats_options.CSVAggregates(*p.flags.Aggregates),
+	)
 
 	po := httpstats.NewPrintOptions()
 	po.SetWriter(p.outWriter)
 	stats := httpstats.NewHTTPStats(true, false, false, po)
 
-	err = stats.InitFilter(p.flags, options)
+	err = stats.InitFilter(options)
 	if err != nil {
 		return err
 	}
@@ -180,11 +184,13 @@ func (p *Profiler) Run() error {
 Loop:
 	for {
 		uri, method, timestr, resTime, bodySize, status, err := stats.Parse()
-		if err == io.EOF {
-			break
-		} else if err == httpstats.SkipReadLineErr {
-			continue Loop
-		} else if err != nil {
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else if err == httpstats.SkipReadLineErr {
+				continue Loop
+			}
+
 			return err
 		}
 
