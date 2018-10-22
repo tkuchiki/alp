@@ -31,7 +31,7 @@ func TestRun(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	defer func (){
+	defer func() {
 		tmpfile.Close()
 		os.Remove(tmpfile.Name())
 	}()
@@ -44,7 +44,7 @@ func TestRun(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	flags := flag.NewEmptyFlags()
+	flags := flag.NewFlags()
 
 	p.SetFlags(flags)
 	p.SetInReader(tmpfile)

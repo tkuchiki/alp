@@ -28,7 +28,9 @@ func NewProfiler(outw, errw io.Writer) *Profiler {
 		inReader:     os.Stdin,
 		optionParser: kingpin.New("alp", "Access Log Profiler for LTSV (read from file or stdin)."),
 	}
-	p.flags = flag.NewFlags(p.optionParser)
+	p.flags = flag.NewFlags()
+
+	 p.flags.InitFlags(p.optionParser)
 
 	return p
 }
@@ -59,35 +61,35 @@ func (p *Profiler) Run() error {
 	p.optionParser.Parse(os.Args[1:])
 
 	var sort string
-	if *p.flags.Max {
+	if p.flags.Max {
 		sort = httpstats.SortMaxResponseTime
-	} else if *p.flags.Min {
+	} else if p.flags.Min {
 		sort = httpstats.SortMinResponseTime
-	} else if *p.flags.Avg {
+	} else if p.flags.Avg {
 		sort = httpstats.SortAvgResponseTime
-	} else if *p.flags.Sum {
+	} else if p.flags.Sum {
 		sort = httpstats.SortSumResponseTime
-	} else if *p.flags.Cnt {
+	} else if p.flags.Cnt {
 		sort = httpstats.SortCount
-	} else if *p.flags.P1 {
+	} else if p.flags.P1 {
 		sort = httpstats.SortP1ResponseTime
-	} else if *p.flags.P50 {
+	} else if p.flags.P50 {
 		sort = httpstats.SortP50ResponseTime
-	} else if *p.flags.P99 {
+	} else if p.flags.P99 {
 		sort = httpstats.SortP99ResponseTime
-	} else if *p.flags.Stddev {
+	} else if p.flags.Stddev {
 		sort = httpstats.SortStddevResponseTime
-	} else if *p.flags.SortUri {
+	} else if p.flags.SortUri {
 		sort = httpstats.SortUri
-	} else if *p.flags.Method {
+	} else if p.flags.Method {
 		sort = httpstats.SortMethod
-	} else if *p.flags.MaxBody {
+	} else if p.flags.MaxBody {
 		sort = httpstats.SortMaxResponseBodySize
-	} else if *p.flags.MinBody {
+	} else if p.flags.MinBody {
 		sort = httpstats.SortMinResponseBodySize
-	} else if *p.flags.AvgBody {
+	} else if p.flags.AvgBody {
 		sort = httpstats.SortAvgResponseBodySize
-	} else if *p.flags.SumBody {
+	} else if p.flags.SumBody {
 		sort = httpstats.SortSumResponseBodySize
 	} else {
 		sort = httpstats.SortMaxResponseTime
@@ -95,8 +97,8 @@ func (p *Profiler) Run() error {
 
 	var err error
 	var options *stats_options.Options
-	if *p.flags.Config != "" {
-		cf, err := os.Open(*p.flags.Config)
+	if p.flags.Config != "" {
+		cf, err := os.Open(p.flags.Config)
 		if err != nil {
 			return err
 		}
@@ -111,29 +113,29 @@ func (p *Profiler) Run() error {
 	}
 
 	options = stats_options.SetOptions(options,
-		stats_options.File(*p.flags.File),
+		stats_options.File(p.flags.File),
 		stats_options.Sort(sort),
-		stats_options.Reverse(*p.flags.Reverse),
-		stats_options.QueryString(*p.flags.QueryString),
-		stats_options.Tsv(*p.flags.Tsv),
-		stats_options.ApptimeLabel(*p.flags.ApptimeLabel),
-		stats_options.ReqtimeLabel(*p.flags.ReqtimeLabel),
-		stats_options.StatusLabel(*p.flags.StatusLabel),
-		stats_options.SizeLabel(*p.flags.SizeLabel),
-		stats_options.MethodLabel(*p.flags.MethodLabel),
-		stats_options.UriLabel(*p.flags.UriLabel),
-		stats_options.TimeLabel(*p.flags.TimeLabel),
-		stats_options.Limit(*p.flags.Limit),
-		stats_options.NoHeaders(*p.flags.NoHeaders),
-		stats_options.StartTime(*p.flags.StartTime),
-		stats_options.EndTime(*p.flags.EndTime),
-		stats_options.StartTimeDuration(*p.flags.StartTimeDuration),
-		stats_options.EndTimeDuration(*p.flags.EndTimeDuration),
-		stats_options.CSVIncludes(*p.flags.Includes),
-		stats_options.CSVExcludes(*p.flags.Excludes),
-		stats_options.CSVIncludeStatuses(*p.flags.IncludeStatuses),
-		stats_options.CSVExcludeStatuses(*p.flags.ExcludeStatuses),
-		stats_options.CSVAggregates(*p.flags.Aggregates),
+		stats_options.Reverse(p.flags.Reverse),
+		stats_options.QueryString(p.flags.QueryString),
+		stats_options.Tsv(p.flags.Tsv),
+		stats_options.ApptimeLabel(p.flags.ApptimeLabel),
+		stats_options.ReqtimeLabel(p.flags.ReqtimeLabel),
+		stats_options.StatusLabel(p.flags.StatusLabel),
+		stats_options.SizeLabel(p.flags.SizeLabel),
+		stats_options.MethodLabel(p.flags.MethodLabel),
+		stats_options.UriLabel(p.flags.UriLabel),
+		stats_options.TimeLabel(p.flags.TimeLabel),
+		stats_options.Limit(p.flags.Limit),
+		stats_options.NoHeaders(p.flags.NoHeaders),
+		stats_options.StartTime(p.flags.StartTime),
+		stats_options.EndTime(p.flags.EndTime),
+		stats_options.StartTimeDuration(p.flags.StartTimeDuration),
+		stats_options.EndTimeDuration(p.flags.EndTimeDuration),
+		stats_options.CSVIncludes(p.flags.Includes),
+		stats_options.CSVExcludes(p.flags.Excludes),
+		stats_options.CSVIncludeStatuses(p.flags.IncludeStatuses),
+		stats_options.CSVExcludeStatuses(p.flags.ExcludeStatuses),
+		stats_options.CSVAggregates(p.flags.Aggregates),
 	)
 
 	po := httpstats.NewPrintOptions()
@@ -147,8 +149,8 @@ func (p *Profiler) Run() error {
 
 	stats.SetOptions(options)
 
-	if *p.flags.Load != "" {
-		lf, err := os.Open(*p.flags.Load)
+	if p.flags.Load != "" {
+		lf, err := os.Open(p.flags.Load)
 		if err != nil {
 			return err
 		}
@@ -205,8 +207,8 @@ Loop:
 		}
 	}
 
-	if *p.flags.Dump != "" {
-		df, err := os.OpenFile(*p.flags.Dump, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	if p.flags.Dump != "" {
+		df, err := os.OpenFile(p.flags.Dump, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 		err = stats.DumpStats(df)
 		if err != nil {
 			return err
