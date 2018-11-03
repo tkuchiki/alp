@@ -97,6 +97,13 @@ log_format ltsv "time:$time_local"
                 "\tvhost:$host";
 ```
 
+### H2O
+
+```
+access-log:
+  format: "time:%t\tforwardedfor:%{X-Forwarded-For}i\thost:%h\treq:%r\tstatus:%>s\tmethod:%m\turi:%U%q\tsize:%b\treferer:%{Referer}i\tua:%{User-Agent}i\tequest_time:%{%Y/%m/%d:%H:%M:%S}t\truntime:%{X-Runtime}o\tvhost:%{Host}i"
+```
+
 ## Config
 
 [sample config file](./example/config.yml)
