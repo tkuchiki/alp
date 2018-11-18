@@ -30,7 +30,7 @@ func NewProfiler(outw, errw io.Writer) *Profiler {
 	}
 	p.flags = flag.NewFlags()
 
-	 p.flags.InitFlags(p.optionParser)
+	p.flags.InitFlags(p.optionParser)
 
 	return p
 }
@@ -140,6 +140,9 @@ func (p *Profiler) Run() error {
 
 	po := httpstats.NewPrintOptions()
 	po.SetWriter(p.outWriter)
+	if options.Tsv {
+		po.SetFormat("tsv")
+	}
 	stats := httpstats.NewHTTPStats(true, false, false, po)
 
 	err = stats.InitFilter(options)
