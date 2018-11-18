@@ -47,8 +47,8 @@
     "options",
     "parsers"
   ]
-  revision = "020b195ee65cc7aa9403d483f39faab103e8cb39"
-  version = "v0.1.7"
+  revision = "c1d99718faa31bff16bdcba97ac42609ed483e4f"
+  version = "v0.1.8"
 
 [[projects]]
   name = "github.com/tkuchiki/parsetime"
@@ -71,6 +71,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b92f4aca6dedf6888c77838b92d809821a8a0f9b4d5dee39419b12b4ad68844a"
+  inputs-digest = "2de4ea75d06ef4dd9d005421b801f9092e2e2ce01a6e137a65b9fa4c58859512"
   solver-name = "gps-cdcl"
   solver-version = 1

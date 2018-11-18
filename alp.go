@@ -8,6 +8,7 @@ import (
 	"github.com/tkuchiki/alp/flag"
 	"github.com/tkuchiki/gohttpstats"
 	"github.com/tkuchiki/gohttpstats/options"
+	"github.com/tkuchiki/gohttpstats/parsers"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -181,14 +182,18 @@ func (p *Profiler) Run() error {
 		}
 	}
 
-	err = stats.InitParser("ltsv", f)
+	label := parsers.NewLTSVLabel(options.UriLabel, options.ApptimeLabel, options.ReqtimeLabel,
+		options.SizeLabel, options.StatusLabel, options.MethodLabel, options.TimeLabel,
+	)
+
+	parser := parsers.NewLTSVParser(f, label, options.QueryString)
 	if err != nil {
 		return err
 	}
 
 Loop:
 	for {
-		uri, method, timestr, resTime, bodySize, status, err := stats.Parse()
+		s, err := parser.Parse()
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -199,11 +204,11 @@ Loop:
 			return err
 		}
 
-		if !stats.DoFilter(uri, method, timestr) {
+		if !stats.DoFilter(s.Uri, s.Method, s.Time) {
 			continue Loop
 		}
 
-		stats.Set(uri, method, status, resTime, bodySize, 0)
+		stats.Set(s.Uri, s.Method, s.Status, s.ResponseTime, s.BodySize, 0)
 
 		if stats.CountUris() > options.Limit {
 			return fmt.Errorf("Too many URI's (%d or less)", options.Limit)
