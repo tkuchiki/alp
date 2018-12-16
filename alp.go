@@ -59,42 +59,9 @@ func (p *Profiler) Open(filename string) (*os.File, error) {
 
 func (p *Profiler) Run() error {
 	p.optionParser.Version(version)
-	p.optionParser.Parse(os.Args[1:])
+	kingpin.MustParse(p.optionParser.Parse(os.Args[1:]))
 
-	var sort string
-	if p.flags.Max {
-		sort = httpstats.SortMaxResponseTime
-	} else if p.flags.Min {
-		sort = httpstats.SortMinResponseTime
-	} else if p.flags.Avg {
-		sort = httpstats.SortAvgResponseTime
-	} else if p.flags.Sum {
-		sort = httpstats.SortSumResponseTime
-	} else if p.flags.Cnt {
-		sort = httpstats.SortCount
-	} else if p.flags.P1 {
-		sort = httpstats.SortP1ResponseTime
-	} else if p.flags.P50 {
-		sort = httpstats.SortP50ResponseTime
-	} else if p.flags.P99 {
-		sort = httpstats.SortP99ResponseTime
-	} else if p.flags.Stddev {
-		sort = httpstats.SortStddevResponseTime
-	} else if p.flags.SortUri {
-		sort = httpstats.SortUri
-	} else if p.flags.Method {
-		sort = httpstats.SortMethod
-	} else if p.flags.MaxBody {
-		sort = httpstats.SortMaxResponseBodySize
-	} else if p.flags.MinBody {
-		sort = httpstats.SortMinResponseBodySize
-	} else if p.flags.AvgBody {
-		sort = httpstats.SortAvgResponseBodySize
-	} else if p.flags.SumBody {
-		sort = httpstats.SortSumResponseBodySize
-	} else {
-		sort = httpstats.SortMaxResponseTime
-	}
+	sort := flag.SortOptions[p.flags.Sort]
 
 	var err error
 	var options *stats_options.Options

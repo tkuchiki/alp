@@ -3,6 +3,7 @@ package flag
 import (
 	"fmt"
 
+	"github.com/tkuchiki/gohttpstats"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -11,21 +12,7 @@ type Flags struct {
 	File              string
 	Dump              string
 	Load              string
-	Max               bool
-	Min               bool
-	Avg               bool
-	Sum               bool
-	Cnt               bool
-	SortUri           bool
-	Method            bool
-	MaxBody           bool
-	MinBody           bool
-	AvgBody           bool
-	SumBody           bool
-	P1                bool
-	P50               bool
-	P99               bool
-	Stddev            bool
+	Sort              string
 	Reverse           bool
 	QueryString       bool
 	Tsv               bool
@@ -50,6 +37,42 @@ type Flags struct {
 	EndTimeDuration   string
 }
 
+var SortKeys = []string{
+	"max",
+	"min",
+	"avg",
+	"sum",
+	"count",
+	"uri",
+	"method",
+	"max-body",
+	"min-body",
+	"avg-body",
+	"sum-body",
+	"p1",
+	"p50",
+	"p99",
+	"stddev",
+}
+
+var SortOptions = map[string]string{
+	"max":      httpstats.SortMaxResponseTime,
+	"min":      httpstats.SortMinResponseTime,
+	"avg":      httpstats.SortAvgResponseTime,
+	"sum":      httpstats.SortSumResponseTime,
+	"count":    httpstats.SortCount,
+	"uri":      httpstats.SortUri,
+	"method":   httpstats.SortMethod,
+	"max-body": httpstats.SortMaxResponseBodySize,
+	"min-body": httpstats.SortMinResponseBodySize,
+	"avg-body": httpstats.SortAvgResponseBodySize,
+	"sum-body": httpstats.SortSumResponseBodySize,
+	"p1":       httpstats.SortP1ResponseTime,
+	"p50":      httpstats.SortP50ResponseTime,
+	"p99":      httpstats.SortP99ResponseTime,
+	"stddev":   httpstats.SortStddevResponseTime,
+}
+
 func NewFlags() *Flags {
 	return &Flags{}
 }
@@ -59,21 +82,7 @@ func (f *Flags) InitFlags(app *kingpin.Application) {
 	app.Flag("file", "access log file").Short('f').StringVar(&f.File)
 	app.Flag("dump", "dump profile data").Short('d').StringVar(&f.Dump)
 	app.Flag("load", "load profile data").Short('l').StringVar(&f.Load)
-	app.Flag("max", "sort by max response time").BoolVar(&f.Max)
-	app.Flag("min", "sort by min response time").BoolVar(&f.Min)
-	app.Flag("avg", "sort by avg response time").BoolVar(&f.Avg)
-	app.Flag("sum", "sort by sum response time").BoolVar(&f.Sum)
-	app.Flag("cnt", "sort by count").BoolVar(&f.Cnt)
-	app.Flag("uri", "sort by uri").BoolVar(&f.SortUri)
-	app.Flag("method", "sort by method").BoolVar(&f.Method)
-	app.Flag("max-body", "sort by max body size").BoolVar(&f.MaxBody)
-	app.Flag("min-body", "sort by min body size").BoolVar(&f.MinBody)
-	app.Flag("avg-body", "sort by avg body size").BoolVar(&f.AvgBody)
-	app.Flag("sum-body", "sort by sum body size").BoolVar(&f.SumBody)
-	app.Flag("p1", "sort by 1 percentail response time").BoolVar(&f.P1)
-	app.Flag("p50", "sort by 50 percentail response time").BoolVar(&f.P50)
-	app.Flag("p99", "sort by 99 percentail response time").BoolVar(&f.P99)
-	app.Flag("stddev", "sort by standard deviation response time").BoolVar(&f.Stddev)
+	app.Flag("sort", "sort").Default("max").EnumVar(&f.Sort, SortKeys...)
 	app.Flag("reverse", "reverse the result of comparisons").Short('r').BoolVar(&f.Reverse)
 	app.Flag("query-string", "include query string").Short('q').BoolVar(&f.QueryString)
 	app.Flag("tsv", "tsv format (default: table)").BoolVar(&f.Tsv)
