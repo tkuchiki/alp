@@ -101,7 +101,7 @@ log_format ltsv "time:$time_local"
 
 ```
 access-log:
-  format: "time:%t\tforwardedfor:%{X-Forwarded-For}i\thost:%h\treq:%r\tstatus:%>s\tmethod:%m\turi:%U%q\tsize:%b\treferer:%{Referer}i\tua:%{User-Agent}i\tequest_time:%{%Y/%m/%d:%H:%M:%S}t\truntime:%{X-Runtime}o\tvhost:%{Host}i"
+  format: "time:%t\thost:%h\tua:\"%{User-agent}i\"\tstatus:%s\treq:%r\turi:%U\treqtime:%{duration}x\tsize:%b\tmethod:%m\t"
 ```
 
 ## Config
