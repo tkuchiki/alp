@@ -101,8 +101,6 @@ func (p *Profiler) Run() error {
 		stats_options.EndTimeDuration(p.flags.EndTimeDuration),
 		stats_options.CSVIncludes(p.flags.Includes),
 		stats_options.CSVExcludes(p.flags.Excludes),
-		stats_options.CSVIncludeStatuses(p.flags.IncludeStatuses),
-		stats_options.CSVExcludeStatuses(p.flags.ExcludeStatuses),
 		stats_options.CSVAggregates(p.flags.Aggregates),
 	)
 
