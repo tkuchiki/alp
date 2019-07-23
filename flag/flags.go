@@ -28,7 +28,7 @@ type Flags struct {
 	Location          string
 	Includes          string
 	Excludes          string
-	Aggregates        string
+	Groups        string
 	StartTime         string
 	EndTime           string
 	StartTimeDuration string
@@ -96,7 +96,7 @@ func (f *Flags) InitFlags(app *kingpin.Application) {
 	app.Flag("includes", "don't exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").StringVar(&f.Includes)
 	app.Flag("excludes", "exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").StringVar(&f.Excludes)
 	app.Flag("noheaders", "print no header line at all (only --tsv)").BoolVar(&f.NoHeaders)
-	app.Flag("aggregates", "aggregate uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").StringVar(&f.Aggregates)
+	app.Flag("groups", "uri matching groups (comma separated)").PlaceHolder("PATTERN,...").StringVar(&f.Groups)
 	app.Flag("start-time", "since the start time").PlaceHolder("TIME").StringVar(&f.StartTime)
 	app.Flag("end-time", "end time earlier").PlaceHolder("TIME").StringVar(&f.EndTime)
 	app.Flag("start-time-duration", "since the start time (now - time.Duration)").PlaceHolder("TIME_DURATION").StringVar(&f.StartTimeDuration)
