@@ -3,7 +3,7 @@ package flag
 import (
 	"fmt"
 
-	"github.com/tkuchiki/gohttpstats"
+	"github.com/tkuchiki/alp/stats"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -28,7 +28,8 @@ type Flags struct {
 	Location          string
 	Includes          string
 	Excludes          string
-	Groups        string
+	Groups            string
+	Filters           string
 	StartTime         string
 	EndTime           string
 	StartTimeDuration string
@@ -54,21 +55,21 @@ var SortKeys = []string{
 }
 
 var SortOptions = map[string]string{
-	"max":      httpstats.SortMaxResponseTime,
-	"min":      httpstats.SortMinResponseTime,
-	"avg":      httpstats.SortAvgResponseTime,
-	"sum":      httpstats.SortSumResponseTime,
-	"count":    httpstats.SortCount,
-	"uri":      httpstats.SortUri,
-	"method":   httpstats.SortMethod,
-	"max-body": httpstats.SortMaxResponseBodySize,
-	"min-body": httpstats.SortMinResponseBodySize,
-	"avg-body": httpstats.SortAvgResponseBodySize,
-	"sum-body": httpstats.SortSumResponseBodySize,
-	"p1":       httpstats.SortP1ResponseTime,
-	"p50":      httpstats.SortP50ResponseTime,
-	"p99":      httpstats.SortP99ResponseTime,
-	"stddev":   httpstats.SortStddevResponseTime,
+	"max":      stats.SortMaxResponseTime,
+	"min":      stats.SortMinResponseTime,
+	"avg":      stats.SortAvgResponseTime,
+	"sum":      stats.SortSumResponseTime,
+	"count":    stats.SortCount,
+	"uri":      stats.SortUri,
+	"method":   stats.SortMethod,
+	"max-body": stats.SortMaxResponseBodySize,
+	"min-body": stats.SortMinResponseBodySize,
+	"avg-body": stats.SortAvgResponseBodySize,
+	"sum-body": stats.SortSumResponseBodySize,
+	"p1":       stats.SortP1ResponseTime,
+	"p50":      stats.SortP50ResponseTime,
+	"p99":      stats.SortP99ResponseTime,
+	"stddev":   stats.SortStddevResponseTime,
 }
 
 func NewFlags() *Flags {
@@ -97,6 +98,7 @@ func (f *Flags) InitFlags(app *kingpin.Application) {
 	app.Flag("excludes", "exclude uri matching PATTERN (comma separated)").PlaceHolder("PATTERN,...").StringVar(&f.Excludes)
 	app.Flag("noheaders", "print no header line at all (only --tsv)").BoolVar(&f.NoHeaders)
 	app.Flag("groups", "uri matching groups (comma separated)").PlaceHolder("PATTERN,...").StringVar(&f.Groups)
+	app.Flag("filters", "the filters").StringVar(&f.Filters)
 	app.Flag("start-time", "since the start time").PlaceHolder("TIME").StringVar(&f.StartTime)
 	app.Flag("end-time", "end time earlier").PlaceHolder("TIME").StringVar(&f.EndTime)
 	app.Flag("start-time-duration", "since the start time (now - time.Duration)").PlaceHolder("TIME_DURATION").StringVar(&f.StartTimeDuration)

@@ -5,10 +5,11 @@ import (
 	"io"
 	"os"
 
+	"github.com/tkuchiki/alp/stats"
+
 	"github.com/tkuchiki/alp/flag"
-	"github.com/tkuchiki/gohttpstats"
-	"github.com/tkuchiki/gohttpstats/options"
-	"github.com/tkuchiki/gohttpstats/parsers"
+	"github.com/tkuchiki/alp/options"
+	"github.com/tkuchiki/alp/parsers"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -64,7 +65,7 @@ func (p *Profiler) Run() error {
 	sort := flag.SortOptions[p.flags.Sort]
 
 	var err error
-	var options *stats_options.Options
+	var opts *options.Options
 	if p.flags.Config != "" {
 		cf, err := os.Open(p.flags.Config)
 		if err != nil {
@@ -72,86 +73,86 @@ func (p *Profiler) Run() error {
 		}
 		defer cf.Close()
 
-		options, err = stats_options.LoadOptionsFromReader(cf)
+		opts, err = options.LoadOptionsFromReader(cf)
 		if err != nil {
 			return err
 		}
 	} else {
-		options = stats_options.NewOptions()
+		opts = options.NewOptions()
 	}
 
-	options = stats_options.SetOptions(options,
-		stats_options.File(p.flags.File),
-		stats_options.Sort(sort),
-		stats_options.Reverse(p.flags.Reverse),
-		stats_options.QueryString(p.flags.QueryString),
-		stats_options.Tsv(p.flags.Tsv),
-		stats_options.ApptimeLabel(p.flags.ApptimeLabel),
-		stats_options.ReqtimeLabel(p.flags.ReqtimeLabel),
-		stats_options.StatusLabel(p.flags.StatusLabel),
-		stats_options.SizeLabel(p.flags.SizeLabel),
-		stats_options.MethodLabel(p.flags.MethodLabel),
-		stats_options.UriLabel(p.flags.UriLabel),
-		stats_options.TimeLabel(p.flags.TimeLabel),
-		stats_options.Limit(p.flags.Limit),
-		stats_options.NoHeaders(p.flags.NoHeaders),
-		stats_options.StartTime(p.flags.StartTime),
-		stats_options.EndTime(p.flags.EndTime),
-		stats_options.StartTimeDuration(p.flags.StartTimeDuration),
-		stats_options.EndTimeDuration(p.flags.EndTimeDuration),
-		stats_options.CSVIncludes(p.flags.Includes),
-		stats_options.CSVExcludes(p.flags.Excludes),
-		stats_options.CSVAggregates(p.flags.Groups),
+	opts = options.SetOptions(opts,
+		options.File(p.flags.File),
+		options.Sort(sort),
+		options.Reverse(p.flags.Reverse),
+		options.QueryString(p.flags.QueryString),
+		options.Tsv(p.flags.Tsv),
+		options.ApptimeLabel(p.flags.ApptimeLabel),
+		options.ReqtimeLabel(p.flags.ReqtimeLabel),
+		options.StatusLabel(p.flags.StatusLabel),
+		options.SizeLabel(p.flags.SizeLabel),
+		options.MethodLabel(p.flags.MethodLabel),
+		options.UriLabel(p.flags.UriLabel),
+		options.TimeLabel(p.flags.TimeLabel),
+		options.Limit(p.flags.Limit),
+		options.NoHeaders(p.flags.NoHeaders),
+		options.StartTime(p.flags.StartTime),
+		options.EndTime(p.flags.EndTime),
+		options.StartTimeDuration(p.flags.StartTimeDuration),
+		options.EndTimeDuration(p.flags.EndTimeDuration),
+		options.CSVIncludes(p.flags.Includes),
+		options.CSVExcludes(p.flags.Excludes),
+		options.CSVGroups(p.flags.Groups),
 	)
 
-	po := httpstats.NewPrintOptions()
+	po := stats.NewPrintOptions()
 	po.SetWriter(p.outWriter)
-	if options.Tsv {
+	if opts.Tsv {
 		po.SetFormat("tsv")
 	}
-	stats := httpstats.NewHTTPStats(true, false, false, po)
+	sts := stats.NewHTTPStats(true, false, false, po)
 
-	err = stats.InitFilter(options)
+	err = sts.InitFilter(opts)
 	if err != nil {
 		return err
 	}
 
-	stats.SetOptions(options)
+	sts.SetOptions(opts)
 
 	if p.flags.Load != "" {
 		lf, err := os.Open(p.flags.Load)
 		if err != nil {
 			return err
 		}
-		err = stats.LoadStats(lf)
+		err = sts.LoadStats(lf)
 		if err != nil {
 			return err
 		}
 		defer lf.Close()
 
-		stats.SortWithOptions()
-		stats.Print()
+		sts.SortWithOptions()
+		sts.Print()
 		return nil
 	}
 
-	f, err := p.Open(options.File)
+	f, err := p.Open(opts.File)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	if len(options.Aggregates) > 0 {
-		err = stats.SetURICapturingGroups(options.Aggregates)
+	if len(opts.Groups) > 0 {
+		err = sts.SetURICapturingGroups(opts.Groups)
 		if err != nil {
 			return err
 		}
 	}
 
-	label := parsers.NewLTSVLabel(options.UriLabel, options.ApptimeLabel, options.ReqtimeLabel,
-		options.SizeLabel, options.StatusLabel, options.MethodLabel, options.TimeLabel,
+	label := parsers.NewLTSVLabel(opts.UriLabel, opts.ApptimeLabel, opts.ReqtimeLabel,
+		opts.SizeLabel, opts.StatusLabel, opts.MethodLabel, opts.TimeLabel,
 	)
 
-	parser := parsers.NewLTSVParser(f, label, options.QueryString)
+	parser := parsers.NewLTSVParser(f, label, opts.QueryString)
 	if err != nil {
 		return err
 	}
@@ -162,35 +163,35 @@ Loop:
 		if err != nil {
 			if err == io.EOF {
 				break
-			} else if err == httpstats.SkipReadLineErr {
+			} else if err == stats.SkipReadLineErr {
 				continue Loop
 			}
 
 			return err
 		}
 
-		if !stats.DoFilter(s.Uri, s.Method, s.Time) {
+		if !sts.DoFilter(s.Uri, s.Method, s.Time) {
 			continue Loop
 		}
 
-		stats.Set(s.Uri, s.Method, s.Status, s.ResponseTime, s.BodySize, 0)
+		sts.Set(s.Uri, s.Method, s.Status, s.ResponseTime, s.BodySize, 0)
 
-		if stats.CountUris() > options.Limit {
-			return fmt.Errorf("Too many URI's (%d or less)", options.Limit)
+		if sts.CountUris() > opts.Limit {
+			return fmt.Errorf("Too many URI's (%d or less)", opts.Limit)
 		}
 	}
 
 	if p.flags.Dump != "" {
 		df, err := os.OpenFile(p.flags.Dump, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-		err = stats.DumpStats(df)
+		err = sts.DumpStats(df)
 		if err != nil {
 			return err
 		}
 		defer df.Close()
 	}
 
-	stats.SortWithOptions()
-	stats.Print()
+	sts.SortWithOptions()
+	sts.Print()
 
 	return nil
 }
