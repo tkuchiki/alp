@@ -8,32 +8,28 @@ import (
 )
 
 type Flags struct {
-	Config            string
-	File              string
-	Dump              string
-	Load              string
-	Sort              string
-	Reverse           bool
-	QueryString       bool
-	Tsv               bool
-	NoHeaders         bool
-	ApptimeLabel      string
-	ReqtimeLabel      string
-	StatusLabel       string
-	SizeLabel         string
-	MethodLabel       string
-	UriLabel          string
-	TimeLabel         string
-	Limit             int
-	Location          string
-	Includes          string
-	Excludes          string
-	Groups            string
-	Filters           string
-	StartTime         string
-	EndTime           string
-	StartTimeDuration string
-	EndTimeDuration   string
+	Config       string
+	File         string
+	Dump         string
+	Load         string
+	Sort         string
+	Reverse      bool
+	QueryString  bool
+	Tsv          bool
+	NoHeaders    bool
+	ApptimeLabel string
+	ReqtimeLabel string
+	StatusLabel  string
+	SizeLabel    string
+	MethodLabel  string
+	UriLabel     string
+	TimeLabel    string
+	Limit        int
+	Location     string
+	Includes     string
+	Excludes     string
+	Groups       string
+	Filters      string
 }
 
 var SortKeys = []string{
@@ -99,8 +95,4 @@ func (f *Flags) InitFlags(app *kingpin.Application) {
 	app.Flag("noheaders", "print no header line at all (only --tsv)").BoolVar(&f.NoHeaders)
 	app.Flag("groups", "uri matching groups (comma separated)").PlaceHolder("PATTERN,...").StringVar(&f.Groups)
 	app.Flag("filters", "the filters").StringVar(&f.Filters)
-	app.Flag("start-time", "since the start time").PlaceHolder("TIME").StringVar(&f.StartTime)
-	app.Flag("end-time", "end time earlier").PlaceHolder("TIME").StringVar(&f.EndTime)
-	app.Flag("start-time-duration", "since the start time (now - time.Duration)").PlaceHolder("TIME_DURATION").StringVar(&f.StartTimeDuration)
-	app.Flag("end-time-duration", "end time earlier (now - time.Duration)").PlaceHolder("TIME_DURATION").StringVar(&f.EndTimeDuration)
 }

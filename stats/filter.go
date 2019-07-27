@@ -4,6 +4,10 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/tkuchiki/alp/errors"
+
+	"github.com/tkuchiki/alp/parsers"
+
 	"github.com/tkuchiki/alp/options"
 	"github.com/tkuchiki/parsetime"
 )
@@ -12,8 +16,7 @@ type Filter struct {
 	options       *options.Options
 	includeGroups []*regexp.Regexp
 	excludeGroups []*regexp.Regexp
-	sTimeNano     int64
-	eTimeNano     int64
+	expeval       *ExpEval
 	parseTime     parsetime.ParseTime
 }
 
@@ -45,48 +48,28 @@ func (f *Filter) Init() error {
 		return err
 	}
 
-	if f.options.StartTime != "" {
-		f.sTimeNano, err = f.TimeStrToUnixNano(f.options.StartTime)
+	if f.options.Filters != "" {
+		var ee *ExpEval
+		ee, err = NewExpEval(f.options.Filters, f.parseTime)
 		if err != nil {
 			return err
 		}
-	}
 
-	if f.options.StartTimeDuration != "" {
-		f.sTimeNano, err = subTimeDuration(f.options.StartTimeDuration)
-		if err != nil {
-			return err
-		}
-	}
-
-	if f.options.EndTime != "" {
-		f.eTimeNano, err = f.TimeStrToUnixNano(f.options.EndTime)
-		if err != nil {
-			return err
-		}
-	}
-
-	if f.options.EndTimeDuration != "" {
-		f.eTimeNano, err = subTimeDuration(f.options.EndTimeDuration)
-		if err != nil {
-			return err
-		}
+		f.expeval = ee
 	}
 
 	return nil
 }
 
 func (f *Filter) isEnable() bool {
-	if len(f.includeGroups) > 0 || len(f.excludeGroups) > 0 ||
-		f.options.StartTime != "" || f.options.StartTimeDuration != "" ||
-		f.options.EndTime != "" || f.options.EndTimeDuration != "" {
+	if len(f.includeGroups) > 0 || len(f.excludeGroups) > 0 || f.expeval != nil {
 		return true
 	}
 
 	return false
 }
 
-func (f *Filter) Do(uri, status, timestr string) error {
+func (f *Filter) Do(stat *parsers.ParsedHTTPStat) error {
 	if !f.isEnable() {
 		return nil
 	}
@@ -94,32 +77,32 @@ func (f *Filter) Do(uri, status, timestr string) error {
 	if len(f.includeGroups) > 0 {
 		isnotMatched := true
 		for _, re := range f.includeGroups {
-			if ok := re.Match([]byte(uri)); ok {
+			if ok := re.Match([]byte(stat.Uri)); ok {
 				isnotMatched = false
 			}
 		}
 
 		if isnotMatched {
-			return SkipReadLineErr
+			return errors.SkipReadLineErr
 		}
 	}
 
 	if len(f.excludeGroups) > 0 {
 		for _, re := range f.excludeGroups {
-			if ok := re.Match([]byte(uri)); ok {
-				return SkipReadLineErr
+			if ok := re.Match([]byte(stat.Uri)); ok {
+				return errors.SkipReadLineErr
 			}
 		}
 	}
 
-	if f.sTimeNano != 0 || f.eTimeNano != 0 {
-		t, err := f.ParseTime(timestr)
+	if f.expeval != nil {
+		matched, err := f.expeval.Run(stat)
 		if err != nil {
-			return SkipReadLineErr
+			return err
 		}
-		timeNano := t.UnixNano()
-		if !IsIncludedInTime(f.sTimeNano, f.eTimeNano, timeNano) {
-			return SkipReadLineErr
+
+		if !matched {
+			return errors.SkipReadLineErr
 		}
 	}
 

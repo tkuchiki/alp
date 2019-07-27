@@ -1,4 +1,4 @@
-package stats
+package helpers
 
 import (
 	"regexp"
@@ -16,18 +16,6 @@ func CompileUriGroups(groups []string) ([]*regexp.Regexp, error) {
 	}
 
 	return uriGroups, nil
-}
-
-func IsIncludedInTime(start, end, val int64) bool {
-	if start > 0 && end == 0 {
-		return start <= val
-	} else if end > 0 && start == 0 {
-		return end >= val
-	} else if start > 0 && end > 0 {
-		return start <= val && end >= val
-	}
-
-	return false
 }
 
 func StringToFloat64(val string) (float64, error) {

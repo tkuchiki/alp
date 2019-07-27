@@ -5,8 +5,9 @@ import (
 	"io"
 	"net/url"
 
+	"github.com/tkuchiki/alp/helpers"
+
 	"github.com/najeira/ltsv"
-	"github.com/tkuchiki/alp/stats"
 )
 
 type LTSVParser struct {
@@ -46,17 +47,17 @@ func NewLTSVParser(r io.Reader, l *LTSVLabel, query bool) *LTSVParser {
 	}
 }
 
-func (l *LTSVParser) Parse() (*HTTPStat, error) {
+func (l *LTSVParser) Parse() (*ParsedHTTPStat, error) {
 	parsedValue, err := l.reader.Read()
 	if err != nil && l.strictMode {
-		return &HTTPStat{}, err
+		return nil, err
 	} else if err == io.EOF {
-		return &HTTPStat{}, err
+		return nil, err
 	}
 
 	u, err := url.Parse(parsedValue[l.label.Uri])
 	if err != nil {
-		return &HTTPStat{}, errSkipReadLine(l.strictMode, err)
+		return nil, errSkipReadLine(l.strictMode, err)
 	}
 	var uri string
 	if l.queryString {
@@ -70,29 +71,29 @@ func (l *LTSVParser) Parse() (*HTTPStat, error) {
 		uri = u.Path
 	}
 
-	resTime, err := stats.StringToFloat64(parsedValue[l.label.Apptime])
+	resTime, err := helpers.StringToFloat64(parsedValue[l.label.Apptime])
 	if err != nil {
 		var reqTime float64
-		reqTime, err = stats.StringToFloat64(parsedValue[l.label.Reqtime])
+		reqTime, err = helpers.StringToFloat64(parsedValue[l.label.Reqtime])
 		if err != nil {
-			return &HTTPStat{}, errSkipReadLine(l.strictMode, err)
+			return nil, errSkipReadLine(l.strictMode, err)
 		}
 
 		resTime = reqTime
 	}
 
-	bodySize, err := stats.StringToFloat64(parsedValue[l.label.Size])
+	bodySize, err := helpers.StringToFloat64(parsedValue[l.label.Size])
 	if err != nil {
-		return &HTTPStat{}, errSkipReadLine(l.strictMode, err)
+		return nil, errSkipReadLine(l.strictMode, err)
 	}
 
-	status, err := stats.StringToInt(parsedValue[l.label.Status])
+	status, err := helpers.StringToInt(parsedValue[l.label.Status])
 	if err != nil {
-		return &HTTPStat{}, errSkipReadLine(l.strictMode, err)
+		return nil, errSkipReadLine(l.strictMode, err)
 	}
 
 	method := parsedValue[l.label.Method]
 	timestr := parsedValue[l.label.Time]
 
-	return NewHTTPStat(uri, method, timestr, resTime, bodySize, status), nil
+	return NewParsedHTTPStat(uri, method, timestr, resTime, bodySize, status), nil
 }

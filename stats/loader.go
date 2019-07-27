@@ -13,7 +13,7 @@ func (hs *HTTPStats) LoadStats(r io.Reader) error {
 		return err
 	}
 
-	var stats []*httpStat
+	var stats []*HTTPStat
 	err = yaml.Unmarshal(buf, &stats)
 	hs.stats = stats
 

@@ -1,14 +1,14 @@
 package parsers
 
 import (
-	"github.com/tkuchiki/alp/stats"
+	"github.com/tkuchiki/alp/errors"
 )
 
 type Parser interface {
-	Parse() *HTTPStat
+	Parse() *ParsedHTTPStat
 }
 
-type HTTPStat struct {
+type ParsedHTTPStat struct {
 	Uri          string
 	Method       string
 	Time         string
@@ -17,8 +17,8 @@ type HTTPStat struct {
 	Status       int
 }
 
-func NewHTTPStat(uri, method, time string, resTime, bodySize float64, status int) *HTTPStat {
-	return &HTTPStat{
+func NewParsedHTTPStat(uri, method, time string, resTime, bodySize float64, status int) *ParsedHTTPStat {
+	return &ParsedHTTPStat{
 		Uri:          uri,
 		Method:       method,
 		Time:         time,
@@ -33,5 +33,5 @@ func errSkipReadLine(strictMode bool, err error) error {
 		return err
 	}
 
-	return stats.SkipReadLineErr
+	return errors.SkipReadLineErr
 }

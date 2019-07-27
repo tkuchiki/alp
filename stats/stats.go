@@ -6,6 +6,12 @@ import (
 	"regexp"
 	"sync"
 
+	"github.com/tkuchiki/alp/errors"
+
+	"github.com/tkuchiki/alp/helpers"
+
+	"github.com/tkuchiki/alp/parsers"
+
 	"github.com/tkuchiki/alp/options"
 )
 
@@ -48,7 +54,7 @@ type HTTPStats struct {
 func NewHTTPStats(useResTimePercentile, useRequestBodySizePercentile, useResponseBodySizePercentile bool, po *PrintOptions) *HTTPStats {
 	return &HTTPStats{
 		hints:                         newHints(),
-		stats:                         make([]*httpStat, 0),
+		stats:                         make([]*HTTPStat, 0),
 		useResponseTimePercentile:     useResTimePercentile,
 		useResponseBodySizePercentile: useResponseBodySizePercentile,
 		printOptions:                  po,
@@ -76,7 +82,7 @@ func (hs *HTTPStats) Set(uri, method string, status int, restime, resBodySize, r
 	hs.stats[idx].Set(status, restime, resBodySize, reqBodySize)
 }
 
-func (hs *HTTPStats) Stats() []*httpStat {
+func (hs *HTTPStats) Stats() []*HTTPStat {
 	return hs.stats
 }
 
@@ -89,7 +95,7 @@ func (hs *HTTPStats) SetOptions(options *options.Options) {
 }
 
 func (hs *HTTPStats) SetURICapturingGroups(groups []string) error {
-	uriGroups, err := CompileUriGroups(groups)
+	uriGroups, err := helpers.CompileUriGroups(groups)
 	if err != nil {
 		return err
 	}
@@ -104,22 +110,24 @@ func (hs *HTTPStats) InitFilter(options *options.Options) error {
 	return hs.filter.Init()
 }
 
-func (hs *HTTPStats) DoFilter(uri, status, timestr string) bool {
-	err := hs.filter.Do(uri, status, timestr)
-	if err == SkipReadLineErr || err != nil {
-		return false
+func (hs *HTTPStats) DoFilter(pstat *parsers.ParsedHTTPStat) (bool, error) {
+	err := hs.filter.Do(pstat)
+	if err == errors.SkipReadLineErr {
+		return false, nil
+	} else if err != nil {
+		return false, err
 	}
 
-	return true
+	return true, nil
 }
 
 func (hs *HTTPStats) SortWithOptions() {
 	hs.Sort(hs.options.Sort, hs.options.Reverse)
 }
 
-type httpStat struct {
+type HTTPStat struct {
 	Uri              string        `yaml:uri`
-	Cnt              int           `yaml:cnt`
+	Cnt              int           `yaml:count`
 	Status1xx        int           `yaml:status1xx`
 	Status2xx        int           `yaml:status2xx`
 	Status3xx        int           `yaml:status3xx`
@@ -129,12 +137,13 @@ type httpStat struct {
 	ResponseTime     *responseTime `yaml:response_time`
 	RequestBodySize  *bodySize     `yaml:request_body_size`
 	ResponseBodySize *bodySize     `yaml:response_body_size`
+	Time             string
 }
 
-type httpStats []*httpStat
+type httpStats []*HTTPStat
 
-func newHTTPStat(uri, method string, useResTimePercentile, useRequestBodySizePercentile, useResponseBodySizePercentile bool) *httpStat {
-	return &httpStat{
+func newHTTPStat(uri, method string, useResTimePercentile, useRequestBodySizePercentile, useResponseBodySizePercentile bool) *HTTPStat {
+	return &HTTPStat{
 		Uri:              uri,
 		Method:           method,
 		ResponseTime:     newResponseTime(useResTimePercentile),
@@ -143,7 +152,7 @@ func newHTTPStat(uri, method string, useResTimePercentile, useRequestBodySizePer
 	}
 }
 
-func (hs *httpStat) Set(status int, restime, reqBodySize, resBodySize float64) {
+func (hs *HTTPStat) Set(status int, restime, reqBodySize, resBodySize float64) {
 	hs.Cnt++
 	hs.setStatus(status)
 	hs.ResponseTime.Set(restime)
@@ -151,7 +160,7 @@ func (hs *httpStat) Set(status int, restime, reqBodySize, resBodySize float64) {
 	hs.ResponseBodySize.Set(resBodySize)
 }
 
-func (hs *httpStat) setStatus(status int) {
+func (hs *HTTPStat) setStatus(status int) {
 	if status >= 100 && status <= 199 {
 		hs.Status1xx++
 	} else if status >= 200 && status <= 299 {
@@ -165,141 +174,141 @@ func (hs *httpStat) setStatus(status int) {
 	}
 }
 
-func (hs *httpStat) StrStatus1xx() string {
+func (hs *HTTPStat) StrStatus1xx() string {
 	return fmt.Sprint(hs.Status1xx)
 }
 
-func (hs *httpStat) StrStatus2xx() string {
+func (hs *HTTPStat) StrStatus2xx() string {
 	return fmt.Sprint(hs.Status2xx)
 }
 
-func (hs *httpStat) StrStatus3xx() string {
+func (hs *HTTPStat) StrStatus3xx() string {
 	return fmt.Sprint(hs.Status3xx)
 }
 
-func (hs *httpStat) StrStatus4xx() string {
+func (hs *HTTPStat) StrStatus4xx() string {
 	return fmt.Sprint(hs.Status4xx)
 }
 
-func (hs *httpStat) StrStatus5xx() string {
+func (hs *HTTPStat) StrStatus5xx() string {
 	return fmt.Sprint(hs.Status5xx)
 }
 
-func (hs *httpStat) Count() int {
+func (hs *HTTPStat) Count() int {
 	return hs.Cnt
 }
 
-func (hs *httpStat) StrCount() string {
+func (hs *HTTPStat) StrCount() string {
 	return fmt.Sprint(hs.Cnt)
 }
 
-func (hs *httpStat) MaxResponseTime() float64 {
+func (hs *HTTPStat) MaxResponseTime() float64 {
 	return hs.ResponseTime.Max
 }
 
-func (hs *httpStat) MinResponseTime() float64 {
+func (hs *HTTPStat) MinResponseTime() float64 {
 	return hs.ResponseTime.Min
 }
 
-func (hs *httpStat) SumResponseTime() float64 {
+func (hs *HTTPStat) SumResponseTime() float64 {
 	return hs.ResponseTime.Sum
 }
 
-func (hs *httpStat) AvgResponseTime() float64 {
+func (hs *HTTPStat) AvgResponseTime() float64 {
 	return hs.ResponseTime.Avg(hs.Cnt)
 }
 
-func (hs *httpStat) P1ResponseTime() float64 {
+func (hs *HTTPStat) P1ResponseTime() float64 {
 	return hs.ResponseTime.P1(hs.Cnt)
 }
 
-func (hs *httpStat) P50ResponseTime() float64 {
+func (hs *HTTPStat) P50ResponseTime() float64 {
 	return hs.ResponseTime.P50(hs.Cnt)
 }
 
-func (hs *httpStat) P90ResponseTime() float64 {
+func (hs *HTTPStat) P90ResponseTime() float64 {
 	return hs.ResponseTime.P90(hs.Cnt)
 }
 
-func (hs *httpStat) P99ResponseTime() float64 {
+func (hs *HTTPStat) P99ResponseTime() float64 {
 	return hs.ResponseTime.P99(hs.Cnt)
 }
 
-func (hs *httpStat) StddevResponseTime() float64 {
+func (hs *HTTPStat) StddevResponseTime() float64 {
 	return hs.ResponseTime.Stddev(hs.Cnt)
 }
 
 // request
-func (hs *httpStat) MaxRequestBodySize() float64 {
+func (hs *HTTPStat) MaxRequestBodySize() float64 {
 	return hs.RequestBodySize.Max
 }
 
-func (hs *httpStat) MinRequestBodySize() float64 {
+func (hs *HTTPStat) MinRequestBodySize() float64 {
 	return hs.RequestBodySize.Min
 }
 
-func (hs *httpStat) SumRequestBodySize() float64 {
+func (hs *HTTPStat) SumRequestBodySize() float64 {
 	return hs.RequestBodySize.Sum
 }
 
-func (hs *httpStat) AvgRequestBodySize() float64 {
+func (hs *HTTPStat) AvgRequestBodySize() float64 {
 	return hs.RequestBodySize.Avg(hs.Cnt)
 }
 
-func (hs *httpStat) P1RequestBodySize() float64 {
+func (hs *HTTPStat) P1RequestBodySize() float64 {
 	return hs.RequestBodySize.P1(hs.Cnt)
 }
 
-func (hs *httpStat) P50RequestBodySize() float64 {
+func (hs *HTTPStat) P50RequestBodySize() float64 {
 	return hs.RequestBodySize.P50(hs.Cnt)
 }
 
-func (hs *httpStat) P90RequestBodySize() float64 {
+func (hs *HTTPStat) P90RequestBodySize() float64 {
 	return hs.RequestBodySize.P90(hs.Cnt)
 }
 
-func (hs *httpStat) P99RequestBodySize() float64 {
+func (hs *HTTPStat) P99RequestBodySize() float64 {
 	return hs.RequestBodySize.P99(hs.Cnt)
 }
 
-func (hs *httpStat) StddevRequestBodySize() float64 {
+func (hs *HTTPStat) StddevRequestBodySize() float64 {
 	return hs.RequestBodySize.Stddev(hs.Cnt)
 }
 
 // response
-func (hs *httpStat) MaxResponseBodySize() float64 {
+func (hs *HTTPStat) MaxResponseBodySize() float64 {
 	return hs.RequestBodySize.Max
 }
 
-func (hs *httpStat) MinResponseBodySize() float64 {
+func (hs *HTTPStat) MinResponseBodySize() float64 {
 	return hs.RequestBodySize.Min
 }
 
-func (hs *httpStat) SumResponseBodySize() float64 {
+func (hs *HTTPStat) SumResponseBodySize() float64 {
 	return hs.RequestBodySize.Sum
 }
 
-func (hs *httpStat) AvgResponseBodySize() float64 {
+func (hs *HTTPStat) AvgResponseBodySize() float64 {
 	return hs.RequestBodySize.Avg(hs.Cnt)
 }
 
-func (hs *httpStat) P1ResponseBodySize() float64 {
+func (hs *HTTPStat) P1ResponseBodySize() float64 {
 	return hs.RequestBodySize.P1(hs.Cnt)
 }
 
-func (hs *httpStat) P50ResponseBodySize() float64 {
+func (hs *HTTPStat) P50ResponseBodySize() float64 {
 	return hs.RequestBodySize.P50(hs.Cnt)
 }
 
-func (hs *httpStat) P90ResponseBodySize() float64 {
+func (hs *HTTPStat) P90ResponseBodySize() float64 {
 	return hs.RequestBodySize.P90(hs.Cnt)
 }
 
-func (hs *httpStat) P99ResponseBodySize() float64 {
+func (hs *HTTPStat) P99ResponseBodySize() float64 {
 	return hs.RequestBodySize.P99(hs.Cnt)
 }
 
-func (hs *httpStat) StddevResponseBodySize() float64 {
+func (hs *HTTPStat) StddevResponseBodySize() float64 {
 	return hs.RequestBodySize.Stddev(hs.Cnt)
 }
 

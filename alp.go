@@ -5,6 +5,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/tkuchiki/alp/errors"
+
 	"github.com/tkuchiki/alp/stats"
 
 	"github.com/tkuchiki/alp/flag"
@@ -95,14 +97,12 @@ func (p *Profiler) Run() error {
 		options.UriLabel(p.flags.UriLabel),
 		options.TimeLabel(p.flags.TimeLabel),
 		options.Limit(p.flags.Limit),
+		options.Location(p.flags.Location),
 		options.NoHeaders(p.flags.NoHeaders),
-		options.StartTime(p.flags.StartTime),
-		options.EndTime(p.flags.EndTime),
-		options.StartTimeDuration(p.flags.StartTimeDuration),
-		options.EndTimeDuration(p.flags.EndTimeDuration),
 		options.CSVIncludes(p.flags.Includes),
 		options.CSVExcludes(p.flags.Excludes),
 		options.CSVGroups(p.flags.Groups),
+		options.Filters(p.flags.Filters),
 	)
 
 	po := stats.NewPrintOptions()
@@ -163,14 +163,20 @@ Loop:
 		if err != nil {
 			if err == io.EOF {
 				break
-			} else if err == stats.SkipReadLineErr {
+			} else if err == errors.SkipReadLineErr {
 				continue Loop
 			}
 
 			return err
 		}
 
-		if !sts.DoFilter(s.Uri, s.Method, s.Time) {
+		var b bool
+		b, err = sts.DoFilter(s)
+		if err != nil {
+			return err
+		}
+
+		if !b {
 			continue Loop
 		}
 

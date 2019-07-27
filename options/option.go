@@ -57,6 +57,7 @@ type Options struct {
 	EndTime           string   `yaml:"end_time"`
 	StartTimeDuration string   `yaml:"start_time_duration"`
 	EndTimeDuration   string   `yaml:"end_time_duration"`
+	Filters           string   `yaml:"filters"`
 	Location          string   `yaml:location`
 }
 
@@ -227,34 +228,10 @@ func CSVGroups(csv string) Option {
 	}
 }
 
-func StartTime(s string) Option {
+func Filters(s string) Option {
 	return func(opts *Options) {
 		if s != "" {
-			opts.StartTime = s
-		}
-	}
-}
-
-func EndTime(s string) Option {
-	return func(opts *Options) {
-		if s != "" {
-			opts.EndTime = s
-		}
-	}
-}
-
-func StartTimeDuration(s string) Option {
-	return func(opts *Options) {
-		if s != "" {
-			opts.StartTimeDuration = s
-		}
-	}
-}
-
-func EndTimeDuration(s string) Option {
-	return func(opts *Options) {
-		if s != "" {
-			opts.EndTimeDuration = s
+			opts.Filters = s
 		}
 	}
 }
@@ -263,6 +240,8 @@ func Location(s string) Option {
 	return func(opts *Options) {
 		if s != "" {
 			opts.Location = s
+		} else {
+			opts.Location = "Local"
 		}
 	}
 }
