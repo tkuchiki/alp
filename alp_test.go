@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tkuchiki/alp/flag"
+	"github.com/tkuchiki/alp/flags"
 )
 
 func TestRun(t *testing.T) {
@@ -44,9 +44,9 @@ func TestRun(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	flags := flag.NewFlags()
+	globalFlags := flags.NewGlobalFlags()
 
-	p.SetFlags(flags)
+	p.SetFlags(globalFlags)
 	p.SetInReader(tmpfile)
 
 	err = p.Run()

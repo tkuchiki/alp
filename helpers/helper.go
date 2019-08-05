@@ -3,19 +3,20 @@ package helpers
 import (
 	"regexp"
 	"strconv"
+	"strings"
 )
 
-func CompileUriGroups(groups []string) ([]*regexp.Regexp, error) {
-	uriGroups := make([]*regexp.Regexp, 0, len(groups))
+func CompileUriMatchingGroups(groups []string) ([]*regexp.Regexp, error) {
+	uriMatchingGroups := make([]*regexp.Regexp, 0, len(groups))
 	for _, pattern := range groups {
 		re, err := regexp.Compile(pattern)
 		if err != nil {
-			return []*regexp.Regexp{}, err
+			return nil, err
 		}
-		uriGroups = append(uriGroups, re)
+		uriMatchingGroups = append(uriMatchingGroups, re)
 	}
 
-	return uriGroups, nil
+	return uriMatchingGroups, nil
 }
 
 func StringToFloat64(val string) (float64, error) {
@@ -24,4 +25,19 @@ func StringToFloat64(val string) (float64, error) {
 
 func StringToInt(val string) (int, error) {
 	return strconv.Atoi(val)
+}
+
+func SplitCSV(val string) []string {
+	strs := strings.Split(val, ",")
+	if len(strs) == 1 && strs[0] == "" {
+		return []string{}
+	}
+
+	trimedStrs := make([]string, 0, len(strs))
+
+	for _, s := range strs {
+		trimedStrs = append(trimedStrs, strings.Trim(s, " "))
+	}
+
+	return trimedStrs
 }

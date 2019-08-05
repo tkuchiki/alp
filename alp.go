@@ -9,7 +9,7 @@ import (
 
 	"github.com/tkuchiki/alp/stats"
 
-	"github.com/tkuchiki/alp/flag"
+	"github.com/tkuchiki/alp/flags"
 	"github.com/tkuchiki/alp/options"
 	"github.com/tkuchiki/alp/parsers"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -22,25 +22,45 @@ type Profiler struct {
 	errWriter    io.Writer
 	inReader     *os.File
 	optionParser *kingpin.Application
-	flags        *flag.Flags
+	subcmdLTSV   *kingpin.CmdClause
+	subcmdRegexp *kingpin.CmdClause
+	subcmdJSON   *kingpin.CmdClause
+	globalFlags  *flags.GlobalFlags
+	ltsvFlags    *flags.LTSVFlags
+	regexpFlags  *flags.RegexpFlags
+	jsonFlags    *flags.JSONFlags
 }
 
 func NewProfiler(outw, errw io.Writer) *Profiler {
+	app := kingpin.New("alp", "Access Log Profiler for LTSV (read from file or stdin).")
 	p := &Profiler{
 		outWriter:    outw,
 		errWriter:    errw,
 		inReader:     os.Stdin,
-		optionParser: kingpin.New("alp", "Access Log Profiler for LTSV (read from file or stdin)."),
+		optionParser: app,
 	}
-	p.flags = flag.NewFlags()
 
-	p.flags.InitFlags(p.optionParser)
+	p.subcmdLTSV = app.Command("ltsv", "ltsv")
+	p.subcmdRegexp = app.Command("regexp", "regexp")
+	p.subcmdJSON = app.Command("json", "json")
+
+	p.globalFlags = flags.NewGlobalFlags()
+	p.globalFlags.InitGlobalFlags(p.optionParser)
+
+	p.ltsvFlags = flags.NewLTSVFlags()
+	p.ltsvFlags.InitFlags(p.subcmdLTSV)
+
+	p.regexpFlags = flags.NewRegexpFlags()
+	p.regexpFlags.InitFlags(p.subcmdRegexp)
+
+	p.jsonFlags = flags.NewJSONFlags()
+	p.jsonFlags.InitFlags(p.subcmdJSON)
 
 	return p
 }
 
-func (p *Profiler) SetFlags(flags *flag.Flags) {
-	p.flags = flags
+func (p *Profiler) SetFlags(flags *flags.GlobalFlags) {
+	p.globalFlags = flags
 }
 
 func (p *Profiler) SetInReader(f *os.File) {
@@ -61,15 +81,23 @@ func (p *Profiler) Open(filename string) (*os.File, error) {
 }
 
 func (p *Profiler) Run() error {
+	var command string
 	p.optionParser.Version(version)
-	kingpin.MustParse(p.optionParser.Parse(os.Args[1:]))
+	switch kingpin.MustParse(p.optionParser.Parse(os.Args[1:])) {
+	case p.subcmdLTSV.FullCommand():
+		command = p.subcmdLTSV.FullCommand()
+	case p.subcmdRegexp.FullCommand():
+		command = p.subcmdRegexp.FullCommand()
+	case p.subcmdJSON.FullCommand():
+		command = p.subcmdJSON.FullCommand()
+	}
 
-	sort := flag.SortOptions[p.flags.Sort]
+	sort := flags.SortOptions[p.globalFlags.Sort]
 
 	var err error
 	var opts *options.Options
-	if p.flags.Config != "" {
-		cf, err := os.Open(p.flags.Config)
+	if p.globalFlags.Config != "" {
+		cf, err := os.Open(p.globalFlags.Config)
 		if err != nil {
 			return err
 		}
@@ -84,33 +112,27 @@ func (p *Profiler) Run() error {
 	}
 
 	opts = options.SetOptions(opts,
-		options.File(p.flags.File),
+		options.File(p.globalFlags.File),
 		options.Sort(sort),
-		options.Reverse(p.flags.Reverse),
-		options.QueryString(p.flags.QueryString),
-		options.Tsv(p.flags.Tsv),
-		options.ApptimeLabel(p.flags.ApptimeLabel),
-		options.ReqtimeLabel(p.flags.ReqtimeLabel),
-		options.StatusLabel(p.flags.StatusLabel),
-		options.SizeLabel(p.flags.SizeLabel),
-		options.MethodLabel(p.flags.MethodLabel),
-		options.UriLabel(p.flags.UriLabel),
-		options.TimeLabel(p.flags.TimeLabel),
-		options.Limit(p.flags.Limit),
-		options.Location(p.flags.Location),
-		options.NoHeaders(p.flags.NoHeaders),
-		options.CSVIncludes(p.flags.Includes),
-		options.CSVExcludes(p.flags.Excludes),
-		options.CSVGroups(p.flags.Groups),
-		options.Filters(p.flags.Filters),
+		options.Reverse(p.globalFlags.Reverse),
+		options.QueryString(p.globalFlags.QueryString),
+		options.Tsv(p.globalFlags.Tsv),
+		options.Limit(p.globalFlags.Limit),
+		options.Location(p.globalFlags.Location),
+		options.Output(p.globalFlags.Output),
+		options.NoHeaders(p.globalFlags.NoHeaders),
+		options.CSVGroups(p.globalFlags.MatchingGroups),
+		options.Filters(p.globalFlags.Filters),
+		//ltsv
+		options.ApptimeLabel(p.ltsvFlags.ApptimeLabel),
+		options.StatusLabel(p.ltsvFlags.StatusLabel),
+		options.SizeLabel(p.ltsvFlags.SizeLabel),
+		options.MethodLabel(p.ltsvFlags.MethodLabel),
+		options.UriLabel(p.ltsvFlags.UriLabel),
+		options.TimeLabel(p.ltsvFlags.TimeLabel),
 	)
 
-	po := stats.NewPrintOptions()
-	po.SetWriter(p.outWriter)
-	if opts.Tsv {
-		po.SetFormat("tsv")
-	}
-	sts := stats.NewHTTPStats(true, false, false, po)
+	sts := stats.NewHTTPStats(true, false, false)
 
 	err = sts.InitFilter(opts)
 	if err != nil {
@@ -119,8 +141,17 @@ func (p *Profiler) Run() error {
 
 	sts.SetOptions(opts)
 
-	if p.flags.Load != "" {
-		lf, err := os.Open(p.flags.Load)
+	printFormat := "table"
+	if opts.Tsv {
+		printFormat = "tsv"
+	}
+	printer := stats.NewPrinter(p.outWriter, opts.Output, printFormat)
+	if err = printer.Validate(); err != nil {
+		return err
+	}
+
+	if p.globalFlags.Load != "" {
+		lf, err := os.Open(p.globalFlags.Load)
 		if err != nil {
 			return err
 		}
@@ -131,7 +162,7 @@ func (p *Profiler) Run() error {
 		defer lf.Close()
 
 		sts.SortWithOptions()
-		sts.Print()
+		printer.Print(sts)
 		return nil
 	}
 
@@ -141,18 +172,40 @@ func (p *Profiler) Run() error {
 	}
 	defer f.Close()
 
-	if len(opts.Groups) > 0 {
-		err = sts.SetURICapturingGroups(opts.Groups)
+	if len(opts.MatchingGroups) > 0 {
+		err = sts.SetURIMatchingGroups(opts.MatchingGroups)
 		if err != nil {
 			return err
 		}
 	}
 
-	label := parsers.NewLTSVLabel(opts.UriLabel, opts.ApptimeLabel, opts.ReqtimeLabel,
-		opts.SizeLabel, opts.StatusLabel, opts.MethodLabel, opts.TimeLabel,
-	)
+	var parser parsers.Parser
+	switch command {
+	case "ltsv":
+		label := parsers.NewLTSVLabel(opts.LTSV.UriLabel, opts.LTSV.MethodLabel, opts.LTSV.TimeLabel,
+			opts.LTSV.ApptimeLabel, opts.LTSV.SizeLabel, opts.LTSV.StatusLabel,
+		)
+		parser = parsers.NewLTSVParser(f, label, opts.QueryString)
+	case "regexp":
+		expr := `^(\S+)\s` + // remote host
+			`\S+\s+` +
+			`(\S+\s+)+` + // user
+			`\[(?P<time>[^]]+)\]\s` + // time
+			`"(?P<method>\S*)\s?` + // method
+			`(?P<uri>(?:[^"]*(?:\\")?)*)\s` + // URL
+			`([^"]*)"\s` + // protocol
+			`(?P<status>\S+)\s` + // status code
+			`(?P<body_bytes>\S+)\s` + // bytes
+			`"((?:[^"]*(?:\\")?)*)"\s` + // referer
+			`"(.*)"` + // user agent
+			`\s(?P<response_time>.*)$`
+		names := parsers.NewSubexpNames("", "", "", "", "", "")
+		parser, err = parsers.NewRegexpParser(f, expr, names, opts.QueryString)
+	case "json":
+		keys := parsers.NewJSONKeys("", "", "", "", "", "")
+		parser = parsers.NewJSONParser(f, keys, opts.QueryString)
+	}
 
-	parser := parsers.NewLTSVParser(f, label, opts.QueryString)
 	if err != nil {
 		return err
 	}
@@ -180,15 +233,15 @@ Loop:
 			continue Loop
 		}
 
-		sts.Set(s.Uri, s.Method, s.Status, s.ResponseTime, s.BodySize, 0)
+		sts.Set(s.Uri, s.Method, s.Status, s.ResponseTime, s.BodyBytes, 0)
 
 		if sts.CountUris() > opts.Limit {
 			return fmt.Errorf("Too many URI's (%d or less)", opts.Limit)
 		}
 	}
 
-	if p.flags.Dump != "" {
-		df, err := os.OpenFile(p.flags.Dump, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	if p.globalFlags.Dump != "" {
+		df, err := os.OpenFile(p.globalFlags.Dump, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 		err = sts.DumpStats(df)
 		if err != nil {
 			return err
@@ -197,7 +250,7 @@ Loop:
 	}
 
 	sts.SortWithOptions()
-	sts.Print()
+	printer.Print(sts)
 
 	return nil
 }
