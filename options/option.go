@@ -3,62 +3,99 @@ package options
 import (
 	"io"
 	"io/ioutil"
-	"strings"
+
+	"github.com/tkuchiki/alp/helpers"
 
 	"gopkg.in/yaml.v2"
 )
 
 const (
-	DefaultSortOption         = "max"
+	DefaultSortOption     = "max"
+	DefaultLimitOption    = 5000
+	DefaultLocationOption = "Local"
+	DefaultOutputOption   = "all"
+	// ltsv
 	DefaultApptimeLabelOption = "apptime"
-	DefaultReqtimeLabelOption = "reqtime"
 	DefaultStatusLabelOption  = "status"
 	DefaultSizeLabelOption    = "size"
 	DefaultMethodLabelOption  = "method"
 	DefaultUriLabelOption     = "uri"
 	DefaultTimeLabelOption    = "time"
-	DefaultLimitOption        = 5000
+	// json
+	DefaultUriKeyOption          = "uri"
+	DefaultMethodKeyOption       = "method"
+	DefaultTimeKeyOption         = "time"
+	DefaultResponseTimeKeyOption = "response_time"
+	DefaultBodyBytesKeyOption    = "body_bytes"
+	DefaultStatusKeyOption       = "status"
+	// regexp
+	DefaultPatternOption = `^(\S+)\s` + // remote host
+		`\S+\s+` +
+		`(\S+\s+)+` + // user
+		`\[(?P<time>[^]]+)\]\s` + // time
+		`"(?P<method>\S*)\s?` + // method
+		`(?P<uri>(?:[^"]*(?:\\")?)*)\s` + // URL
+		`([^"]*)"\s` + // protocol
+		`(?P<status>\S+)\s` + // status code
+		`(?P<body_bytes>\S+)\s` + // bytes
+		`"((?:[^"]*(?:\\")?)*)"\s` + // referer
+		`"(.*)"` + // user agent
+		`\s(?P<response_time>.*)$`
+	DefaultUriSubexpOption          = "uri"
+	DefaultMethodSubexpOption       = "method"
+	DefaultTimeSubexpOption         = "time"
+	DefaultResponseTimeSubexpOption = "response_time"
+	DefaultBodyBytesSubexpOption    = "body_bytes"
+	DefaultStatusSubexpOption       = "status"
 )
 
-func splitCSV(val string) []string {
-	strs := strings.Split(val, ",")
-	if len(strs) == 1 && strs[0] == "" {
-		return []string{}
-	}
-
-	trimedStrs := make([]string, 0, len(strs))
-
-	for _, s := range strs {
-		trimedStrs = append(trimedStrs, strings.Trim(s, " "))
-	}
-
-	return trimedStrs
+type Options struct {
+	File              string         `yaml:"file"`
+	Sort              string         `yaml:"sort"`
+	Reverse           bool           `yaml:"reverse"`
+	QueryString       bool           `yaml:"query_string"`
+	Tsv               bool           `yaml:"tsv"`
+	NoHeaders         bool           `yaml:no_headers`
+	Limit             int            `yaml:"limit"`
+	MatchingGroups    []string       `yaml:"matching_groups"`
+	StartTime         string         `yaml:"start_time"`
+	EndTime           string         `yaml:"end_time"`
+	StartTimeDuration string         `yaml:"start_time_duration"`
+	EndTimeDuration   string         `yaml:"end_time_duration"`
+	Filters           string         `yaml:"filters"`
+	Location          string         `yaml:location`
+	Output            string         `yaml:output`
+	LTSV              *LTSVOptions   `yaml:ltsv`
+	Regexp            *RegexpOptions `yaml:regexp`
+	JSON              *JSONOptions   `yaml:json`
 }
 
-type Options struct {
-	File              string   `yaml:"file"`
-	Sort              string   `yaml:"sort"`
-	Reverse           bool     `yaml:"reverse"`
-	QueryString       bool     `yaml:"query_string"`
-	Tsv               bool     `yaml:"tsv"`
-	NoHeaders         bool     `yaml:no_headers`
-	ApptimeLabel      string   `yaml:"apptime_label"`
-	ReqtimeLabel      string   `yaml:"reqtime_label"`
-	StatusLabel       string   `yaml:"status_label"`
-	SizeLabel         string   `yaml:"size_label"`
-	MethodLabel       string   `yaml:"method_label"`
-	UriLabel          string   `yaml:"uri_label"`
-	TimeLabel         string   `yaml:"time_label"`
-	Limit             int      `yaml:"limit"`
-	Includes          []string `yaml:"includes"`
-	Excludes          []string `yaml:"excludes"`
-	Groups            []string `yaml:"groups"`
-	StartTime         string   `yaml:"start_time"`
-	EndTime           string   `yaml:"end_time"`
-	StartTimeDuration string   `yaml:"start_time_duration"`
-	EndTimeDuration   string   `yaml:"end_time_duration"`
-	Filters           string   `yaml:"filters"`
-	Location          string   `yaml:location`
+type LTSVOptions struct {
+	ApptimeLabel string `yaml:"apptime_label"`
+	StatusLabel  string `yaml:"status_label"`
+	SizeLabel    string `yaml:"size_label"`
+	MethodLabel  string `yaml:"method_label"`
+	UriLabel     string `yaml:"uri_label"`
+	TimeLabel    string `yaml:"time_label"`
+}
+
+type RegexpOptions struct {
+	Pattern            string `yaml:pattern`
+	UriSubexp          string `yaml:uri_subexp`
+	MethodSubexp       string `yaml:method_subexp`
+	TimeSubexp         string `yaml:time_subexp`
+	ResponseTimeSubexp string `yaml:response_time_subexp`
+	BodyBytesSubexp    string `yaml:body_bytes_subexp`
+	StatusSubexp       string `yaml:status_subexp`
+}
+
+type JSONOptions struct {
+	UriKey          string `yaml:uri_key`
+	MethodKey       string `yaml:method_key`
+	TimeKey         string `yaml:time_key`
+	ResponseTimeKey string `yaml:response_time_key`
+	BodyBytesKey    string `yaml:body_bytes_key`
+	StatusKey       string `yaml:status_key`
 }
 
 type Option func(*Options)
@@ -111,62 +148,6 @@ func NoHeaders(b bool) Option {
 	}
 }
 
-func ApptimeLabel(s string) Option {
-	return func(opts *Options) {
-		if s != "" {
-			opts.ApptimeLabel = s
-		}
-	}
-}
-
-func ReqtimeLabel(s string) Option {
-	return func(opts *Options) {
-		if s != "" {
-			opts.ReqtimeLabel = s
-		}
-	}
-}
-
-func StatusLabel(s string) Option {
-	return func(opts *Options) {
-		if s != "" {
-			opts.StatusLabel = s
-		}
-	}
-}
-
-func SizeLabel(s string) Option {
-	return func(opts *Options) {
-		if s != "" {
-			opts.SizeLabel = s
-		}
-	}
-}
-
-func MethodLabel(s string) Option {
-	return func(opts *Options) {
-		if s != "" {
-			opts.MethodLabel = s
-		}
-	}
-}
-
-func UriLabel(s string) Option {
-	return func(opts *Options) {
-		if s != "" {
-			opts.UriLabel = s
-		}
-	}
-}
-
-func TimeLabel(s string) Option {
-	return func(opts *Options) {
-		if s != "" {
-			opts.TimeLabel = s
-		}
-	}
-}
-
 func Limit(i int) Option {
 	return func(opts *Options) {
 		if i > 0 {
@@ -175,55 +156,19 @@ func Limit(i int) Option {
 	}
 }
 
-func Includes(values []string) Option {
+func MatchingGroups(values []string) Option {
 	return func(opts *Options) {
 		if len(values) > 0 {
-			opts.Includes = values
-		}
-	}
-}
-
-func CSVIncludes(csv string) Option {
-	return func(opts *Options) {
-		i := splitCSV(csv)
-		if len(i) > 0 {
-			opts.Includes = i
-		}
-	}
-
-}
-
-func Excludes(values []string) Option {
-	return func(opts *Options) {
-		if len(values) > 0 {
-			opts.Excludes = values
-		}
-	}
-}
-
-func CSVExcludes(csv string) Option {
-	return func(opts *Options) {
-		e := splitCSV(csv)
-		if len(e) > 0 {
-			opts.Excludes = e
-		}
-	}
-
-}
-
-func Groups(values []string) Option {
-	return func(opts *Options) {
-		if len(values) > 0 {
-			opts.Groups = values
+			opts.MatchingGroups = values
 		}
 	}
 }
 
 func CSVGroups(csv string) Option {
 	return func(opts *Options) {
-		a := splitCSV(csv)
+		a := helpers.SplitCSV(csv)
 		if len(a) > 0 {
-			opts.Groups = a
+			opts.MatchingGroups = a
 		}
 	}
 }
@@ -240,23 +185,210 @@ func Location(s string) Option {
 	return func(opts *Options) {
 		if s != "" {
 			opts.Location = s
-		} else {
-			opts.Location = "Local"
+		}
+	}
+}
+
+func Output(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.Output = s
+		}
+	}
+}
+
+// ltsv
+func ApptimeLabel(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.LTSV.ApptimeLabel = s
+		}
+	}
+}
+
+func StatusLabel(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.LTSV.StatusLabel = s
+		}
+	}
+}
+
+func SizeLabel(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.LTSV.SizeLabel = s
+		}
+	}
+}
+
+func MethodLabel(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.LTSV.MethodLabel = s
+		}
+	}
+}
+
+func UriLabel(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.LTSV.UriLabel = s
+		}
+	}
+}
+
+func TimeLabel(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.LTSV.TimeLabel = s
+		}
+	}
+}
+
+// regexp
+func Pattern(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.Regexp.Pattern = s
+		}
+	}
+}
+
+func UriSubexp(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.Regexp.UriSubexp = s
+		}
+	}
+}
+
+func MethodSubexp(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.Regexp.MethodSubexp = s
+		}
+	}
+}
+
+func TimeSubexp(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.Regexp.TimeSubexp = s
+		}
+	}
+}
+
+func ResponseTimeSubexp(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.Regexp.ResponseTimeSubexp = s
+		}
+	}
+}
+
+func BodyBytesSubexp(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.Regexp.BodyBytesSubexp = s
+		}
+	}
+}
+
+func StatusSubexp(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.Regexp.StatusSubexp = s
+		}
+	}
+}
+
+// json
+func UriKey(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.JSON.UriKey = s
+		}
+	}
+}
+
+func MethodKey(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.JSON.MethodKey = s
+		}
+	}
+}
+
+func TimeKey(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.JSON.TimeKey = s
+		}
+	}
+}
+
+func ResponseTimeKey(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.JSON.ResponseTimeKey = s
+		}
+	}
+}
+
+func BodyBytesKey(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.JSON.BodyBytesKey = s
+		}
+	}
+}
+
+func StatusKey(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.JSON.StatusKey = s
 		}
 	}
 }
 
 func NewOptions(opt ...Option) *Options {
-	options := &Options{
-		Sort:         DefaultSortOption,
+	ltsv := &LTSVOptions{
 		ApptimeLabel: DefaultApptimeLabelOption,
-		ReqtimeLabel: DefaultReqtimeLabelOption,
 		StatusLabel:  DefaultStatusLabelOption,
 		SizeLabel:    DefaultSizeLabelOption,
 		MethodLabel:  DefaultMethodLabelOption,
 		UriLabel:     DefaultUriLabelOption,
 		TimeLabel:    DefaultTimeLabelOption,
-		Limit:        DefaultLimitOption,
+	}
+
+	regexp := &RegexpOptions{
+		Pattern:            DefaultPatternOption,
+		UriSubexp:          DefaultUriSubexpOption,
+		MethodSubexp:       DefaultMethodSubexpOption,
+		TimeSubexp:         DefaultTimeSubexpOption,
+		ResponseTimeSubexp: DefaultResponseTimeSubexpOption,
+		BodyBytesSubexp:    DefaultBodyBytesSubexpOption,
+		StatusSubexp:       DefaultStatusSubexpOption,
+	}
+
+	json := &JSONOptions{
+		UriKey:          DefaultUriKeyOption,
+		MethodKey:       DefaultMethodKeyOption,
+		TimeKey:         DefaultTimeKeyOption,
+		ResponseTimeKey: DefaultResponseTimeKeyOption,
+		BodyBytesKey:    DefaultBodyBytesKeyOption,
+		StatusKey:       DefaultStatusKeyOption,
+	}
+
+	options := &Options{
+		Sort:     DefaultSortOption,
+		Limit:    DefaultLimitOption,
+		Location: DefaultLocationOption,
+		Output:   DefaultOutputOption,
+		LTSV:     ltsv,
+		Regexp:   regexp,
+		JSON:     json,
 	}
 
 	for _, o := range opt {
