@@ -3,36 +3,36 @@ package stats
 import "sort"
 
 const (
-	SortCount                  = "Count"
-	SortUri                    = "Uri"
-	SortMethod                 = "Method"
-	SortMaxResponseTime        = "MaxResponseTime"
-	SortMinResponseTime        = "MinResponseTime"
-	SortSumResponseTime        = "SumResponseTime"
-	SortAvgResponseTime        = "AvgResponseTime"
-	SortP1ResponseTime         = "P1ResponseTime"
-	SortP50ResponseTime        = "P50ResponseTime"
-	SortP90ResponseTime        = "P90ResponseTime"
-	SortP99ResponseTime        = "P99ResponseTime"
-	SortStddevResponseTime     = "StddevResponseTime"
-	SortMaxRequestBodySize     = "MaxRequestBodySize"
-	SortMinRequestBodySize     = "MinRequestBodySize"
-	SortSumRequestBodySize     = "SumRequestBodySize"
-	SortAvgRequestBodySize     = "AvgRequestBodySize"
-	SortP1RequestBodySize      = "P1RequestBodySize"
-	SortP50RequestBodySize     = "P50RequestBodySize"
-	SortP90RequestBodySize     = "P90RequestBodySize"
-	SortP99RequestBodySize     = "P99RequestBodySize"
-	SortStddevRequestBodySize  = "StddevRequestBodySize"
-	SortMaxResponseBodySize    = "MaxResponseBodySize"
-	SortMinResponseBodySize    = "MinResponseBodySize"
-	SortSumResponseBodySize    = "SumResponseBodySize"
-	SortAvgResponseBodySize    = "AvgResponseBodySize"
-	SortP1ResponseBodySize     = "P1ResponseBodySize"
-	SortP50ResponseBodySize    = "P50ResponseBodySize"
-	SortP90ResponseBodySize    = "P90ResponseBodySize"
-	SortP99ResponseBodySize    = "P99ResponseBodySize"
-	SortStddevResponseBodySize = "StddevResponseBodySize"
+	SortCount                   = "Count"
+	SortUri                     = "Uri"
+	SortMethod                  = "Method"
+	SortMaxResponseTime         = "MaxResponseTime"
+	SortMinResponseTime         = "MinResponseTime"
+	SortSumResponseTime         = "SumResponseTime"
+	SortAvgResponseTime         = "AvgResponseTime"
+	SortP1ResponseTime          = "P1ResponseTime"
+	SortP50ResponseTime         = "P50ResponseTime"
+	SortP90ResponseTime         = "P90ResponseTime"
+	SortP99ResponseTime         = "P99ResponseTime"
+	SortStddevResponseTime      = "StddevResponseTime"
+	SortMaxRequestBodyBytes     = "MaxRequestBodyBytes"
+	SortMinRequestBodyBytes     = "MinRequestBodyBytes"
+	SortSumRequestBodyBytes     = "SumRequestBodyBytes"
+	SortAvgRequestBodyBytes     = "AvgRequestBodyBytes"
+	SortP1RequestBodyBytes      = "P1RequestBodyBytes"
+	SortP50RequestBodyBytes     = "P50RequestBodyBytes"
+	SortP90RequestBodyBytes     = "P90RequestBodyBytes"
+	SortP99RequestBodyBytes     = "P99RequestBodyBytes"
+	SortStddevRequestBodyBytes  = "StddevRequestBodyBytes"
+	SortMaxResponseBodyBytes    = "MaxResponseBodyBytes"
+	SortMinResponseBodyBytes    = "MinResponseBodyBytes"
+	SortSumResponseBodyBytes    = "SumResponseBodyBytes"
+	SortAvgResponseBodyBytes    = "AvgResponseBodyBytes"
+	SortP1ResponseBodyBytes     = "P1ResponseBodyBytes"
+	SortP50ResponseBodyBytes    = "P50ResponseBodyBytes"
+	SortP90ResponseBodyBytes    = "P90ResponseBodyBytes"
+	SortP99ResponseBodyBytes    = "P99ResponseBodyBytes"
+	SortStddevResponseBodyBytes = "StddevResponseBodyBytes"
 )
 
 func (hs *HTTPStats) Sort(sortType string, reverse bool) {
@@ -62,44 +62,44 @@ func (hs *HTTPStats) Sort(sortType string, reverse bool) {
 		hs.SortP99ResponseTime(reverse)
 	case SortStddevResponseTime:
 		hs.SortStddevResponseTime(reverse)
-	// request body size
-	case SortMaxRequestBodySize:
-		hs.SortMaxRequestBodySize(reverse)
-	case SortMinRequestBodySize:
-		hs.SortMinRequestBodySize(reverse)
-	case SortSumRequestBodySize:
-		hs.SortSumRequestBodySize(reverse)
-	case SortAvgRequestBodySize:
-		hs.SortAvgRequestBodySize(reverse)
-	case SortP1RequestBodySize:
-		hs.SortP1RequestBodySize(reverse)
-	case SortP50RequestBodySize:
-		hs.SortP50RequestBodySize(reverse)
-	case SortP90RequestBodySize:
-		hs.SortP90RequestBodySize(reverse)
-	case SortP99RequestBodySize:
-		hs.SortP99RequestBodySize(reverse)
-	case SortStddevRequestBodySize:
-		hs.SortStddevRequestBodySize(reverse)
-	// response body size
-	case SortMaxResponseBodySize:
-		hs.SortMaxResponseBodySize(reverse)
-	case SortMinResponseBodySize:
-		hs.SortMinResponseBodySize(reverse)
-	case SortSumResponseBodySize:
-		hs.SortSumResponseBodySize(reverse)
-	case SortAvgResponseBodySize:
-		hs.SortAvgResponseBodySize(reverse)
-	case SortP1ResponseBodySize:
-		hs.SortP1ResponseBodySize(reverse)
-	case SortP50ResponseBodySize:
-		hs.SortP50ResponseBodySize(reverse)
-	case SortP90ResponseBodySize:
-		hs.SortP90ResponseBodySize(reverse)
-	case SortP99ResponseBodySize:
-		hs.SortP99ResponseBodySize(reverse)
-	case SortStddevResponseBodySize:
-		hs.SortStddevResponseBodySize(reverse)
+	// request body bytes
+	case SortMaxRequestBodyBytes:
+		hs.SortMaxRequestBodyBytes(reverse)
+	case SortMinRequestBodyBytes:
+		hs.SortMinRequestBodyBytes(reverse)
+	case SortSumRequestBodyBytes:
+		hs.SortSumRequestBodyBytes(reverse)
+	case SortAvgRequestBodyBytes:
+		hs.SortAvgRequestBodyBytes(reverse)
+	case SortP1RequestBodyBytes:
+		hs.SortP1RequestBodyBytes(reverse)
+	case SortP50RequestBodyBytes:
+		hs.SortP50RequestBodyBytes(reverse)
+	case SortP90RequestBodyBytes:
+		hs.SortP90RequestBodyBytes(reverse)
+	case SortP99RequestBodyBytes:
+		hs.SortP99RequestBodyBytes(reverse)
+	case SortStddevRequestBodyBytes:
+		hs.SortStddevRequestBodyBytes(reverse)
+	// response body bytes
+	case SortMaxResponseBodyBytes:
+		hs.SortMaxResponseBodyBytes(reverse)
+	case SortMinResponseBodyBytes:
+		hs.SortMinResponseBodyBytes(reverse)
+	case SortSumResponseBodyBytes:
+		hs.SortSumResponseBodyBytes(reverse)
+	case SortAvgResponseBodyBytes:
+		hs.SortAvgResponseBodyBytes(reverse)
+	case SortP1ResponseBodyBytes:
+		hs.SortP1ResponseBodyBytes(reverse)
+	case SortP50ResponseBodyBytes:
+		hs.SortP50ResponseBodyBytes(reverse)
+	case SortP90ResponseBodyBytes:
+		hs.SortP90ResponseBodyBytes(reverse)
+	case SortP99ResponseBodyBytes:
+		hs.SortP99ResponseBodyBytes(reverse)
+	case SortStddevResponseBodyBytes:
+		hs.SortStddevResponseBodyBytes(reverse)
 	default:
 		hs.SortCount(reverse)
 	}
@@ -250,219 +250,219 @@ func (hs *HTTPStats) SortStddevResponseTime(reverse bool) {
 }
 
 // request
-func (hs *HTTPStats) SortMaxRequestBodySize(reverse bool) {
+func (hs *HTTPStats) SortMaxRequestBodyBytes(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].MaxRequestBodySize() > hs.stats[j].MaxRequestBodySize()
+			return hs.stats[i].MaxRequestBodyBytes() > hs.stats[j].MaxRequestBodyBytes()
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].MaxRequestBodySize() < hs.stats[j].MaxRequestBodySize()
+			return hs.stats[i].MaxRequestBodyBytes() < hs.stats[j].MaxRequestBodyBytes()
 		})
 	}
 }
 
-func (hs *HTTPStats) SortMinRequestBodySize(reverse bool) {
+func (hs *HTTPStats) SortMinRequestBodyBytes(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].MinRequestBodySize() > hs.stats[j].MinRequestBodySize()
+			return hs.stats[i].MinRequestBodyBytes() > hs.stats[j].MinRequestBodyBytes()
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].MinRequestBodySize() < hs.stats[j].MinRequestBodySize()
+			return hs.stats[i].MinRequestBodyBytes() < hs.stats[j].MinRequestBodyBytes()
 		})
 	}
 }
 
-func (hs *HTTPStats) SortSumRequestBodySize(reverse bool) {
+func (hs *HTTPStats) SortSumRequestBodyBytes(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].SumRequestBodySize() > hs.stats[j].SumRequestBodySize()
+			return hs.stats[i].SumRequestBodyBytes() > hs.stats[j].SumRequestBodyBytes()
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].SumRequestBodySize() < hs.stats[j].SumRequestBodySize()
+			return hs.stats[i].SumRequestBodyBytes() < hs.stats[j].SumRequestBodyBytes()
 		})
 	}
 }
 
-func (hs *HTTPStats) SortAvgRequestBodySize(reverse bool) {
+func (hs *HTTPStats) SortAvgRequestBodyBytes(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].AvgRequestBodySize() > hs.stats[j].AvgRequestBodySize()
+			return hs.stats[i].AvgRequestBodyBytes() > hs.stats[j].AvgRequestBodyBytes()
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].AvgRequestBodySize() < hs.stats[j].AvgRequestBodySize()
+			return hs.stats[i].AvgRequestBodyBytes() < hs.stats[j].AvgRequestBodyBytes()
 		})
 	}
 }
 
-func (hs *HTTPStats) SortP1RequestBodySize(reverse bool) {
+func (hs *HTTPStats) SortP1RequestBodyBytes(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P1RequestBodySize() > hs.stats[j].P1RequestBodySize()
+			return hs.stats[i].P1RequestBodyBytes() > hs.stats[j].P1RequestBodyBytes()
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P1RequestBodySize() < hs.stats[j].P1RequestBodySize()
+			return hs.stats[i].P1RequestBodyBytes() < hs.stats[j].P1RequestBodyBytes()
 		})
 	}
 }
 
-func (hs *HTTPStats) SortP50RequestBodySize(reverse bool) {
+func (hs *HTTPStats) SortP50RequestBodyBytes(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P50RequestBodySize() > hs.stats[j].P50RequestBodySize()
+			return hs.stats[i].P50RequestBodyBytes() > hs.stats[j].P50RequestBodyBytes()
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P50RequestBodySize() < hs.stats[j].P50RequestBodySize()
+			return hs.stats[i].P50RequestBodyBytes() < hs.stats[j].P50RequestBodyBytes()
 		})
 	}
 }
 
-func (hs *HTTPStats) SortP90RequestBodySize(reverse bool) {
+func (hs *HTTPStats) SortP90RequestBodyBytes(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P90RequestBodySize() > hs.stats[j].P90RequestBodySize()
+			return hs.stats[i].P90RequestBodyBytes() > hs.stats[j].P90RequestBodyBytes()
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P90RequestBodySize() < hs.stats[j].P90RequestBodySize()
+			return hs.stats[i].P90RequestBodyBytes() < hs.stats[j].P90RequestBodyBytes()
 		})
 	}
 }
 
-func (hs *HTTPStats) SortP99RequestBodySize(reverse bool) {
+func (hs *HTTPStats) SortP99RequestBodyBytes(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P99RequestBodySize() > hs.stats[j].P99RequestBodySize()
+			return hs.stats[i].P99RequestBodyBytes() > hs.stats[j].P99RequestBodyBytes()
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P99RequestBodySize() < hs.stats[j].P99RequestBodySize()
+			return hs.stats[i].P99RequestBodyBytes() < hs.stats[j].P99RequestBodyBytes()
 		})
 	}
 }
 
-func (hs *HTTPStats) SortStddevRequestBodySize(reverse bool) {
+func (hs *HTTPStats) SortStddevRequestBodyBytes(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].StddevRequestBodySize() > hs.stats[j].StddevRequestBodySize()
+			return hs.stats[i].StddevRequestBodyBytes() > hs.stats[j].StddevRequestBodyBytes()
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].StddevRequestBodySize() < hs.stats[j].StddevRequestBodySize()
+			return hs.stats[i].StddevRequestBodyBytes() < hs.stats[j].StddevRequestBodyBytes()
 		})
 	}
 }
 
 // response
-func (hs *HTTPStats) SortMaxResponseBodySize(reverse bool) {
+func (hs *HTTPStats) SortMaxResponseBodyBytes(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].MaxResponseBodySize() > hs.stats[j].MaxResponseBodySize()
+			return hs.stats[i].MaxResponseBodyBytes() > hs.stats[j].MaxResponseBodyBytes()
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].MaxResponseBodySize() < hs.stats[j].MaxResponseBodySize()
+			return hs.stats[i].MaxResponseBodyBytes() < hs.stats[j].MaxResponseBodyBytes()
 		})
 	}
 }
 
-func (hs *HTTPStats) SortMinResponseBodySize(reverse bool) {
+func (hs *HTTPStats) SortMinResponseBodyBytes(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].MinResponseBodySize() > hs.stats[j].MinResponseBodySize()
+			return hs.stats[i].MinResponseBodyBytes() > hs.stats[j].MinResponseBodyBytes()
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].MinResponseBodySize() < hs.stats[j].MinResponseBodySize()
+			return hs.stats[i].MinResponseBodyBytes() < hs.stats[j].MinResponseBodyBytes()
 		})
 	}
 }
 
-func (hs *HTTPStats) SortSumResponseBodySize(reverse bool) {
+func (hs *HTTPStats) SortSumResponseBodyBytes(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].SumResponseBodySize() > hs.stats[j].SumResponseBodySize()
+			return hs.stats[i].SumResponseBodyBytes() > hs.stats[j].SumResponseBodyBytes()
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].SumResponseBodySize() < hs.stats[j].SumResponseBodySize()
+			return hs.stats[i].SumResponseBodyBytes() < hs.stats[j].SumResponseBodyBytes()
 		})
 	}
 }
 
-func (hs *HTTPStats) SortAvgResponseBodySize(reverse bool) {
+func (hs *HTTPStats) SortAvgResponseBodyBytes(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].AvgResponseBodySize() > hs.stats[j].AvgResponseBodySize()
+			return hs.stats[i].AvgResponseBodyBytes() > hs.stats[j].AvgResponseBodyBytes()
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].AvgResponseBodySize() < hs.stats[j].AvgResponseBodySize()
+			return hs.stats[i].AvgResponseBodyBytes() < hs.stats[j].AvgResponseBodyBytes()
 		})
 	}
 }
 
-func (hs *HTTPStats) SortP1ResponseBodySize(reverse bool) {
+func (hs *HTTPStats) SortP1ResponseBodyBytes(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P1ResponseBodySize() > hs.stats[j].P1ResponseBodySize()
+			return hs.stats[i].P1ResponseBodyBytes() > hs.stats[j].P1ResponseBodyBytes()
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P1ResponseBodySize() < hs.stats[j].P1ResponseBodySize()
+			return hs.stats[i].P1ResponseBodyBytes() < hs.stats[j].P1ResponseBodyBytes()
 		})
 	}
 }
 
-func (hs *HTTPStats) SortP50ResponseBodySize(reverse bool) {
+func (hs *HTTPStats) SortP50ResponseBodyBytes(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P50ResponseBodySize() > hs.stats[j].P50ResponseBodySize()
+			return hs.stats[i].P50ResponseBodyBytes() > hs.stats[j].P50ResponseBodyBytes()
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P50ResponseBodySize() < hs.stats[j].P50ResponseBodySize()
+			return hs.stats[i].P50ResponseBodyBytes() < hs.stats[j].P50ResponseBodyBytes()
 		})
 	}
 }
 
-func (hs *HTTPStats) SortP90ResponseBodySize(reverse bool) {
+func (hs *HTTPStats) SortP90ResponseBodyBytes(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P90ResponseBodySize() > hs.stats[j].P90ResponseBodySize()
+			return hs.stats[i].P90ResponseBodyBytes() > hs.stats[j].P90ResponseBodyBytes()
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P90ResponseBodySize() < hs.stats[j].P90ResponseBodySize()
+			return hs.stats[i].P90ResponseBodyBytes() < hs.stats[j].P90ResponseBodyBytes()
 		})
 	}
 }
 
-func (hs *HTTPStats) SortP99ResponseBodySize(reverse bool) {
+func (hs *HTTPStats) SortP99ResponseBodyBytes(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P99ResponseBodySize() > hs.stats[j].P99ResponseBodySize()
+			return hs.stats[i].P99ResponseBodyBytes() > hs.stats[j].P99ResponseBodyBytes()
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P99ResponseBodySize() < hs.stats[j].P99ResponseBodySize()
+			return hs.stats[i].P99ResponseBodyBytes() < hs.stats[j].P99ResponseBodyBytes()
 		})
 	}
 }
 
-func (hs *HTTPStats) SortStddevResponseBodySize(reverse bool) {
+func (hs *HTTPStats) SortStddevResponseBodyBytes(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].StddevResponseBodySize() > hs.stats[j].StddevResponseBodySize()
+			return hs.stats[i].StddevResponseBodyBytes() > hs.stats[j].StddevResponseBodyBytes()
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].StddevResponseBodySize() < hs.stats[j].StddevResponseBodySize()
+			return hs.stats[i].StddevResponseBodyBytes() < hs.stats[j].StddevResponseBodyBytes()
 		})
 	}
 }

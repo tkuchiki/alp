@@ -31,8 +31,7 @@ func TestLoadStats(t *testing.T) {
     min: 0
     sum: 0`)
 
-	po := NewPrintOptions()
-	stats := NewHTTPStats(true, false, false, po)
+	stats := NewHTTPStats(true, false, false)
 
 	err := stats.LoadStats(data)
 	assert.Nil(t, err)
@@ -42,7 +41,7 @@ func TestLoadStats(t *testing.T) {
 	assert.Equal(t, 1, s[0].Cnt)
 	assert.Equal(t, "POST", s[0].Method)
 	assert.Equal(t, "/foo/bar", s[0].Uri)
-	assert.Equal(t, float64(12), s[0].RequestBodySize.Max)
+	assert.Equal(t, float64(12), s[0].RequestBodyBytes.Max)
 	assert.Equal(t, 0.057, s[0].ResponseTime.Max)
 	assert.Equal(t, 0, s[0].Status1xx)
 	assert.Equal(t, 1, s[0].Status2xx)
