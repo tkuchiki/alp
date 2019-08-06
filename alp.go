@@ -32,7 +32,7 @@ type Profiler struct {
 }
 
 func NewProfiler(outw, errw io.Writer) *Profiler {
-	app := kingpin.New("alp", "Access Log Profiler for LTSV (read from file or stdin).")
+	app := kingpin.New("alp", "alp is the access log profiler for LTSV, JSON, and others.")
 	p := &Profiler{
 		outWriter:    outw,
 		errWriter:    errw,
@@ -40,21 +40,20 @@ func NewProfiler(outw, errw io.Writer) *Profiler {
 		optionParser: app,
 	}
 
-	p.subcmdLTSV = app.Command("ltsv", "ltsv")
-	p.subcmdRegexp = app.Command("regexp", "regexp")
-	p.subcmdJSON = app.Command("json", "json")
-
 	p.globalFlags = flags.NewGlobalFlags()
 	p.globalFlags.InitGlobalFlags(p.optionParser)
 
+	p.subcmdLTSV = app.Command("ltsv", "Profile the logs for LTSV")
 	p.ltsvFlags = flags.NewLTSVFlags()
 	p.ltsvFlags.InitFlags(p.subcmdLTSV)
 
-	p.regexpFlags = flags.NewRegexpFlags()
-	p.regexpFlags.InitFlags(p.subcmdRegexp)
-
+	p.subcmdJSON = app.Command("json", "Profile the logs for JSON")
 	p.jsonFlags = flags.NewJSONFlags()
 	p.jsonFlags.InitFlags(p.subcmdJSON)
+
+	p.subcmdRegexp = app.Command("regexp", "Profile the logs that match a regular expression")
+	p.regexpFlags = flags.NewRegexpFlags()
+	p.regexpFlags.InitFlags(p.subcmdRegexp)
 
 	return p
 }
@@ -116,20 +115,34 @@ func (p *Profiler) Run() error {
 		options.Sort(sort),
 		options.Reverse(p.globalFlags.Reverse),
 		options.QueryString(p.globalFlags.QueryString),
-		options.Tsv(p.globalFlags.Tsv),
+		options.Format(p.globalFlags.Format),
 		options.Limit(p.globalFlags.Limit),
 		options.Location(p.globalFlags.Location),
 		options.Output(p.globalFlags.Output),
 		options.NoHeaders(p.globalFlags.NoHeaders),
 		options.CSVGroups(p.globalFlags.MatchingGroups),
 		options.Filters(p.globalFlags.Filters),
-		//ltsv
-		options.ApptimeLabel(p.ltsvFlags.ApptimeLabel),
-		options.StatusLabel(p.ltsvFlags.StatusLabel),
-		options.SizeLabel(p.ltsvFlags.SizeLabel),
-		options.MethodLabel(p.ltsvFlags.MethodLabel),
+		// ltsv
 		options.UriLabel(p.ltsvFlags.UriLabel),
+		options.MethodLabel(p.ltsvFlags.MethodLabel),
 		options.TimeLabel(p.ltsvFlags.TimeLabel),
+		options.ApptimeLabel(p.ltsvFlags.ApptimeLabel),
+		options.SizeLabel(p.ltsvFlags.SizeLabel),
+		options.StatusLabel(p.ltsvFlags.StatusLabel),
+		// json
+		options.UriKey(p.jsonFlags.UriKey),
+		options.MethodKey(p.jsonFlags.MethodKey),
+		options.TimeKey(p.jsonFlags.TimeKey),
+		options.ResponseTimeKey(p.jsonFlags.ResponseTimeKey),
+		options.BodyBytesKey(p.jsonFlags.BodyBytesKey),
+		options.StatusKey(p.jsonFlags.StatusKey),
+		// regexp
+		options.UriSubexp(p.regexpFlags.UriSubexp),
+		options.MethodSubexp(p.regexpFlags.MethodSubexp),
+		options.TimeSubexp(p.regexpFlags.TimeSubexp),
+		options.ResponseTimeSubexp(p.regexpFlags.ResponseTimeSubexp),
+		options.BodyBytesSubexp(p.regexpFlags.BodyBytesSubexp),
+		options.StatusSubexp(p.regexpFlags.StatusSubexp),
 	)
 
 	sts := stats.NewHTTPStats(true, false, false)
@@ -141,11 +154,7 @@ func (p *Profiler) Run() error {
 
 	sts.SetOptions(opts)
 
-	printFormat := "table"
-	if opts.Tsv {
-		printFormat = "tsv"
-	}
-	printer := stats.NewPrinter(p.outWriter, opts.Output, printFormat)
+	printer := stats.NewPrinter(p.outWriter, opts.Output, opts.Format)
 	if err = printer.Validate(); err != nil {
 		return err
 	}
@@ -186,24 +195,14 @@ func (p *Profiler) Run() error {
 			opts.LTSV.ApptimeLabel, opts.LTSV.SizeLabel, opts.LTSV.StatusLabel,
 		)
 		parser = parsers.NewLTSVParser(f, label, opts.QueryString)
-	case "regexp":
-		expr := `^(\S+)\s` + // remote host
-			`\S+\s+` +
-			`(\S+\s+)+` + // user
-			`\[(?P<time>[^]]+)\]\s` + // time
-			`"(?P<method>\S*)\s?` + // method
-			`(?P<uri>(?:[^"]*(?:\\")?)*)\s` + // URL
-			`([^"]*)"\s` + // protocol
-			`(?P<status>\S+)\s` + // status code
-			`(?P<body_bytes>\S+)\s` + // bytes
-			`"((?:[^"]*(?:\\")?)*)"\s` + // referer
-			`"(.*)"` + // user agent
-			`\s(?P<response_time>.*)$`
-		names := parsers.NewSubexpNames("", "", "", "", "", "")
-		parser, err = parsers.NewRegexpParser(f, expr, names, opts.QueryString)
 	case "json":
-		keys := parsers.NewJSONKeys("", "", "", "", "", "")
+		keys := parsers.NewJSONKeys(opts.JSON.UriKey, opts.JSON.MethodKey, opts.JSON.TimeKey,
+			opts.JSON.ResponseTimeKey, opts.JSON.BodyBytesKey, opts.JSON.StatusKey)
 		parser = parsers.NewJSONParser(f, keys, opts.QueryString)
+	case "regexp":
+		names := parsers.NewSubexpNames(opts.Regexp.UriSubexp, opts.Regexp.MethodSubexp, opts.Regexp.TimeSubexp,
+			opts.Regexp.ResponseTimeSubexp, opts.Regexp.BodyBytesSubexp, opts.Regexp.StatusSubexp)
+		parser, err = parsers.NewRegexpParser(f, options.DefaultPatternOption, names, opts.QueryString)
 	}
 
 	if err != nil {
