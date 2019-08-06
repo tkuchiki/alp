@@ -1,11 +1,12 @@
 # alp
 
-alp is Access Log Profiler for Labeled Tab-separated Values(LTSV).  
-(See: [Labeled Tab-separated Values](http://ltsv.org))
+alp is Access Log Profiler
+
+[日本語](./README.ja.md)
 
 # Installation
 
-Download from https://github.com/tkuchiki/alp/releases
+Download from https://github.com/tkuchiki/alp/releasse
 
 # Usage
 

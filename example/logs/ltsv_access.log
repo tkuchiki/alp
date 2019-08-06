@@ -1,0 +1,13 @@
+time:2015-09-06T05:58:05+09:00	method:POST	uri:/foo/bar?token=xxx&uuid=1234	status:200	size:12	apptime:0.057
+time:2015-09-06T05:58:41+09:00	method:POST	uri:/foo/bar?token=yyy	status:200	size:34	apptime:0.100
+time:2015-09-06T06:00:42+09:00	method:GET	uri:/foo/bar?token=zzz	status:200	size:56	apptime:0.123
+time:2015-09-06T06:00:43+09:00	method:GET	uri:/foo/bar	status:400	size:15	apptime:-
+time:2015-09-06T05:58:44+09:00	method:POST	uri:/foo/bar?token=yyy	status:200	size:34	apptime:0.234
+time:2015-09-06T05:58:44+09:00	method:POST	uri:/hoge/piyo?id=yyy	status:200	size:34	apptime:0.234
+time:2015-09-06T05:58:05+09:00	method:POST	uri:/foo/bar?token=xxx&uuid=1234	status:200	size:12	apptime:0.057
+time:2015-09-06T05:58:41+09:00	method:POST	uri:/foo/bar?token=yyy	status:200	size:34	apptime:0.100
+time:2015-09-06T06:00:42+09:00	method:GET	uri:/foo/bar?token=zzz	status:200	size:56	apptime:0.123
+time:2015-09-06T06:00:43+09:00	method:GET	uri:/foo/bar	status:400	size:15	apptime:-
+time:2015-09-06T06:00:43+09:00	method:GET	uri:/diary/entry/1234	status:200	size:15	apptime:0.135
+time:2015-09-06T06:00:43+09:00	method:GET	uri:/diary/entry/5678	status:200	size:30	apptime:0.432
+time:2015-09-06T06:00:43+09:00	method:GET	uri:/foo/bar/5xx	status:504	size:15	apptime:60.000

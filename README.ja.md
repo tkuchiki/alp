@@ -1,0 +1,356 @@
+# alp
+
+alp はアクセスログ解析ツールです。
+
+# インストール
+
+https://github.com/tkuchiki/alp/releases から環境にあったバイナリが含まれる zip ファイルをダウンロードして、解凍してください。
+
+# v0.4.0 と v1.0.0 の違い
+
+[v0.4.0 と v1.0.0 の違い](./docs/how_to_difference_between_v0_4_0_and_v1_0_0.ja.md) を参照してください。
+
+# 使い方
+
+```consol
+$ alp --help
+usage: alp [<flags>] <command> [<args> ...]
+
+alp is the access log profiler for LTSV, JSON, and others.
+
+Flags:
+      --help              Show context-sensitive help (also try --help-long and --help-man).
+  -c, --config=CONFIG     The configuration file
+      --file=FILE         The access log file
+  -d, --dump=DUMP         Dump profiled data as YAML
+  -l, --load=LOAD         Load the profiled YAML data
+      --sort=max          Output the results in sorted order
+  -r, --reverse           Sort results in reverse order
+  -q, --query-string      Include the URI query string.
+      --format=table      The output format (table or tsv)
+      --noheaders         Output no header line at all (only --format=tsv)
+      --limit=5000        The maximum number of results to display.
+      --location="Local"  Location name for the timezone
+  -o, --output="all"      Specifies the results to display, separated by commas
+  -m, --matching-groups=PATTERN,...
+                          Specifies URI matching groups separated by commas
+  -f, --filters=FILTERS   Only the logs are profiled that match the conditions
+      --version           Show application version.
+
+Commands:
+  help [<command>...]
+    Show help.
+
+  ltsv [<flags>]
+    Profile the logs for LTSV
+
+  json [<flags>]
+    Profile the logs for JSON
+
+  regexp [<flags>]
+    Profile the logs that match a regular expression
+```
+
+- alp は ltsv, json, regexp の3つのサブコマンドで構成されています
+- `cat /path/to/log | alp` のようにパイプでデータを送るか、後述する `-f, --file` オプションでファイルを指定して解析します
+
+## ltsv
+
+- [LTSV](http://ltsv.org/) 形式のログを解析します
+- デフォルトでは以下のラベルを抽出します
+    - `time`
+        - ログ時刻
+    - `method`
+        - HTTP Method
+    - `uri`
+        - URI
+    - `status`
+        - HTTP Status Code
+    - `apptime`
+        - Response Time
+-`--xxx-label` オプションで、任意のラベル名に変更することができます 
+
+```console
+$ cat example/logs/ltsv_access.log
+time:2015-09-06T05:58:05+09:00	method:POST	uri:/foo/bar?token=xxx&uuid=1234	status:200	size:12	apptime:0.057
+time:2015-09-06T05:58:41+09:00	method:POST	uri:/foo/bar?token=yyy	status:200	size:34	apptime:0.100
+time:2015-09-06T06:00:42+09:00	method:GET	uri:/foo/bar?token=zzz	status:200	size:56	apptime:0.123
+time:2015-09-06T06:00:43+09:00	method:GET	uri:/foo/bar	status:400	size:15	apptime:-
+time:2015-09-06T05:58:44+09:00	method:POST	uri:/foo/bar?token=yyy	status:200	size:34	apptime:0.234
+time:2015-09-06T05:58:44+09:00	method:POST	uri:/hoge/piyo?id=yyy	status:200	size:34	apptime:0.234
+time:2015-09-06T05:58:05+09:00	method:POST	uri:/foo/bar?token=xxx&uuid=1234	status:200	size:12	apptime:0.057
+time:2015-09-06T05:58:41+09:00	method:POST	uri:/foo/bar?token=yyy	status:200	size:34	apptime:0.100
+time:2015-09-06T06:00:42+09:00	method:GET	uri:/foo/bar?token=zzz	status:200	size:56	apptime:0.123
+time:2015-09-06T06:00:43+09:00	method:GET	uri:/foo/bar	status:400	size:15	apptime:-
+time:2015-09-06T06:00:43+09:00	method:GET	uri:/diary/entry/1234	status:200	size:15	apptime:0.135
+time:2015-09-06T06:00:43+09:00	method:GET	uri:/diary/entry/5678	status:200	size:30	apptime:0.432
+time:2015-09-06T06:00:43+09:00	method:GET	uri:/foo/bar/5xx	status:504	size:15	apptime:60.000
+
+$ cat example/logs/ltsv_access.log | alp ltsv
++-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
+| COUNT | 1XX | 2XX | 3XX | 4XX | 5XX | METHOD |        URI        |  MIN   |  MAX   |  SUM   |  AVG   |   P1   |  P50   |  P99   | STDDEV | MIN(BODY) | MAX(BODY) | SUM(BODY) | AVG(BODY) |
++-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
+|     2 |   0 |   2 |   0 |   0 |   0 | GET    | /foo/bar          |  0.123 |  0.123 |  0.246 |  0.123 |  0.123 |  0.123 |  0.123 |  0.000 |    56.000 |    56.000 |   112.000 |    56.000 |
+|     1 |   0 |   1 |   0 |   0 |   0 | GET    | /diary/entry/1234 |  0.135 |  0.135 |  0.135 |  0.135 |  0.135 |  0.135 |  0.135 |  0.000 |    15.000 |    15.000 |    15.000 |    15.000 |
+|     5 |   0 |   5 |   0 |   0 |   0 | POST   | /foo/bar          |  0.057 |  0.234 |  0.548 |  0.110 |  0.057 |  0.100 |  0.057 |  0.065 |    12.000 |    34.000 |   126.000 |    25.200 |
+|     1 |   0 |   1 |   0 |   0 |   0 | POST   | /hoge/piyo        |  0.234 |  0.234 |  0.234 |  0.234 |  0.234 |  0.234 |  0.234 |  0.000 |    34.000 |    34.000 |    34.000 |    34.000 |
+|     1 |   0 |   1 |   0 |   0 |   0 | GET    | /diary/entry/5678 |  0.432 |  0.432 |  0.432 |  0.432 |  0.432 |  0.432 |  0.432 |  0.000 |    30.000 |    30.000 |    30.000 |    30.000 |
+|     1 |   0 |   0 |   0 |   0 |   1 | GET    | /foo/bar/5xx      | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 |  0.000 |    15.000 |    15.000 |    15.000 |    15.000 |
++-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
+|  11   |  0  | 10  |  0  |  0  |  1  |                                                                                                                                                     
++-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
+```
+
+## json
+
+- 1 行に 1 つの JSON が書かれているログを解析します
+- デフォルトでは以下のキーを抽出します
+    - `time`
+        - ログ時刻
+    - `method`
+        - HTTP Method
+    - `uri`
+        - URI
+    - `status`
+        - HTTP Status Code
+    - `response_time`
+        - Response Time
+- `--xxx-key` オプションで、任意のキー名に変更することができます
+
+```console
+$ cat example/logs/json_access.log
+{"time":"2015-09-06T05:58:05+09:00","method":"POST","uri":"/foo/bar?token=xxx&uuid=1234","status":200,"body_bytes":12,"response_time":0.057}
+{"time":"2015-09-06T05:58:41+09:00","method":"POST","uri":"/foo/bar?token=yyy","status":200,"body_bytes":34,"response_time":0.100}
+{"time":"2015-09-06T06:00:42+09:00","method":"GET","uri":"/foo/bar?token=zzz","status":200,"body_bytes":56,"response_time":0.123}
+{"time":"2015-09-06T06:00:43+09:00","method":"GET","uri":"/foo/bar","status":400,"body_bytes":15,"response_time":"-"}
+{"time":"2015-09-06T05:58:44+09:00","method":"POST","uri":"/foo/bar?token=yyy","status":200,"body_bytes":34,"response_time":0.234}
+{"time":"2015-09-06T05:58:44+09:00","method":"POST","uri":"/hoge/piyo?id=yyy","status":200,"body_bytes":34,"response_time":0.234}
+{"time":"2015-09-06T05:58:05+09:00","method":"POST","uri":"/foo/bar?token=xxx&uuid=1234","status":200,"body_bytes":12,"response_time":0.057}
+{"time":"2015-09-06T05:58:41+09:00","method":"POST","uri":"/foo/bar?token=yyy","status":200,"body_bytes":34,"response_time":0.100}
+{"time":"2015-09-06T06:00:42+09:00","method":"GET","uri":"/foo/bar?token=zzz","status":200,"body_bytes":56,"response_time":0.123}
+{"time":"2015-09-06T06:00:43+09:00","method":"GET","uri":"/foo/bar","status":400,"body_bytes":15,"response_time":"-"}
+{"time":"2015-09-06T06:00:43+09:00","method":"GET","uri":"/diary/entry/1234","status":200,"body_bytes":15,"response_time":0.135}
+{"time":"2015-09-06T06:00:43+09:00","method":"GET","uri":"/diary/entry/5678","status":200,"body_bytes":30,"response_time":0.432}
+{"time":"2015-09-06T06:00:43+09:00","method":"GET","uri":"/foo/bar/5xx","status":504,"body_bytes":15,"response_time":60.000}
+
+$ cat example/logs/json_access.log | alp json
++-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
+| COUNT | 1XX | 2XX | 3XX | 4XX | 5XX | METHOD |        URI        |  MIN   |  MAX   |  SUM   |  AVG   |   P1   |  P50   |  P99   | STDDEV | MIN(BODY) | MAX(BODY) | SUM(BODY) | AVG(BODY) |
++-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
+|     2 |   0 |   2 |   0 |   0 |   0 | GET    | /foo/bar          |  0.123 |  0.123 |  0.246 |  0.123 |  0.123 |  0.123 |  0.123 |  0.000 |    56.000 |    56.000 |   112.000 |    56.000 |
+|     1 |   0 |   1 |   0 |   0 |   0 | GET    | /diary/entry/1234 |  0.135 |  0.135 |  0.135 |  0.135 |  0.135 |  0.135 |  0.135 |  0.000 |    15.000 |    15.000 |    15.000 |    15.000 |
+|     5 |   0 |   5 |   0 |   0 |   0 | POST   | /foo/bar          |  0.057 |  0.234 |  0.548 |  0.110 |  0.057 |  0.100 |  0.057 |  0.065 |    12.000 |    34.000 |   126.000 |    25.200 |
+|     1 |   0 |   1 |   0 |   0 |   0 | POST   | /hoge/piyo        |  0.234 |  0.234 |  0.234 |  0.234 |  0.234 |  0.234 |  0.234 |  0.000 |    34.000 |    34.000 |    34.000 |    34.000 |
+|     1 |   0 |   1 |   0 |   0 |   0 | GET    | /diary/entry/5678 |  0.432 |  0.432 |  0.432 |  0.432 |  0.432 |  0.432 |  0.432 |  0.000 |    30.000 |    30.000 |    30.000 |    30.000 |
+|     1 |   0 |   0 |   0 |   0 |   1 | GET    | /foo/bar/5xx      | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 |  0.000 |    15.000 |    15.000 |    15.000 |    15.000 |
++-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
+|  11   |  0  | 10  |  0  |  0  |  1  |
++-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
+```
+
+## regexp
+
+- 正規表現にマッチするログを解析します
+- デフォルトでは Apache combined log + ` "response time"` のログを、以下の名前付きキャプチャで抽出します
+    - `time`
+        - ログ時刻
+    - `method`
+        - HTTP Method
+    - `uri`
+        - URI
+    - `status`
+        - HTTP Status Code
+    - `response_time`
+        - Response Time
+- 以下の正規表現
+    ```regexp
+    ^(\S+)\s\S+\s+(\S+\s+)+\[(?P<time>[^]]+)\]\s"(?P<method>\S*)\s?(?P<uri>(?:[^"]*(?:\\")?)*)\s([^"]*)"\s(?P<status>\S+)\s(?P<body_bytes>\S+)\s"((?:[^"]*(?:\\")?)*)"\s"(.*)"\s(?P<response_time>.*)$
+    ```
+- `--xxx-subexp` オプションで、任意の名前付きキャプチャに変更することができます
+
+```console
+$ cat example/logs/combined_access.log
+127.0.0.1 - - [06/Sep/2015:05:58:05 +0900] "POST /foo/bar?token=xxx&uuid=1234 HTTP/1.1" 200 12 "-" "curl/7.54.0" "-" 0.057
+127.0.0.1 - - [06/Sep/2015:05:58:41 +0900] "POST /foo/bar?token=yyy HTTP/1.1" 200 34 "-" "curl/7.54.0" "-" 0.100
+127.0.0.1 - - [06/Sep/2015:06:00:42 +0900] "GET /foo/bar?token=zzz HTTP/1.1" 200 56 "-" "curl/7.54.0" "-" 0.123
+127.0.0.1 - - [06/Sep/2015:06:00:43 +0900] "GET /foo/bar HTTP/1.1" 400 15 "-" "curl/7.54.0" "-" -
+127.0.0.1 - - [06/Sep/2015:05:58:44 +0900] "POST /foo/bar?token=yyy HTTP/1.1" 200 34 "-" "curl/7.54.0" "-" 0.234
+127.0.0.1 - - [06/Sep/2015:05:58:44 +0900] "POST /hoge/piyo?id=yyy HTTP/1.1" 200 34 "-" "curl/7.54.0" "-" 0.234
+127.0.0.1 - - [06/Sep/2015:05:58:05 +0900] "POST foo/bar?token=xxx&uuid=1234 HTTP/1.1" 200 12 "-" "curl/7.54.0" "-" 0.057
+127.0.0.1 - - [06/Sep/2015:05:58:41 +0900] "POST /foo/bar?token=yyy HTTP/1.1" 200 34 "-" "curl/7.54.0" "-" 0.100
+127.0.0.1 - - [06/Sep/2015:06:00:42 +0900] "GET /foo/bar?token=zzz HTTP/1.1" 200 56 "-" "curl/7.54.0" "-" 0.123
+127.0.0.1 - - [06/Sep/2015:06:00:43 +0900] "GET /foo/bar HTTP/1.1" 400 15 "-" "curl/7.54.0" "-" -
+127.0.0.1 - - [06/Sep/2015:06:00:43 +0900] "GET /diary/entry/1234 HTTP/1.1" 200 15 "-" "curl/7.54.0" "-" 0.135
+127.0.0.1 - - [06/Sep/2015:06:00:43 +0900] "GET /diary/entry/5678 HTTP/1.1" 200 30 "-" "curl/7.54.0" "-" 0.432
+127.0.0.1 - - [06/Sep/2015:06:00:43 +0900] "GET /foo/bar/5xx HTTP/1.1" 504 15 "-" "curl/7.54.0" "-" 60.000
+
+$ cat example/logs/combined_access.log | alp regexp
++-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
+| COUNT | 1XX | 2XX | 3XX | 4XX | 5XX | METHOD |        URI        |  MIN   |  MAX   |  SUM   |  AVG   |   P1   |  P50   |  P99   | STDDEV | MIN(BODY) | MAX(BODY) | SUM(BODY) | AVG(BODY) |
++-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
+|     1 |   0 |   1 |   0 |   0 |   0 | POST   | foo/bar           |  0.057 |  0.057 |  0.057 |  0.057 |  0.057 |  0.057 |  0.057 |  0.000 |    12.000 |    12.000 |    12.000 |    12.000 |
+|     2 |   0 |   2 |   0 |   0 |   0 | GET    | /foo/bar          |  0.123 |  0.123 |  0.246 |  0.123 |  0.123 |  0.123 |  0.123 |  0.000 |    56.000 |    56.000 |   112.000 |    56.000 |
+|     1 |   0 |   1 |   0 |   0 |   0 | GET    | /diary/entry/1234 |  0.135 |  0.135 |  0.135 |  0.135 |  0.135 |  0.135 |  0.135 |  0.000 |    15.000 |    15.000 |    15.000 |    15.000 |
+|     4 |   0 |   4 |   0 |   0 |   0 | POST   | /foo/bar          |  0.057 |  0.234 |  0.491 |  0.123 |  0.057 |  0.100 |  0.234 |  0.067 |    12.000 |    34.000 |   114.000 |    28.500 |
+|     1 |   0 |   1 |   0 |   0 |   0 | POST   | /hoge/piyo        |  0.234 |  0.234 |  0.234 |  0.234 |  0.234 |  0.234 |  0.234 |  0.000 |    34.000 |    34.000 |    34.000 |    34.000 |
+|     1 |   0 |   1 |   0 |   0 |   0 | GET    | /diary/entry/5678 |  0.432 |  0.432 |  0.432 |  0.432 |  0.432 |  0.432 |  0.432 |  0.000 |    30.000 |    30.000 |    30.000 |    30.000 |
+|     1 |   0 |   0 |   0 |   0 |   1 | GET    | /foo/bar/5xx      | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 |  0.000 |    15.000 |    15.000 |    15.000 |    15.000 |
++-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
+|  11   |  0  | 10  |  0  |  0  |  1  |
++-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
+```
+
+## グローバルオプション
+
+- `-c, --config`
+    - 各種オプションの設定ファイル
+    - YAML
+- `--file=FILE` 
+    - 解析するファイルのパス
+- `-d, --dump=DUMP`
+    - 解析結果をファイルに書き出す際のファイルパス
+- `-l, --load=LOAD`
+    - `-d, --dump` オプションで書き出した解析結果を読み込む際のファイルパス
+    - 同じ解析結果に対して、`--sort` や `--reverse` のオプションを変更したい場合に高速に動作することが期待できます
+- `--sort=max`
+    - 解析結果を表示する際にソートする条件
+    - 昇順でソートする 
+    - `max`, `min`, `sum`, `avg`
+    - `max-body`, `min-body`, `sum-body`, `avg-body`  
+    - `p1`, `p50`, `p99`, `stddev`
+    - `uri`
+    - `method`
+    - `count`
+    - デフォルトは `max`
+- `-r, --reverse`
+    - `--sort` オプションのソート結果を降順にします
+- `-q, --query-string`
+    - Query String までを含めた URI を集計対象にする
+- `--format=table`
+    - 解析結果を テーブル、TSV 形式で出力する
+    - デフォルトはテーブル形式
+- `--noheaders`
+    - 解析結果を TSV で出力する際、header を表示しない
+- `--limit=5000`
+    - 解析結果の表示上限数
+    - 解析結果の表示数が想定より多かった場合でも、リソースを使いすぎないための設定です
+    - デフォルトは 5000 行
+- `--location="Local"`
+    - フィルタ条件で指定する時刻の timezone
+    - デフォルトは localhost に設定されている timezone
+- `-o, --output="all"`
+    - 出力する解析結果をカンマ区切りで指定する
+    - `count`,`1xx`, `2xx`, `3xx`, `4xx`, `5xx`, `method`, `uri`, `min`, `max`, `sum`, `avg`, `p1`, `p50`, `p99`, `stddev`, `min_body`, `max_body`, `sum_body`, `avg_body`
+    - デフォルトはすべて出力(`all`)
+- `-m, --matching-groups=PATTERN,...`
+    - 正規表現にマッチした URI を同じ集計対象として扱います
+    - 後述の [URI matching groups](#URI matching groups) 参照
+- `-f, --filters=FILTERS`
+    - 集計対象をフィルタします
+    - 後述の[フィルタ](#フィルタ)参照
+    
+## URI matching groups
+
+以下の `/diary/entry/1234` や `/diary/entry/5678` のように、同一のルーティングでパラメータが異なる URI を単純に集計すると、パラメータごとに集計されますが、ルーティングごとに集計したい場合もあるでしょう。
+
+```console
+$ cat example/logs/ltsv_access.log | alp ltsv --filters "Val.Uri matches '^/diary/entry'"
++-------+-----+-----+-----+-----+-----+--------+-------------------+-------+-------+-------+-------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+
+| COUNT | 1XX | 2XX | 3XX | 4XX | 5XX | METHOD |        URI        |  MIN  |  MAX  |  SUM  |  AVG  |  P1   |  P50  |  P99  | STDDEV | MIN(BODY) | MAX(BODY) | SUM(BODY) | AVG(BODY) |
++-------+-----+-----+-----+-----+-----+--------+-------------------+-------+-------+-------+-------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+
+|     1 |   0 |   1 |   0 |   0 |   0 | GET    | /diary/entry/1234 | 0.135 | 0.135 | 0.135 | 0.135 | 0.135 | 0.135 | 0.135 |  0.000 |    15.000 |    15.000 |    15.000 |    15.000 |
+|     1 |   0 |   1 |   0 |   0 |   0 | GET    | /diary/entry/5678 | 0.432 | 0.432 | 0.432 | 0.432 | 0.432 | 0.432 | 0.432 |  0.000 |    30.000 |    30.000 |    30.000 |    30.000 |
++-------+-----+-----+-----+-----+-----+--------+-------------------+-------+-------+-------+-------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+
+|   2   |  0  |  2  |  0  |  0  |  0  |
++-------+-----+-----+-----+-----+-----+--------+-------------------+-------+-------+-------+-------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+
+```
+
+そのようなケースで、正規表現にマッチした URI を同じ集計対象とするオプションが `-m, --matching-groups=PATTERN,...` です。
+カンマ区切りで複数指定することもできます。
+
+
+```console
+$ cat example/logs/ltsv_access.log | alp ltsv --filters "Val.Uri matches '^/diary/entry'" -m "/diary/entry/.+"
++-------+-----+-----+-----+-----+-----+--------+-----------------+-------+-------+-------+-------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+
+| COUNT | 1XX | 2XX | 3XX | 4XX | 5XX | METHOD |       URI       |  MIN  |  MAX  |  SUM  |  AVG  |  P1   |  P50  |  P99  | STDDEV | MIN(BODY) | MAX(BODY) | SUM(BODY) | AVG(BODY) |
++-------+-----+-----+-----+-----+-----+--------+-----------------+-------+-------+-------+-------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+
+|     2 |   0 |   2 |   0 |   0 |   0 | GET    | /diary/entry/.+ | 0.135 | 0.432 | 0.567 | 0.283 | 0.135 | 0.135 | 0.135 |  0.148 |    15.000 |    30.000 |    45.000 |    22.500 |
++-------+-----+-----+-----+-----+-----+--------+-----------------+-------+-------+-------+-------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+
+|   2   |  0  |  2  |  0  |  0  |  0  |
++-------+-----+-----+-----+-----+-----+--------+-----------------+-------+-------+-------+-------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+
+```
+
+## フィルタ
+
+集計対象を条件に応じて包含、除外する機能です。
+
+### 変数
+
+以下の変数に対してフィルタをかけることができます。
+
+- `Val.Uri`
+    - URI
+- `Val.Method`
+    - HTTP メソッド
+- `Val.Time`
+    - 時刻文字列
+    - https://github.com/tkuchiki/parsetime でパースできる時刻文字列に対応しています
+- `Val.ResponseTime`
+    - レスポンスタイム
+- `Val.BodyBytes`
+    - HTTP Body のバイト数
+- `Val.Status`
+    - HTTP Status Code
+
+### 演算子
+
+以下の演算子を使用できます。
+
+- `+`, `-`, `*`, `/`, `%`, `**(べき乗)` 
+- `==`, `!=`, `<`, `>`, `<=`, `>=`
+- `not`, `!`
+- `and`, `&&`
+- `or`, `||`
+- `matches`
+    - 正規表現(`PATTERN`)にマッチするか否か
+    - e.g.
+       - `Val.Uri matches "PATTERN"`
+       - `not Val.Uri matches "PATTERN"`
+- `contains`
+    - 文字列(`STRING`)を含むか否か
+    - e.g.
+        - `Val.Uri contains "STRING"`
+        - `not Val.Uri contains "STRING"`
+- `startsWith`
+    - 文字列に前方一致するか否か
+    - e.g.
+        - `Val.Uri startsWith "PREFIX"`
+        - `not Val.Uri startsWith "PREFIX"`
+- `endsWith`
+    - 文字列に後方一致するか否か
+    - e.g.
+        - `Val.Uri endsWith "SUFFIX"`
+        - `not Val.Uri endsWith "SUFFIX"`
+- `in`
+    - 配列の値を含むか否か
+    - e.g.
+        - `Val.Method in ["GET", "POST"]`
+        - `Val.Method not in ["GET", "POST"]`
+
+詳細は https://github.com/antonmedv/expr/blob/master/docs/Language-Definition.md を参照してください。  
+
+### 関数
+
+- `Datetime(timestr)`
+    - 時刻文字列を時刻型に変換
+- `TimeAgo(duration)`
+    - 現在時刻 - `duration` した時刻を返します
+    - Go の time.Duration で使用できる時刻の単位を指定できます
+    - `ns`, `us or µs`, `ms`, `s`, `m`, `h`
+    - e.g.
+        - `Val.Time >= TimeAgo("5m")`
+        - `Val.Time` が現在時刻 -5分以上のログを集計対象とする
+- `BetweenTime(val, start, end)`
+    - SQL の `BETWEEN` のように、`start <= val && val <= end` を返す
+    - e.g.
+        - `BetweenTime(Val.Time, "2019-08-06T00:00:00", "2019-08-06T00:05:00")`
