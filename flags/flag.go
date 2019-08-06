@@ -17,7 +17,7 @@ type GlobalFlags struct {
 	Sort           string
 	Reverse        bool
 	QueryString    bool
-	Tsv            bool
+	Format         string
 	NoHeaders      bool
 	Limit          int
 	Location       string
@@ -44,6 +44,11 @@ var SortKeys = []string{
 	"stddev",
 }
 
+var Formats = []string{
+	"table",
+	"tsv",
+}
+
 var SortOptions = map[string]string{
 	"max":      stats.SortMaxResponseTime,
 	"min":      stats.SortMinResponseTime,
@@ -67,32 +72,32 @@ func NewGlobalFlags() *GlobalFlags {
 }
 
 func (f *GlobalFlags) InitGlobalFlags(app *kingpin.Application) {
-	app.Flag("config", "config file").
+	app.Flag("config", "The configuration file").
 		Short('c').StringVar(&f.Config)
-	app.Flag("file", "access log file").
-		Short('f').StringVar(&f.File)
-	app.Flag("dump", "dump profile data").
+	app.Flag("file", "The access log file").
+		StringVar(&f.File)
+	app.Flag("dump", "Dump profiled data as YAML").
 		Short('d').StringVar(&f.Dump)
-	app.Flag("load", "load profile data").
+	app.Flag("load", "Load the profiled YAML data").
 		Short('l').StringVar(&f.Load)
-	app.Flag("sort", "sort").
+	app.Flag("sort", "Output the results in sorted order").
 		Default(options.DefaultSortOption).EnumVar(&f.Sort, SortKeys...)
-	app.Flag("reverse", "reverse the result of comparisons").
+	app.Flag("reverse", "Sort results in reverse order").
 		Short('r').BoolVar(&f.Reverse)
-	app.Flag("query-string", "include query string").
+	app.Flag("query-string", "Include the URI query string.").
 		Short('q').BoolVar(&f.QueryString)
-	app.Flag("tsv", "tsv format (default: table)").
-		BoolVar(&f.Tsv)
-	app.Flag("limit", "set an upper limit of the target uri").
-		Default(fmt.Sprint(options.DefaultLimitOption)).IntVar(&f.Limit)
-	app.Flag("location", "location name").
-		Default(options.DefaultLocationOption).StringVar(&f.Location)
-	app.Flag("output", "output").Short('o').
-		Default(options.DefaultOutputOption).StringVar(&f.Output)
-	app.Flag("noheaders", "print no header line at all (only --tsv)").
+	app.Flag("format", "The output format (table or tsv)").
+		Default(options.DefaultFormatOption).EnumVar(&f.Format, Formats...)
+	app.Flag("noheaders", "Output no header line at all (only --format=tsv)").
 		BoolVar(&f.NoHeaders)
-	app.Flag("matching-groups", "uri matching groups (comma separated)").
+	app.Flag("limit", "The maximum number of results to display.").
+		Default(fmt.Sprint(options.DefaultLimitOption)).IntVar(&f.Limit)
+	app.Flag("location", "Location name for the timezone").
+		Default(options.DefaultLocationOption).StringVar(&f.Location)
+	app.Flag("output", "Specifies the results to display, separated by commas").Short('o').
+		Default(options.DefaultOutputOption).StringVar(&f.Output)
+	app.Flag("matching-groups", "Specifies URI matching groups separated by commas").
 		Short('m').PlaceHolder("PATTERN,...").StringVar(&f.MatchingGroups)
-	app.Flag("filters", "the filters").
-		StringVar(&f.Filters)
+	app.Flag("filters", "Only the logs are profiled that match the conditions").
+		Short('f').StringVar(&f.Filters)
 }

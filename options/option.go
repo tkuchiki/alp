@@ -11,6 +11,7 @@ import (
 
 const (
 	DefaultSortOption     = "max"
+	DefaultFormatOption   = "table"
 	DefaultLimitOption    = 5000
 	DefaultLocationOption = "Local"
 	DefaultOutputOption   = "all"
@@ -54,7 +55,7 @@ type Options struct {
 	Sort              string         `yaml:"sort"`
 	Reverse           bool           `yaml:"reverse"`
 	QueryString       bool           `yaml:"query_string"`
-	Tsv               bool           `yaml:"tsv"`
+	Format            string         `yaml:"format"`
 	NoHeaders         bool           `yaml:no_headers`
 	Limit             int            `yaml:"limit"`
 	MatchingGroups    []string       `yaml:"matching_groups"`
@@ -132,10 +133,10 @@ func QueryString(b bool) Option {
 	}
 }
 
-func Tsv(b bool) Option {
+func Format(s string) Option {
 	return func(opts *Options) {
-		if b {
-			opts.Tsv = b
+		if s != "" {
+			opts.Format = s
 		}
 	}
 }

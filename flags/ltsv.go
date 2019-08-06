@@ -19,16 +19,16 @@ func NewLTSVFlags() *LTSVFlags {
 }
 
 func (f *LTSVFlags) InitFlags(app *kingpin.CmdClause) {
-	app.Flag("uri-label", "uri label").
+	app.Flag("uri-label", "Change the uri label").
 		Default(options.DefaultUriLabelOption).StringVar(&f.UriLabel)
-	app.Flag("method-label", "method label").
+	app.Flag("method-label", "Change the method label").
 		Default(options.DefaultMethodLabelOption).StringVar(&f.MethodLabel)
-	app.Flag("time-label", "time label").
+	app.Flag("time-label", "Change the time label").
 		Default(options.DefaultTimeLabelOption).StringVar(&f.TimeLabel)
-	app.Flag("apptime-label", "apptime label").
+	app.Flag("apptime-label", "Change the apptime label").
 		Default(options.DefaultApptimeLabelOption).StringVar(&f.ApptimeLabel)
-	app.Flag("size-label", "size label").
+	app.Flag("size-label", "Change the size label").
 		Default(options.DefaultSizeLabelOption).StringVar(&f.SizeLabel)
-	app.Flag("status-label", "status label").
+	app.Flag("status-label", "Change the status label").
 		Default(options.DefaultStatusLabelOption).StringVar(&f.StatusLabel)
 }
