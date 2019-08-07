@@ -6,8 +6,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-
-	"github.com/tkuchiki/alp/flags"
 )
 
 func TestRun(t *testing.T) {
@@ -44,12 +42,9 @@ func TestRun(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	globalFlags := flags.NewGlobalFlags()
-
-	p.SetFlags(globalFlags)
 	p.SetInReader(tmpfile)
 
-	err = p.Run()
+	err = p.Run([]string{"ltsv"})
 	if err != nil {
 		t.Fatal(err)
 	}

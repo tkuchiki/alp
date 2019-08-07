@@ -10,7 +10,7 @@ import (
 func main() {
 	p := alp.NewProfiler(os.Stdout, os.Stderr)
 
-	err := p.Run()
+	err := p.Run(os.Args[1:])
 	if err != nil {
 		log.Fatal(err)
 	}

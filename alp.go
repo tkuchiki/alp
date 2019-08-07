@@ -58,10 +58,6 @@ func NewProfiler(outw, errw io.Writer) *Profiler {
 	return p
 }
 
-func (p *Profiler) SetFlags(flags *flags.GlobalFlags) {
-	p.globalFlags = flags
-}
-
 func (p *Profiler) SetInReader(f *os.File) {
 	p.inReader = f
 }
@@ -79,10 +75,10 @@ func (p *Profiler) Open(filename string) (*os.File, error) {
 	return f, err
 }
 
-func (p *Profiler) Run() error {
+func (p *Profiler) Run(args []string) error {
 	var command string
 	p.optionParser.Version(version)
-	switch kingpin.MustParse(p.optionParser.Parse(os.Args[1:])) {
+	switch kingpin.MustParse(p.optionParser.Parse(args)) {
 	case p.subcmdLTSV.FullCommand():
 		command = p.subcmdLTSV.FullCommand()
 	case p.subcmdRegexp.FullCommand():
