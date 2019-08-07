@@ -15,7 +15,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-const version = "0.4.0"
+const version = "1.0.0-rc1"
 
 type Profiler struct {
 	outWriter    io.Writer
