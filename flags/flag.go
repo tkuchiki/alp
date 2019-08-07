@@ -19,6 +19,7 @@ type GlobalFlags struct {
 	QueryString    bool
 	Format         string
 	NoHeaders      bool
+	ShowFooters    bool
 	Limit          int
 	Location       string
 	Output         string
@@ -90,6 +91,8 @@ func (f *GlobalFlags) InitGlobalFlags(app *kingpin.Application) {
 		Default(options.DefaultFormatOption).EnumVar(&f.Format, Formats...)
 	app.Flag("noheaders", "Output no header line at all (only --format=tsv)").
 		BoolVar(&f.NoHeaders)
+	app.Flag("show-footers", "Output footer line at all (only --format=table)").
+		BoolVar(&f.ShowFooters)
 	app.Flag("limit", "The maximum number of results to display.").
 		Default(fmt.Sprint(options.DefaultLimitOption)).IntVar(&f.Limit)
 	app.Flag("location", "Location name for the timezone").

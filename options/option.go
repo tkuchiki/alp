@@ -57,6 +57,7 @@ type Options struct {
 	QueryString       bool           `yaml:"query_string"`
 	Format            string         `yaml:"format"`
 	NoHeaders         bool           `yaml:no_headers`
+	ShowFooters       bool           `yaml:show_footers`
 	Limit             int            `yaml:"limit"`
 	MatchingGroups    []string       `yaml:"matching_groups"`
 	StartTime         string         `yaml:"start_time"`
@@ -145,6 +146,14 @@ func NoHeaders(b bool) Option {
 	return func(opts *Options) {
 		if b {
 			opts.NoHeaders = b
+		}
+	}
+}
+
+func ShowFooters(b bool) Option {
+	return func(opts *Options) {
+		if b {
+			opts.ShowFooters = b
 		}
 	}
 }

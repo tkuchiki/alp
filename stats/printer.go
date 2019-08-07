@@ -64,18 +64,20 @@ var defaultHeaders = []string{
 }
 
 type Printer struct {
-	keywords  []string
-	format    string
-	noHeaders bool
-	headers   []string
-	writer    io.Writer
-	all       bool
+	keywords    []string
+	format      string
+	noHeaders   bool
+	showFooters bool
+	headers     []string
+	writer      io.Writer
+	all         bool
 }
 
-func NewPrinter(w io.Writer, val, format string) *Printer {
+func NewPrinter(w io.Writer, val, format string, showFooters bool) *Printer {
 	p := &Printer{
-		format: format,
-		writer: w,
+		format:      format,
+		writer:      w,
+		showFooters: showFooters,
 	}
 
 	if val == "all" {
@@ -257,8 +259,12 @@ func (p *Printer) printTable(hs *HTTPStats) {
 		table.Append(data)
 	}
 
-	footer := p.GenerateFooter(hs.CountAll())
-	table.SetFooter(footer)
+	if p.showFooters {
+		footer := p.GenerateFooter(hs.CountAll())
+		table.SetFooter(footer)
+		table.SetFooterAlignment(tablewriter.ALIGN_RIGHT)
+	}
+
 	table.Render()
 }
 

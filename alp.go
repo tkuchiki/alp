@@ -116,6 +116,7 @@ func (p *Profiler) Run(args []string) error {
 		options.Location(p.globalFlags.Location),
 		options.Output(p.globalFlags.Output),
 		options.NoHeaders(p.globalFlags.NoHeaders),
+		options.ShowFooters(p.globalFlags.ShowFooters),
 		options.CSVGroups(p.globalFlags.MatchingGroups),
 		options.Filters(p.globalFlags.Filters),
 		// ltsv
@@ -150,7 +151,7 @@ func (p *Profiler) Run(args []string) error {
 
 	sts.SetOptions(opts)
 
-	printer := stats.NewPrinter(p.outWriter, opts.Output, opts.Format)
+	printer := stats.NewPrinter(p.outWriter, opts.Output, opts.Format, opts.ShowFooters)
 	if err = printer.Validate(); err != nil {
 		return err
 	}
