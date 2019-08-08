@@ -120,7 +120,13 @@ func toStats(parsedValue map[string]string, keys *statKeys, strictMode, queryStr
 		for q := range values {
 			v.Set(q, "xxx")
 		}
-		uri = fmt.Sprintf("%s?%s", u.Path, v.Encode())
+
+		qs := v.Encode()
+		if qs != "" {
+			uri = fmt.Sprintf("%s?%s", u.Path, qs)
+		} else {
+			uri = u.Path
+		}
 	} else {
 		uri = u.Path
 	}
