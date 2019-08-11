@@ -1,7 +1,10 @@
 package parsers
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
+	"io"
 	"net/url"
 
 	"github.com/tkuchiki/alp/errors"
@@ -10,6 +13,8 @@ import (
 
 type Parser interface {
 	Parse() (*ParsedHTTPStat, error)
+	ReadBytes() int
+	Seek(n int) error
 }
 
 type ParsedHTTPStat struct {
@@ -95,6 +100,38 @@ func newStatKeys(sk ...statKey) *statKeys {
 	}
 
 	return sks
+}
+
+func readline(reader *bufio.Reader) ([]byte, int, error) {
+	var b []byte
+	var i int
+	var err error
+	for {
+		line, _err := reader.ReadBytes('\n')
+		if _err == io.EOF && len(line) == 0 {
+			err = io.EOF
+			break
+		}
+
+		if _err != io.EOF && _err != nil {
+			return []byte{}, 0, err
+		}
+		trimedLine := bytes.TrimRight(line, "\r\n")
+		if len(trimedLine) > 0 {
+			b = append(b, trimedLine...)
+		} else {
+			err = errors.SkipReadLineErr
+		}
+
+		size := len(line)
+		i += size
+
+		if line[size-1] == byte('\n') {
+			break
+		}
+	}
+
+	return b, i, err
 }
 
 func NewParsedHTTPStat(uri, method, time string, resTime, bodyBytes float64, status int) *ParsedHTTPStat {

@@ -65,6 +65,8 @@ type Options struct {
 	StartTimeDuration string         `yaml:"start_time_duration"`
 	EndTimeDuration   string         `yaml:"end_time_duration"`
 	Filters           string         `yaml:"filters"`
+	PosFile           string         `yaml:pos_file`
+	NoSavePos         bool           `yaml:nosave_pos`
 	Location          string         `yaml:location`
 	Output            string         `yaml:output`
 	LTSV              *LTSVOptions   `yaml:ltsv`
@@ -203,6 +205,22 @@ func Output(s string) Option {
 	return func(opts *Options) {
 		if s != "" {
 			opts.Output = s
+		}
+	}
+}
+
+func PosFile(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.PosFile = s
+		}
+	}
+}
+
+func NoSavePos(b bool) Option {
+	return func(opts *Options) {
+		if b {
+			opts.NoSavePos = b
 		}
 	}
 }

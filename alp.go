@@ -1,9 +1,12 @@
 package alp
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/tkuchiki/alp/helpers"
 
 	"github.com/tkuchiki/alp/errors"
 
@@ -75,6 +78,20 @@ func (p *Profiler) Open(filename string) (*os.File, error) {
 	return f, err
 }
 
+func (p *Profiler) OpenPosFile(filename string) (*os.File, error) {
+	return os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0644)
+}
+
+func (p *Profiler) ReadPosFile(f *os.File) (int, error) {
+	reader := bufio.NewReader(f)
+	pos, _, err := reader.ReadLine()
+	if err != nil {
+		return 0, err
+	}
+
+	return helpers.StringToInt(string(pos))
+}
+
 func (p *Profiler) Run(args []string) error {
 	var command string
 	p.optionParser.Version(version)
@@ -119,6 +136,8 @@ func (p *Profiler) Run(args []string) error {
 		options.ShowFooters(p.globalFlags.ShowFooters),
 		options.CSVGroups(p.globalFlags.MatchingGroups),
 		options.Filters(p.globalFlags.Filters),
+		options.PosFile(p.globalFlags.PosFile),
+		options.NoSavePos(p.globalFlags.NoSavePos),
 		// ltsv
 		options.UriLabel(p.ltsvFlags.UriLabel),
 		options.MethodLabel(p.ltsvFlags.MethodLabel),
@@ -200,10 +219,29 @@ func (p *Profiler) Run(args []string) error {
 		names := parsers.NewSubexpNames(opts.Regexp.UriSubexp, opts.Regexp.MethodSubexp, opts.Regexp.TimeSubexp,
 			opts.Regexp.ResponseTimeSubexp, opts.Regexp.BodyBytesSubexp, opts.Regexp.StatusSubexp)
 		parser, err = parsers.NewRegexpParser(f, options.DefaultPatternOption, names, opts.QueryString)
+
+		if err != nil {
+			return err
+		}
 	}
 
-	if err != nil {
-		return err
+	var posfile *os.File
+	if opts.PosFile != "" {
+		posfile, err = p.OpenPosFile(opts.PosFile)
+		if err != nil {
+			return err
+		}
+		defer posfile.Close()
+
+		pos, err := p.ReadPosFile(posfile)
+		if err != nil && err != io.EOF {
+			return err
+		}
+
+		err = parser.Seek(pos)
+		if err != nil {
+			return err
+		}
 	}
 
 Loop:
@@ -243,6 +281,14 @@ Loop:
 			return err
 		}
 		defer df.Close()
+	}
+
+	if !opts.NoSavePos && opts.PosFile != "" {
+		posfile.Seek(0, 0)
+		_, err = posfile.Write([]byte(fmt.Sprint(parser.ReadBytes())))
+		if err != nil {
+			return err
+		}
 	}
 
 	sts.SortWithOptions()

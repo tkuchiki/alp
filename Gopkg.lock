@@ -3,6 +3,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:0cc40f62e88079fab1597ddf9674f232efbf8ad201a76e2b33a2ceec856e5bd5"
+  name = "github.com/Songmu/go-ltsv"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c30af2b7b171f5896188903b69f8afa4ef3e7daa"
+
+[[projects]]
+  branch = "master"
   digest = "1:315c5f2f60c76d89b871c73f9bd5fe689cad96597afd50fb9992228ef80bdd34"
   name = "github.com/alecthomas/template"
   packages = [
@@ -62,14 +70,6 @@
   pruneopts = "UT"
   revision = "ce7b0b5c7b45a81508558cd1dba6bb1e4ddb51bb"
   version = "v0.0.3"
-
-[[projects]]
-  branch = "master"
-  digest = "1:5c27d2d618585323761231f2e0d116c94b906accb417b8224e9640ea87bf5e90"
-  name = "github.com/najeira/ltsv"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "40eb84a5b5d21afa8f26f357445d910c62011166"
 
 [[projects]]
   branch = "master"
@@ -146,8 +146,9 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/Songmu/go-ltsv",
     "github.com/antonmedv/expr",
-    "github.com/najeira/ltsv",
+    "github.com/antonmedv/expr/vm",
     "github.com/olekukonko/tablewriter",
     "github.com/stretchr/testify/assert",
     "github.com/tkuchiki/parsetime",

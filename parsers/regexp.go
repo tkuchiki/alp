@@ -8,11 +8,12 @@ import (
 )
 
 type RegexpParser struct {
-	scanner     *bufio.Scanner
+	reader      *bufio.Reader
 	subexpNames *statKeys
 	strictMode  bool
 	queryString bool
 	re          *regexp.Regexp
+	readBytes   int
 }
 
 var errPatternNotMatched = errors.New("pattern not matched")
@@ -35,7 +36,7 @@ func NewRegexpParser(r io.Reader, expr string, names *statKeys, query bool) (Par
 	}
 
 	return &RegexpParser{
-		scanner:     bufio.NewScanner(r),
+		reader:      bufio.NewReader(r),
 		re:          re,
 		subexpNames: names,
 		queryString: query,
@@ -43,11 +44,13 @@ func NewRegexpParser(r io.Reader, expr string, names *statKeys, query bool) (Par
 }
 
 func (rp *RegexpParser) Parse() (*ParsedHTTPStat, error) {
-	if !rp.scanner.Scan() {
-		return nil, io.EOF
+	b, i, err := readline(rp.reader)
+	if len(b) == 0 && err != nil {
+		return nil, err
 	}
+	rp.readBytes += i
 
-	groups := rp.re.FindStringSubmatch(rp.scanner.Text())
+	groups := rp.re.FindStringSubmatch(string(b))
 	if len(groups) == 0 {
 		return nil, errSkipReadLine(rp.strictMode, errPatternNotMatched)
 	}
@@ -62,4 +65,13 @@ func (rp *RegexpParser) Parse() (*ParsedHTTPStat, error) {
 	}
 
 	return toStats(parsedValue, rp.subexpNames, rp.strictMode, rp.queryString)
+}
+
+func (rp *RegexpParser) ReadBytes() int {
+	return rp.readBytes
+}
+
+func (rp *RegexpParser) Seek(n int) error {
+	_, err := rp.reader.Discard(n)
+	return err
 }

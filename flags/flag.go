@@ -25,6 +25,8 @@ type GlobalFlags struct {
 	Output         string
 	MatchingGroups string
 	Filters        string
+	PosFile        string
+	NoSavePos      bool
 }
 
 var SortKeys = []string{
@@ -103,4 +105,8 @@ func (f *GlobalFlags) InitGlobalFlags(app *kingpin.Application) {
 		Short('m').PlaceHolder("PATTERN,...").StringVar(&f.MatchingGroups)
 	app.Flag("filters", "Only the logs are profiled that match the conditions").
 		Short('f').StringVar(&f.Filters)
+	app.Flag("pos", "The position file").
+		PlaceHolder("POSITION_FILE").StringVar(&f.PosFile)
+	app.Flag("nosave-pos", "Do not save position file").
+		BoolVar(&f.NoSavePos)
 }
