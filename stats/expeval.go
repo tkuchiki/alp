@@ -15,14 +15,18 @@ type ExpEval struct {
 }
 
 type ExpEvalEnv struct {
-	Val                    *parsers.ParsedHTTPStat
+	Uri                    string
+	Method                 string
+	Time                   string
+	ResponseTime           float64
+	BodyBytes              float64
+	Status                 int
 	EqualTime              func(l time.Time, r string) bool
 	NotEqualTime           func(l time.Time, r string) bool
 	GreaterThanTime        func(l time.Time, r string) bool
 	GreaterThanOrEqualTime func(l time.Time, r string) bool
 	LessThanTime           func(l time.Time, r string) bool
 	LessThanOrEqualTime    func(l time.Time, r string) bool
-	Datetime               func(s string) time.Time
 	TimeAgo                func(s string) time.Time
 	BetweenTime            func(t, start, end string) bool
 }
@@ -148,14 +152,18 @@ func NewExpEval(input string, pt parsetime.ParseTime) (*ExpEval, error) {
 
 func (ee *ExpEval) Run(stat *parsers.ParsedHTTPStat) (bool, error) {
 	env := &ExpEvalEnv{
-		Val:                    stat,
+		Uri:                    stat.Uri,
+		Method:                 stat.Method,
+		Time:                   stat.Time,
+		ResponseTime:           stat.ResponseTime,
+		BodyBytes:              stat.BodyBytes,
+		Status:                 stat.Status,
 		EqualTime:              EqualTime,
 		NotEqualTime:           NotEqualTime,
 		GreaterThanTime:        GreaterThanTime,
 		GreaterThanOrEqualTime: GreaterThanOrEqualTime,
 		LessThanTime:           LessThanTime,
 		LessThanOrEqualTime:    LessThanOrEqualTime,
-		Datetime:               Datetime,
 		TimeAgo:                TimeAgo,
 		BetweenTime:            BetweenTime,
 	}
