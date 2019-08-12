@@ -14,6 +14,7 @@ import (
 type Parser interface {
 	Parse() (*ParsedHTTPStat, error)
 	ReadBytes() int
+	SetReadBytes(n int)
 	Seek(n int) error
 }
 

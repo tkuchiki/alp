@@ -242,6 +242,8 @@ func (p *Profiler) Run(args []string) error {
 		if err != nil {
 			return err
 		}
+
+		parser.SetReadBytes(pos)
 	}
 
 Loop:

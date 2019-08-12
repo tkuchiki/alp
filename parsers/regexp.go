@@ -71,6 +71,10 @@ func (rp *RegexpParser) ReadBytes() int {
 	return rp.readBytes
 }
 
+func (rp *RegexpParser) SetReadBytes(n int) {
+	rp.readBytes = n
+}
+
 func (rp *RegexpParser) Seek(n int) error {
 	_, err := rp.reader.Discard(n)
 	return err

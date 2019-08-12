@@ -68,6 +68,10 @@ func (j *JSONParser) ReadBytes() int {
 	return j.readBytes
 }
 
+func (j *JSONParser) SetReadBytes(n int) {
+	j.readBytes = n
+}
+
 func (j *JSONParser) Seek(n int) error {
 	_, err := j.reader.Discard(n)
 	return err

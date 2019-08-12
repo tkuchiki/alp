@@ -54,6 +54,10 @@ func (l *LTSVParser) ReadBytes() int {
 	return l.readBytes
 }
 
+func (l *LTSVParser) SetReadBytes(n int) {
+	l.readBytes = n
+}
+
 func (l *LTSVParser) Seek(n int) error {
 	_, err := l.reader.Discard(n)
 	return err
