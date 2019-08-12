@@ -12,11 +12,11 @@ import (
 
 var headers = map[string]string{
 	"count":    "Count",
-	"1xx":      "Status_1xx",
-	"2xx":      "Status_2xx",
-	"3xx":      "Status_3xx",
-	"4xx":      "Status_4xx",
-	"5xx":      "Status_5xx",
+	"1xx":      "1xx",
+	"2xx":      "2xx",
+	"3xx":      "3xx",
+	"4xx":      "4xx",
+	"5xx":      "5xx",
 	"method":   "Method",
 	"uri":      "Uri",
 	"min":      "Min",
