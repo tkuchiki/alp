@@ -73,11 +73,12 @@ type Printer struct {
 	all         bool
 }
 
-func NewPrinter(w io.Writer, val, format string, showFooters bool) *Printer {
+func NewPrinter(w io.Writer, val, format string, noHeaders, showFooters bool) *Printer {
 	p := &Printer{
 		format:      format,
 		writer:      w,
 		showFooters: showFooters,
+		noHeaders:   noHeaders,
 	}
 
 	if val == "all" {

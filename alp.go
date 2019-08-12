@@ -170,7 +170,7 @@ func (p *Profiler) Run(args []string) error {
 
 	sts.SetOptions(opts)
 
-	printer := stats.NewPrinter(p.outWriter, opts.Output, opts.Format, opts.ShowFooters)
+	printer := stats.NewPrinter(p.outWriter, opts.Output, opts.Format, opts.NoHeaders, opts.ShowFooters)
 	if err = printer.Validate(); err != nil {
 		return err
 	}
