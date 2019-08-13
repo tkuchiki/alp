@@ -15,26 +15,32 @@ type ExpEval struct {
 }
 
 type ExpEvalEnv struct {
-	Uri                    string
-	Method                 string
-	Time                   string
-	ResponseTime           float64
-	BodyBytes              float64
-	Status                 int
-	EqualTime              func(l time.Time, r string) bool
-	NotEqualTime           func(l time.Time, r string) bool
-	GreaterThanTime        func(l time.Time, r string) bool
-	GreaterThanOrEqualTime func(l time.Time, r string) bool
-	LessThanTime           func(l time.Time, r string) bool
-	LessThanOrEqualTime    func(l time.Time, r string) bool
-	TimeAgo                func(s string) time.Time
-	BetweenTime            func(t, start, end string) bool
+	Uri                              string
+	Method                           string
+	Time                             string
+	ResponseTime                     float64
+	BodyBytes                        float64
+	Status                           int
+	TimeStringEqualTime              func(l time.Time, r string) bool
+	TimeStringNotEqualTime           func(l time.Time, r string) bool
+	TimeStringGreaterThanTime        func(l time.Time, r string) bool
+	TimeStringGreaterThanOrEqualTime func(l time.Time, r string) bool
+	TimeStringLessThanTime           func(l time.Time, r string) bool
+	TimeStringLessThanOrEqualTime    func(l time.Time, r string) bool
+	StringTimeEqualTime              func(l string, r time.Time) bool
+	StringTimeNotEqualTime           func(l string, r time.Time) bool
+	StringTimeGreaterThanTime        func(l string, r time.Time) bool
+	StringTimeGreaterThanOrEqualTime func(l string, r time.Time) bool
+	StringTimeLessThanTime           func(l string, r time.Time) bool
+	StringTimeLessThanOrEqualTime    func(l string, r time.Time) bool
+	TimeAgo                          func(s string) time.Time
+	BetweenTime                      func(t, start, end string) bool
 }
 
 var parseTime parsetime.ParseTime
 
 // =
-func EqualTime(l time.Time, r string) bool {
+func TimeStringEqualTime(l time.Time, r string) bool {
 	t, err := parseTime.Parse(r)
 	if err != nil {
 		panic(err)
@@ -44,7 +50,7 @@ func EqualTime(l time.Time, r string) bool {
 }
 
 // !=
-func NotEqualTime(l time.Time, r string) bool {
+func TimeStringNotEqualTime(l time.Time, r string) bool {
 	t, err := parseTime.Parse(r)
 	if err != nil {
 		panic(err)
@@ -54,7 +60,7 @@ func NotEqualTime(l time.Time, r string) bool {
 }
 
 // >
-func GreaterThanTime(l time.Time, r string) bool {
+func TimeStringGreaterThanTime(l time.Time, r string) bool {
 	t, err := parseTime.Parse(r)
 	if err != nil {
 		panic(err)
@@ -64,7 +70,7 @@ func GreaterThanTime(l time.Time, r string) bool {
 }
 
 // >=
-func GreaterThanOrEqualTime(l time.Time, r string) bool {
+func TimeStringGreaterThanOrEqualTime(l time.Time, r string) bool {
 	t, err := parseTime.Parse(r)
 	if err != nil {
 		panic(err)
@@ -74,7 +80,7 @@ func GreaterThanOrEqualTime(l time.Time, r string) bool {
 }
 
 // <
-func LessThanTime(l time.Time, r string) bool {
+func TimeStringLessThanTime(l time.Time, r string) bool {
 	t, err := parseTime.Parse(r)
 	if err != nil {
 		panic(err)
@@ -84,7 +90,7 @@ func LessThanTime(l time.Time, r string) bool {
 }
 
 // <=
-func LessThanOrEqualTime(l time.Time, r string) bool {
+func TimeStringLessThanOrEqualTime(l time.Time, r string) bool {
 	t, err := parseTime.Parse(r)
 	if err != nil {
 		panic(err)
@@ -93,13 +99,64 @@ func LessThanOrEqualTime(l time.Time, r string) bool {
 	return l.Before(t) || l.Equal(t)
 }
 
-func Datetime(s string) time.Time {
-	datetime, err := parseTime.Parse(s)
+// =
+func StringTimeEqualTime(l string, r time.Time) bool {
+	t, err := parseTime.Parse(l)
 	if err != nil {
 		panic(err)
 	}
 
-	return datetime
+	return t.Equal(r)
+}
+
+// !=
+func StringTimeNotEqualTime(l string, r time.Time) bool {
+	t, err := parseTime.Parse(l)
+	if err != nil {
+		panic(err)
+	}
+
+	return !t.Equal(r)
+}
+
+// >
+func StringTimeGreaterThanTime(l string, r time.Time) bool {
+	t, err := parseTime.Parse(l)
+	if err != nil {
+		panic(err)
+	}
+
+	return t.After(r)
+}
+
+// >=
+func StringTimeGreaterThanOrEqualTime(l string, r time.Time) bool {
+	t, err := parseTime.Parse(l)
+	if err != nil {
+		panic(err)
+	}
+
+	return t.After(r) || t.Equal(r)
+}
+
+// <
+func StringTimeLessThanTime(l string, r time.Time) bool {
+	t, err := parseTime.Parse(l)
+	if err != nil {
+		panic(err)
+	}
+
+	return t.Before(r)
+}
+
+// <=
+func StringTimeLessThanOrEqualTime(l string, r time.Time) bool {
+	t, err := parseTime.Parse(l)
+	if err != nil {
+		panic(err)
+	}
+
+	return t.Before(r) || t.Equal(r)
 }
 
 func TimeAgo(s string) time.Time {
@@ -132,12 +189,18 @@ func BetweenTime(t, start, end string) bool {
 
 func NewExpEval(input string, pt parsetime.ParseTime) (*ExpEval, error) {
 	program, err := expr.Compile(input, expr.Env(&ExpEvalEnv{}), expr.AsBool(),
-		expr.Operator("=", "EqualTime"),
-		expr.Operator("!=", "NotEqualTime"),
-		expr.Operator(">", "GreaterThanTime"),
-		expr.Operator(">=", "GreaterThanOrEqualTime"),
-		expr.Operator("<", "LessThanTime"),
-		expr.Operator("<=", "LessThanOrEqualTime"),
+		expr.Operator("=", "TimeStringEqualTime"),
+		expr.Operator("!=", "TimeStringNotEqualTime"),
+		expr.Operator(">", "TimeStringGreaterThanTime"),
+		expr.Operator(">=", "TimeStringGreaterThanOrEqualTime"),
+		expr.Operator("<", "TimeStringLessThanTime"),
+		expr.Operator("<=", "TimeStringLessThanOrEqualTime"),
+		expr.Operator("=", "StringTimeEqualTime"),
+		expr.Operator("!=", "StringTimeNotEqualTime"),
+		expr.Operator(">", "StringTimeGreaterThanTime"),
+		expr.Operator(">=", "StringTimeGreaterThanOrEqualTime"),
+		expr.Operator("<", "StringTimeLessThanTime"),
+		expr.Operator("<=", "StringTimeLessThanOrEqualTime"),
 	)
 	if err != nil {
 		return nil, err
@@ -152,20 +215,26 @@ func NewExpEval(input string, pt parsetime.ParseTime) (*ExpEval, error) {
 
 func (ee *ExpEval) Run(stat *parsers.ParsedHTTPStat) (bool, error) {
 	env := &ExpEvalEnv{
-		Uri:                    stat.Uri,
-		Method:                 stat.Method,
-		Time:                   stat.Time,
-		ResponseTime:           stat.ResponseTime,
-		BodyBytes:              stat.BodyBytes,
-		Status:                 stat.Status,
-		EqualTime:              EqualTime,
-		NotEqualTime:           NotEqualTime,
-		GreaterThanTime:        GreaterThanTime,
-		GreaterThanOrEqualTime: GreaterThanOrEqualTime,
-		LessThanTime:           LessThanTime,
-		LessThanOrEqualTime:    LessThanOrEqualTime,
-		TimeAgo:                TimeAgo,
-		BetweenTime:            BetweenTime,
+		Uri:                              stat.Uri,
+		Method:                           stat.Method,
+		Time:                             stat.Time,
+		ResponseTime:                     stat.ResponseTime,
+		BodyBytes:                        stat.BodyBytes,
+		Status:                           stat.Status,
+		TimeStringEqualTime:              TimeStringEqualTime,
+		TimeStringNotEqualTime:           TimeStringNotEqualTime,
+		TimeStringGreaterThanTime:        TimeStringGreaterThanTime,
+		TimeStringGreaterThanOrEqualTime: TimeStringGreaterThanOrEqualTime,
+		TimeStringLessThanTime:           TimeStringLessThanTime,
+		TimeStringLessThanOrEqualTime:    TimeStringLessThanOrEqualTime,
+		StringTimeEqualTime:              StringTimeEqualTime,
+		StringTimeNotEqualTime:           StringTimeNotEqualTime,
+		StringTimeGreaterThanTime:        StringTimeGreaterThanTime,
+		StringTimeGreaterThanOrEqualTime: StringTimeGreaterThanOrEqualTime,
+		StringTimeLessThanTime:           StringTimeLessThanTime,
+		StringTimeLessThanOrEqualTime:    StringTimeLessThanOrEqualTime,
+		TimeAgo:                          TimeAgo,
+		BetweenTime:                      BetweenTime,
 	}
 
 	output, err := expr.Run(ee.program, env)
