@@ -21,23 +21,26 @@ usage: alp [<flags>] <command> [<args> ...]
 alp is the access log profiler for LTSV, JSON, and others.
 
 Flags:
-      --help              Show context-sensitive help (also try --help-long and --help-man).
-  -c, --config=CONFIG     The configuration file
-      --file=FILE         The access log file
-  -d, --dump=DUMP         Dump profiled data as YAML
-  -l, --load=LOAD         Load the profiled YAML data
-      --sort=max          Output the results in sorted order
-  -r, --reverse           Sort results in reverse order
-  -q, --query-string      Include the URI query string.
-      --format=table      The output format (table or tsv)
-      --noheaders         Output no header line at all (only --format=tsv)
-      --limit=5000        The maximum number of results to display.
-      --location="Local"  Location name for the timezone
-  -o, --output="all"      Specifies the results to display, separated by commas
+      --help               Show context-sensitive help (also try --help-long and --help-man).
+  -c, --config=CONFIG      The configuration file
+      --file=FILE          The access log file
+  -d, --dump=DUMP          Dump profiled data as YAML
+  -l, --load=LOAD          Load the profiled YAML data
+      --sort=max           Output the results in sorted order
+  -r, --reverse            Sort results in reverse order
+  -q, --query-string       Include the URI query string.
+      --format=table       The output format (table or tsv)
+      --noheaders          Output no header line at all (only --format=tsv)
+      --show-footers       Output footer line at all (only --format=table)
+      --limit=5000         The maximum number of results to display.
+      --location="Local"   Location name for the timezone
+  -o, --output="all"       Specifies the results to display, separated by commas
   -m, --matching-groups=PATTERN,...
-                          Specifies URI matching groups separated by commas
-  -f, --filters=FILTERS   Only the logs are profiled that match the conditions
-      --version           Show application version.
+                           Specifies URI matching groups separated by commas
+  -f, --filters=FILTERS    Only the logs are profiled that match the conditions
+      --pos=POSITION_FILE  The position file
+      --nosave-pos         Do not save position file
+      --version            Show application version.
 
 Commands:
   help [<command>...]
@@ -51,6 +54,8 @@ Commands:
 
   regexp [<flags>]
     Profile the logs that match a regular expression
+
+
 ```
 
 ## ltsv
@@ -198,18 +203,18 @@ TBW
 
 Filter on the following variables:.
 
-- `Val.Uri`
+- `Uri`
     - URI
-- `Val.Method`
+- `Method`
     - HTTP Method
-- `Val.Time`
+- `Time`
     - Datetime string
     - See: https://github.com/tkuchiki/parsetime
-- `Val.ResponseTime`
+- `ResponseTime`
     - Response time
-- `Val.BodyBytes`
+- `BodyBytes`
     - Bytes of HTTP Body 
-- `Val.Status`
+- `Status`
     - HTTP Status Code
 
 ### Operators
@@ -223,20 +228,20 @@ The following operators are available:.
 - `or`, `||`
 - `matches`
     - e.g.
-       - `Val.Uri matches "PATTERN"`
-       - `not Val.Uri matches "PATTERN"`
+       - `Uri matches "PATTERN"`
+       - `not(Uri matches "PATTERN")`
 - `contains`
     - e.g.
-        - `Val.Uri contains "STRING"`
-        - `not Val.Uri contains "STRING"`
+        - `Uri contains "STRING"`
+        - `not(Uri contains "STRING")`
 - `startsWith`
     - e.g.
-        - `Val.Uri startsWith "PREFIX"`
-        - `not Val.Uri startsWith "PREFIX"`
+        - `Uri startsWith "PREFIX"`
+        - `not(Uri startsWith "PREFIX")`
 - `endsWith`
     - e.g.
-        - `Val.Uri endsWith "SUFFIX"`
-        - `not Val.Uri endsWith "SUFFIX"`
+        - `Uri endsWith "SUFFIX"`
+        - `not(Uri endsWith "SUFFIX")`
 - `in`
     - e.g.
         - `Val.Method in ["GET", "POST"]`
@@ -246,8 +251,6 @@ See: https://github.com/antonmedv/expr/blob/master/docs/Language-Definition.md
 
 ### Functions
 
-- `Datetime(timestr)`
-    - Convert datetime string to time type
 - `TimeAgo(duration)`
     - now - `duration`
     - `ns`, `us or µs`, `ms`, `s`, `m`, `h`
@@ -257,3 +260,7 @@ See: https://github.com/antonmedv/expr/blob/master/docs/Language-Definition.md
     - Like SQL's `BETWEEN`, returns `start <= val && val <= end`
     - e.g.
         - `BetweenTime(Val.Time, "2019-08-06T00:00:00", "2019-08-06T00:05:00")`
+
+## Usage samples
+
+See: [Usage samples](./docs/usage_samples.md)

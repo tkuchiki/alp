@@ -12,6 +12,8 @@
     - 同等の機能をフィルタで実現したため、`--includes`, `--excludes`, `--start-time`, `--end-time`, `--start-time-duration`, `--end-time-duration` を削除 
 - `--aggregates` オプションを `-m, --matching-groups` オプションに rename
 - `-o, --output` オプションで解析結果の出力を変更可能
+- `--pos` オプションで、解析したバイト数を記録して、次回以降そのバイト数以降のデータを解析対象とすることが可能に
+    - ベンチマークなどで、都度ログファイルを truncate する必要がなくなる想定
 
 ## 参考
 
@@ -83,23 +85,26 @@ usage: alp [<flags>] <command> [<args> ...]
 alp is the access log profiler for LTSV, JSON, and others.
 
 Flags:
-      --help              Show context-sensitive help (also try --help-long and --help-man).
-  -c, --config=CONFIG     The configuration file
-      --file=FILE         The access log file
-  -d, --dump=DUMP         Dump profiled data as YAML
-  -l, --load=LOAD         Load the profiled YAML data
-      --sort=max          Output the results in sorted order
-  -r, --reverse           Sort results in reverse order
-  -q, --query-string      Include the URI query string.
-      --format=table      The output format (table or tsv)
-      --noheaders         Output no header line at all (only --format=tsv)
-      --limit=5000        The maximum number of results to display.
-      --location="Local"  Location name for the timezone
-  -o, --output="all"      Specifies the results to display, separated by commas
+      --help               Show context-sensitive help (also try --help-long and --help-man).
+  -c, --config=CONFIG      The configuration file
+      --file=FILE          The access log file
+  -d, --dump=DUMP          Dump profiled data as YAML
+  -l, --load=LOAD          Load the profiled YAML data
+      --sort=max           Output the results in sorted order
+  -r, --reverse            Sort results in reverse order
+  -q, --query-string       Include the URI query string.
+      --format=table       The output format (table or tsv)
+      --noheaders          Output no header line at all (only --format=tsv)
+      --show-footers       Output footer line at all (only --format=table)
+      --limit=5000         The maximum number of results to display.
+      --location="Local"   Location name for the timezone
+  -o, --output="all"       Specifies the results to display, separated by commas
   -m, --matching-groups=PATTERN,...
-                          Specifies URI matching groups separated by commas
-  -f, --filters=FILTERS   Only the logs are profiled that match the conditions
-      --version           Show application version.
+                           Specifies URI matching groups separated by commas
+  -f, --filters=FILTERS    Only the logs are profiled that match the conditions
+      --pos=POSITION_FILE  The position file
+      --nosave-pos         Do not save position file
+      --version            Show application version.
 
 Commands:
   help [<command>...]

@@ -12,30 +12,33 @@ https://github.com/tkuchiki/alp/releases から環境にあったバイナリが
 
 # 使い方
 
-```consol
+```console
 $ alp --help
 usage: alp [<flags>] <command> [<args> ...]
 
 alp is the access log profiler for LTSV, JSON, and others.
 
 Flags:
-      --help              Show context-sensitive help (also try --help-long and --help-man).
-  -c, --config=CONFIG     The configuration file
-      --file=FILE         The access log file
-  -d, --dump=DUMP         Dump profiled data as YAML
-  -l, --load=LOAD         Load the profiled YAML data
-      --sort=max          Output the results in sorted order
-  -r, --reverse           Sort results in reverse order
-  -q, --query-string      Include the URI query string.
-      --format=table      The output format (table or tsv)
-      --noheaders         Output no header line at all (only --format=tsv)
-      --limit=5000        The maximum number of results to display.
-      --location="Local"  Location name for the timezone
-  -o, --output="all"      Specifies the results to display, separated by commas
+      --help               Show context-sensitive help (also try --help-long and --help-man).
+  -c, --config=CONFIG      The configuration file
+      --file=FILE          The access log file
+  -d, --dump=DUMP          Dump profiled data as YAML
+  -l, --load=LOAD          Load the profiled YAML data
+      --sort=max           Output the results in sorted order
+  -r, --reverse            Sort results in reverse order
+  -q, --query-string       Include the URI query string.
+      --format=table       The output format (table or tsv)
+      --noheaders          Output no header line at all (only --format=tsv)
+      --show-footers       Output footer line at all (only --format=table)
+      --limit=5000         The maximum number of results to display.
+      --location="Local"   Location name for the timezone
+  -o, --output="all"       Specifies the results to display, separated by commas
   -m, --matching-groups=PATTERN,...
-                          Specifies URI matching groups separated by commas
-  -f, --filters=FILTERS   Only the logs are profiled that match the conditions
-      --version           Show application version.
+                           Specifies URI matching groups separated by commas
+  -f, --filters=FILTERS    Only the logs are profiled that match the conditions
+      --pos=POSITION_FILE  The position file
+      --nosave-pos         Do not save position file
+      --version            Show application version.
 
 Commands:
   help [<command>...]
@@ -267,6 +270,8 @@ $ cat example/logs/combined_access.log | alp regexp
 
 ## グローバルオプション
 
+sample は [Usage samples](./docs/usage_samples.ja.md) を参照してください。
+
 - `-c, --config`
     - 各種オプションの設定ファイル
     - YAML
@@ -313,6 +318,13 @@ $ cat example/logs/combined_access.log | alp regexp
 - `-f, --filters=FILTERS`
     - 集計対象をフィルタします
     - 後述の[フィルタ](#フィルタ)参照
+- `--pos=POSITION_FILE`
+    - ファイルをどこまで読み込んだかバイト数を記録します
+    - POSITION_FILE にバイト数が書かれていた場合、そのバイト数以降のデータが解析対象になります
+    - ファイルを truncate することなく前回解析後からの増分だけを解析することができます
+        - また、ファイルを Seek して読み飛ばすので、高速に動作することが見込めます
+- `--nosave-pos`
+    - `--pos` で指定したバイト数以降のデータを解析対象としますが、読み込んだバイト数の記録はしないようにします
     
 ## URI matching groups
 
@@ -349,18 +361,18 @@ $ cat example/logs/ltsv_access.log | alp ltsv --filters "Val.Uri matches '^/diar
 
 以下の変数に対してフィルタをかけることができます。
 
-- `Val.Uri`
+- `Uri`
     - URI
-- `Val.Method`
+- `Method`
     - HTTP メソッド
-- `Val.Time`
+- `Time`
     - 時刻文字列
     - https://github.com/tkuchiki/parsetime でパースできる時刻文字列に対応しています
-- `Val.ResponseTime`
+- `ResponseTime`
     - レスポンスタイム
-- `Val.BodyBytes`
+- `BodyBytes`
     - HTTP Body のバイト数
-- `Val.Status`
+- `Status`
     - HTTP Status Code
 
 ### 演算子
@@ -375,43 +387,45 @@ $ cat example/logs/ltsv_access.log | alp ltsv --filters "Val.Uri matches '^/diar
 - `matches`
     - 正規表現(`PATTERN`)にマッチするか否か
     - e.g.
-       - `Val.Uri matches "PATTERN"`
-       - `not Val.Uri matches "PATTERN"`
+       - `Uri matches "PATTERN"`
+       - `not(Uri matches "PATTERN")`
 - `contains`
     - 文字列(`STRING`)を含むか否か
     - e.g.
-        - `Val.Uri contains "STRING"`
-        - `not Val.Uri contains "STRING"`
+        - `Uri contains "STRING"`
+        - `not(Uri contains "STRING")`
 - `startsWith`
     - 文字列に前方一致するか否か
     - e.g.
-        - `Val.Uri startsWith "PREFIX"`
-        - `not Val.Uri startsWith "PREFIX"`
+        - `Uri startsWith "PREFIX"`
+        - `not(Uri startsWith "PREFIX")`
 - `endsWith`
     - 文字列に後方一致するか否か
     - e.g.
-        - `Val.Uri endsWith "SUFFIX"`
-        - `not Val.Uri endsWith "SUFFIX"`
+        - `Uri endsWith "SUFFIX"`
+        - `not(Uri endsWith "SUFFIX")`
 - `in`
     - 配列の値を含むか否か
     - e.g.
-        - `Val.Method in ["GET", "POST"]`
-        - `Val.Method not in ["GET", "POST"]`
+        - `Method in ["GET", "POST"]`
+        - `Method not in ["GET", "POST"]`
 
 詳細は https://github.com/antonmedv/expr/blob/master/docs/Language-Definition.md を参照してください。  
 
 ### 関数
 
-- `Datetime(timestr)`
-    - 時刻文字列を時刻型に変換
 - `TimeAgo(duration)`
     - 現在時刻 - `duration` した時刻を返します
     - Go の time.Duration で使用できる時刻の単位を指定できます
     - `ns`, `us or µs`, `ms`, `s`, `m`, `h`
     - e.g.
-        - `Val.Time >= TimeAgo("5m")`
-        - `Val.Time` が現在時刻 -5分以上のログを集計対象とする
+        - `Time >= TimeAgo("5m")`
+        - `Time` が現在時刻 -5分以上のログを集計対象とする
 - `BetweenTime(val, start, end)`
-    - SQL の `BETWEEN` のように、`start <= val && val <= end` を返す
+    - SQL の `BETWEEN` のように、`start <= val && val <= end` の結果を返す   
     - e.g.
-        - `BetweenTime(Val.Time, "2019-08-06T00:00:00", "2019-08-06T00:05:00")`
+        - `BetweenTime(Time, "2019-08-06T00:00:00", "2019-08-06T00:05:00")`
+        
+## 利用例
+
+[Usage samples](./docs/usage_samples.ja.md) を参照してください。
