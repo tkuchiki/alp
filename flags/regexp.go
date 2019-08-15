@@ -21,17 +21,17 @@ func NewRegexpFlags() *RegexpFlags {
 
 func (f *RegexpFlags) InitFlags(app *kingpin.CmdClause) {
 	app.Flag("pattern", "Regular expressions pattern matching the log").
-		Default(options.DefaultPatternOption).PlaceHolder("PATTERN").StringVar(&f.Pattern)
+		PlaceHolder(options.DefaultPatternOption).PlaceHolder("PATTERN").StringVar(&f.Pattern)
 	app.Flag("uri-subexp", "Change the uri sub expression").
-		Default(options.DefaultUriSubexpOption).StringVar(&f.UriSubexp)
+		PlaceHolder(options.DefaultUriSubexpOption).StringVar(&f.UriSubexp)
 	app.Flag("method-subexp", "Change the method sub expression").
-		Default(options.DefaultMethodSubexpOption).StringVar(&f.MethodSubexp)
+		PlaceHolder(options.DefaultMethodSubexpOption).StringVar(&f.MethodSubexp)
 	app.Flag("time-subexp", "Change the time sub expression").
-		Default(options.DefaultTimeSubexpOption).StringVar(&f.TimeSubexp)
+		PlaceHolder(options.DefaultTimeSubexpOption).StringVar(&f.TimeSubexp)
 	app.Flag("restime-subexp", "Change the response_time sub expression").
-		Default(options.DefaultResponseTimeSubexpOption).StringVar(&f.ResponseTimeSubexp)
+		PlaceHolder(options.DefaultResponseTimeSubexpOption).StringVar(&f.ResponseTimeSubexp)
 	app.Flag("body-bytes-subexp", "Change the body_bytes sub expression").
-		Default(options.DefaultBodyBytesSubexpOption).StringVar(&f.BodyBytesSubexp)
+		PlaceHolder(options.DefaultBodyBytesSubexpOption).StringVar(&f.BodyBytesSubexp)
 	app.Flag("status-subexp", "Change the status sub expression").
-		Default(options.DefaultStatusSubexpOption).StringVar(&f.StatusSubexp)
+		PlaceHolder(options.DefaultStatusSubexpOption).StringVar(&f.StatusSubexp)
 }

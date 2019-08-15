@@ -119,6 +119,8 @@ func (p *Profiler) Run(args []string) error {
 		if err != nil {
 			return err
 		}
+		sort = flags.SortOptions[opts.Sort]
+
 	} else {
 		opts = options.NewOptions()
 	}

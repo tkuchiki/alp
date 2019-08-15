@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	DefaultSortOption     = "max"
+	DefaultSortOption     = "count"
 	DefaultFormatOption   = "table"
 	DefaultLimitOption    = 5000
 	DefaultLocationOption = "Local"
@@ -51,27 +51,23 @@ const (
 )
 
 type Options struct {
-	File              string         `yaml:"file"`
-	Sort              string         `yaml:"sort"`
-	Reverse           bool           `yaml:"reverse"`
-	QueryString       bool           `yaml:"query_string"`
-	Format            string         `yaml:"format"`
-	NoHeaders         bool           `yaml:no_headers`
-	ShowFooters       bool           `yaml:show_footers`
-	Limit             int            `yaml:"limit"`
-	MatchingGroups    []string       `yaml:"matching_groups"`
-	StartTime         string         `yaml:"start_time"`
-	EndTime           string         `yaml:"end_time"`
-	StartTimeDuration string         `yaml:"start_time_duration"`
-	EndTimeDuration   string         `yaml:"end_time_duration"`
-	Filters           string         `yaml:"filters"`
-	PosFile           string         `yaml:pos_file`
-	NoSavePos         bool           `yaml:nosave_pos`
-	Location          string         `yaml:location`
-	Output            string         `yaml:output`
-	LTSV              *LTSVOptions   `yaml:ltsv`
-	Regexp            *RegexpOptions `yaml:regexp`
-	JSON              *JSONOptions   `yaml:json`
+	File           string         `yaml:"file"`
+	Sort           string         `yaml:"sort"`
+	Reverse        bool           `yaml:"reverse"`
+	QueryString    bool           `yaml:"query_string"`
+	Format         string         `yaml:"format"`
+	NoHeaders      bool           `yaml:"noheaders"`
+	ShowFooters    bool           `yaml:"show_footers"`
+	Limit          int            `yaml:"limit"`
+	MatchingGroups []string       `yaml:"matching_groups"`
+	Filters        string         `yaml:"filters"`
+	PosFile        string         `yaml:"pos_file"`
+	NoSavePos      bool           `yaml:"nosave_pos"`
+	Location       string         `yaml:"location"`
+	Output         string         `yaml:"output"`
+	LTSV           *LTSVOptions   `yaml:"ltsv"`
+	Regexp         *RegexpOptions `yaml:"regexp"`
+	JSON           *JSONOptions   `yaml:"json"`
 }
 
 type LTSVOptions struct {
@@ -84,22 +80,22 @@ type LTSVOptions struct {
 }
 
 type RegexpOptions struct {
-	Pattern            string `yaml:pattern`
-	UriSubexp          string `yaml:uri_subexp`
-	MethodSubexp       string `yaml:method_subexp`
-	TimeSubexp         string `yaml:time_subexp`
-	ResponseTimeSubexp string `yaml:response_time_subexp`
-	BodyBytesSubexp    string `yaml:body_bytes_subexp`
-	StatusSubexp       string `yaml:status_subexp`
+	Pattern            string `yaml:"pattern"`
+	UriSubexp          string `yaml:"uri_subexp"`
+	MethodSubexp       string `yaml:"method_subexp"`
+	TimeSubexp         string `yaml:"time_subexp"`
+	ResponseTimeSubexp string `yaml:"response_time_subexp"`
+	BodyBytesSubexp    string `yaml:"body_bytes_subexp"`
+	StatusSubexp       string `yaml:"status_subexp"`
 }
 
 type JSONOptions struct {
-	UriKey          string `yaml:uri_key`
-	MethodKey       string `yaml:method_key`
-	TimeKey         string `yaml:time_key`
-	ResponseTimeKey string `yaml:response_time_key`
-	BodyBytesKey    string `yaml:body_bytes_key`
-	StatusKey       string `yaml:status_key`
+	UriKey          string `yaml:"uri_key"`
+	MethodKey       string `yaml:"method_key"`
+	TimeKey         string `yaml:"time_key"`
+	ResponseTimeKey string `yaml:"response_time_key"`
+	BodyBytesKey    string `yaml:"body_bytes_key"`
+	StatusKey       string `yaml:"status_key"`
 }
 
 type Option func(*Options)
@@ -411,6 +407,7 @@ func NewOptions(opt ...Option) *Options {
 
 	options := &Options{
 		Sort:     DefaultSortOption,
+		Format:   DefaultFormatOption,
 		Limit:    DefaultLimitOption,
 		Location: DefaultLocationOption,
 		Output:   DefaultOutputOption,
@@ -441,7 +438,47 @@ func LoadOptionsFromReader(r io.Reader) (*Options, error) {
 		return opts, err
 	}
 
-	err = yaml.Unmarshal(buf, opts)
+	configs := &Options{}
+	err = yaml.Unmarshal(buf, configs)
+
+	opts = SetOptions(opts,
+		Sort(configs.Sort),
+		Limit(configs.Limit),
+		Location(configs.Location),
+		Output(configs.Output),
+		Reverse(configs.Reverse),
+		File(configs.File),
+		QueryString(configs.QueryString),
+		Format(configs.Format),
+		NoHeaders(configs.NoHeaders),
+		ShowFooters(configs.ShowFooters),
+		PosFile(configs.PosFile),
+		NoSavePos(configs.NoSavePos),
+		MatchingGroups(configs.MatchingGroups),
+		Filters(configs.Filters),
+		// ltsv
+		ApptimeLabel(configs.LTSV.ApptimeLabel),
+		StatusLabel(configs.LTSV.StatusLabel),
+		SizeLabel(configs.LTSV.SizeLabel),
+		MethodLabel(configs.LTSV.MethodLabel),
+		UriLabel(configs.LTSV.UriLabel),
+		TimeLabel(configs.LTSV.TimeLabel),
+		// json
+		ResponseTimeKey(configs.JSON.ResponseTimeKey),
+		StatusKey(configs.JSON.StatusKey),
+		BodyBytesKey(configs.JSON.BodyBytesKey),
+		MethodKey(configs.JSON.MethodKey),
+		UriKey(configs.JSON.UriKey),
+		TimeKey(configs.JSON.TimeKey),
+		// regexp
+		Pattern(configs.Regexp.Pattern),
+		ResponseTimeSubexp(configs.Regexp.ResponseTimeSubexp),
+		StatusSubexp(configs.Regexp.StatusSubexp),
+		BodyBytesSubexp(configs.Regexp.BodyBytesSubexp),
+		MethodSubexp(configs.Regexp.MethodSubexp),
+		UriSubexp(configs.Regexp.UriSubexp),
+		TimeSubexp(configs.Regexp.TimeSubexp),
+	)
 
 	return opts, err
 }

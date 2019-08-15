@@ -1,24 +1,36 @@
 ---
-file:                # access.log
-sort:                # max|min|avg|sum|cnt|uri|method|max-body|min-body|avg-body|sum-body|p1|p50|p99|stddev
-reverse:             # boolean
-query_string:        # boolean
-tsv:                 # boolean
-apptime_label:       # apptime
-reqtime_label:       # reqtime
-status_label:        # status code
-size_label:          # size
-method_label:        # method
-uri_label:           # uri
-time_label:          # time
-limit:               # 5000
-includes:            # array
-excludes:            # array
-include_statuses:    # array
-exclude_statuses:    # array
-no_headers:          # boolean
-aggregates:          # array
-start_time:          # 2006-01-02T15:04:05
-end_time:            # 2006-01-02 15:04:05
-start_time_duration: # 1m
-end_time_duration:   # 1h
+file:            # string
+sort:            # max|min|avg|sum|count|uri|method|max-body|min-body|avg-body|sum-body|p1|p50|p99|stddev
+reverse:         # boolean
+query_string:    # boolean
+format:          # string
+limit:           # 5000
+noheaders:       # boolean
+show_footers:    # boolean
+matching_groups: # array
+filters:         # string
+output:          # string(comma separated)
+pos_file:        # string
+nosave_pos:      # boolean
+ltsv:
+  apptime_label: # apptime
+  status_label:  # status code
+  size_label:    # size
+  method_label:  # method
+  uri_label:     # uri
+  time_label:     # time
+json:
+  uri_key:           # string
+  method_key:        # string
+  time_key:          # string
+  response_time_key: # string
+  body_bytes_key:    # string
+  status_key:        # string
+regexp:
+  pattern:              # string
+  uri_subexp:           # string
+  method_subexp:        # string
+  time_subexp:          # string
+  response_time_subexp: # string
+  body_bytes_subexp:    # string
+  status_subexp:        # string

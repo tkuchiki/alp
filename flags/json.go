@@ -20,15 +20,15 @@ func NewJSONFlags() *JSONFlags {
 
 func (f *JSONFlags) InitFlags(app *kingpin.CmdClause) {
 	app.Flag("uri-key", "Change the uri key").
-		Default(options.DefaultUriKeyOption).StringVar(&f.UriKey)
+		PlaceHolder(options.DefaultUriKeyOption).StringVar(&f.UriKey)
 	app.Flag("method-key", "Change the method key").
-		Default(options.DefaultMethodKeyOption).StringVar(&f.MethodKey)
+		PlaceHolder(options.DefaultMethodKeyOption).StringVar(&f.MethodKey)
 	app.Flag("time-key", "Change the time key").
-		Default(options.DefaultTimeKeyOption).StringVar(&f.TimeKey)
+		PlaceHolder(options.DefaultTimeKeyOption).StringVar(&f.TimeKey)
 	app.Flag("restime-key", "Change the response_time key").
-		Default(options.DefaultResponseTimeKeyOption).StringVar(&f.ResponseTimeKey)
+		PlaceHolder(options.DefaultResponseTimeKeyOption).StringVar(&f.ResponseTimeKey)
 	app.Flag("body-bytes-key", "Change the body_bytes key").
-		Default(options.DefaultBodyBytesKeyOption).StringVar(&f.BodyBytesKey)
+		PlaceHolder(options.DefaultBodyBytesKeyOption).StringVar(&f.BodyBytesKey)
 	app.Flag("status-key", "Change the status key").
-		Default(options.DefaultStatusKeyOption).StringVar(&f.StatusKey)
+		PlaceHolder(options.DefaultStatusKeyOption).StringVar(&f.StatusKey)
 }
