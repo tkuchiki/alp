@@ -139,17 +139,17 @@ func (hs *HTTPStats) SortWithOptions() {
 }
 
 type HTTPStat struct {
-	Uri               string        `yaml:uri`
-	Cnt               int           `yaml:count`
-	Status1xx         int           `yaml:status1xx`
-	Status2xx         int           `yaml:status2xx`
-	Status3xx         int           `yaml:status3xx`
-	Status4xx         int           `yaml:status4xx`
-	Status5xx         int           `yaml:status5xx`
-	Method            string        `yaml:method`
-	ResponseTime      *responseTime `yaml:response_time`
-	RequestBodyBytes  *bodyBytes    `yaml:request_body_bytes`
-	ResponseBodyBytes *bodyBytes    `yaml:response_body_bytes`
+	Uri               string        `yaml:"uri"`
+	Cnt               int           `yaml:"count"`
+	Status1xx         int           `yaml:"status1xx"`
+	Status2xx         int           `yaml:"status2xx"`
+	Status3xx         int           `yaml:"status3xx"`
+	Status4xx         int           `yaml:"status4xx"`
+	Status5xx         int           `yaml:"status5xx"`
+	Method            string        `yaml:"method"`
+	ResponseTime      *responseTime `yaml:"response_time"`
+	RequestBodyBytes  *bodyBytes    `yaml:"request_body_bytes"`
+	ResponseBodyBytes *bodyBytes    `yaml:"response_body_bytes"`
 	Time              string
 }
 
@@ -335,16 +335,16 @@ func percentRank(l int, n int) int {
 }
 
 type responseTime struct {
-	Max           float64
-	Min           float64
-	Sum           float64
-	usePercentile bool
-	Percentiles   []float64
+	Max           float64 `yaml:"max"`
+	Min           float64 `yaml:"min"`
+	Sum           float64 `yaml:"sum"`
+	UsePercentile bool
+	Percentiles   []float64 `yaml:"percentiles"`
 }
 
 func newResponseTime(usePercentile bool) *responseTime {
 	return &responseTime{
-		usePercentile: usePercentile,
+		UsePercentile: usePercentile,
 		Percentiles:   make([]float64, 0),
 	}
 }
@@ -360,7 +360,7 @@ func (res *responseTime) Set(val float64) {
 
 	res.Sum += val
 
-	if res.usePercentile {
+	if res.UsePercentile {
 		res.Percentiles = append(res.Percentiles, val)
 	}
 }
@@ -370,7 +370,7 @@ func (res *responseTime) Avg(cnt int) float64 {
 }
 
 func (res *responseTime) P1(cnt int) float64 {
-	if !res.usePercentile {
+	if !res.UsePercentile {
 		return 0.0
 	}
 
@@ -379,7 +379,7 @@ func (res *responseTime) P1(cnt int) float64 {
 }
 
 func (res *responseTime) P50(cnt int) float64 {
-	if !res.usePercentile {
+	if !res.UsePercentile {
 		return 0.0
 	}
 
@@ -388,7 +388,7 @@ func (res *responseTime) P50(cnt int) float64 {
 }
 
 func (res *responseTime) P90(cnt int) float64 {
-	if !res.usePercentile {
+	if !res.UsePercentile {
 		return 0.0
 	}
 
@@ -397,7 +397,7 @@ func (res *responseTime) P90(cnt int) float64 {
 }
 
 func (res *responseTime) P99(cnt int) float64 {
-	if !res.usePercentile {
+	if !res.UsePercentile {
 		return 0.0
 	}
 
@@ -406,7 +406,7 @@ func (res *responseTime) P99(cnt int) float64 {
 }
 
 func (res *responseTime) Stddev(cnt int) float64 {
-	if !res.usePercentile {
+	if !res.UsePercentile {
 		return 0.0
 	}
 
@@ -422,17 +422,17 @@ func (res *responseTime) Stddev(cnt int) float64 {
 }
 
 type bodyBytes struct {
-	Max           float64
-	Min           float64
-	Sum           float64
-	usePercentile bool
-	percentiles   []float64
+	Max           float64 `yaml:"max"`
+	Min           float64 `yaml:"min"`
+	Sum           float64 `yaml:"sum"`
+	UsePercentile bool
+	Percentiles   []float64 `yaml:"percentiles"`
 }
 
 func newBodyBytes(usePercentile bool) *bodyBytes {
 	return &bodyBytes{
-		usePercentile: usePercentile,
-		percentiles:   make([]float64, 0),
+		UsePercentile: usePercentile,
+		Percentiles:   make([]float64, 0),
 	}
 }
 
@@ -447,8 +447,8 @@ func (body *bodyBytes) Set(val float64) {
 
 	body.Sum += val
 
-	if body.usePercentile {
-		body.percentiles = append(body.percentiles, val)
+	if body.UsePercentile {
+		body.Percentiles = append(body.Percentiles, val)
 	}
 }
 
@@ -457,43 +457,43 @@ func (body *bodyBytes) Avg(cnt int) float64 {
 }
 
 func (body *bodyBytes) P1(cnt int) float64 {
-	if !body.usePercentile {
+	if !body.UsePercentile {
 		return 0.0
 	}
 
 	plen := percentRank(cnt, 1)
-	return body.percentiles[plen]
+	return body.Percentiles[plen]
 }
 
 func (body *bodyBytes) P50(cnt int) float64 {
-	if !body.usePercentile {
+	if !body.UsePercentile {
 		return 0.0
 	}
 
 	plen := percentRank(cnt, 50)
-	return body.percentiles[plen]
+	return body.Percentiles[plen]
 }
 
 func (body *bodyBytes) P90(cnt int) float64 {
-	if !body.usePercentile {
+	if !body.UsePercentile {
 		return 0.0
 	}
 
 	plen := percentRank(cnt, 90)
-	return body.percentiles[plen]
+	return body.Percentiles[plen]
 }
 
 func (body *bodyBytes) P99(cnt int) float64 {
-	if !body.usePercentile {
+	if !body.UsePercentile {
 		return 0.0
 	}
 
 	plen := percentRank(cnt, 99)
-	return body.percentiles[plen]
+	return body.Percentiles[plen]
 }
 
 func (body *bodyBytes) Stddev(cnt int) float64 {
-	if !body.usePercentile {
+	if !body.UsePercentile {
 		return 0.0
 	}
 
@@ -501,7 +501,7 @@ func (body *bodyBytes) Stddev(cnt int) float64 {
 	avg := body.Avg(cnt)
 	n := float64(cnt)
 
-	for _, v := range body.percentiles {
+	for _, v := range body.Percentiles {
 		stdd += (v - avg) * (v - avg)
 	}
 
