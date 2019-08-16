@@ -173,7 +173,7 @@ TBW
 TBW
 
 ```console
-$ cat example/logs/ltsv_access.log | alp ltsv --filters "Val.Uri matches '^/diary/entry'"
+$ cat example/logs/ltsv_access.log | alp ltsv --filters "Uri matches '^/diary/entry'"
 +-------+-----+-----+-----+-----+-----+--------+-------------------+-------+-------+-------+-------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+
 | COUNT | 1XX | 2XX | 3XX | 4XX | 5XX | METHOD |        URI        |  MIN  |  MAX  |  SUM  |  AVG  |  P1   |  P50  |  P99  | STDDEV | MIN(BODY) | MAX(BODY) | SUM(BODY) | AVG(BODY) |
 +-------+-----+-----+-----+-----+-----+--------+-------------------+-------+-------+-------+-------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+
@@ -185,7 +185,7 @@ $ cat example/logs/ltsv_access.log | alp ltsv --filters "Val.Uri matches '^/diar
 ```
 
 ```console
-$ cat example/logs/ltsv_access.log | alp ltsv --filters "Val.Uri matches '^/diary/entry'" -m "/diary/entry/.+"
+$ cat example/logs/ltsv_access.log | alp ltsv --filters "Uri matches '^/diary/entry'" -m "/diary/entry/.+"
 +-------+-----+-----+-----+-----+-----+--------+-----------------+-------+-------+-------+-------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+
 | COUNT | 1XX | 2XX | 3XX | 4XX | 5XX | METHOD |       URI       |  MIN  |  MAX  |  SUM  |  AVG  |  P1   |  P50  |  P99  | STDDEV | MIN(BODY) | MAX(BODY) | SUM(BODY) | AVG(BODY) |
 +-------+-----+-----+-----+-----+-----+--------+-----------------+-------+-------+-------+-------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+
@@ -244,8 +244,8 @@ The following operators are available:.
         - `not(Uri endsWith "SUFFIX")`
 - `in`
     - e.g.
-        - `Val.Method in ["GET", "POST"]`
-        - `Val.Method not in ["GET", "POST"]`
+        - `Method in ["GET", "POST"]`
+        - `Method not in ["GET", "POST"]`
 
 See: https://github.com/antonmedv/expr/blob/master/docs/Language-Definition.md  
 
@@ -255,11 +255,11 @@ See: https://github.com/antonmedv/expr/blob/master/docs/Language-Definition.md
     - now - `duration`
     - `ns`, `us or µs`, `ms`, `s`, `m`, `h`
     - e.g.
-        - `Val.Time >= TimeAgo("5m")`
+        - `Time >= TimeAgo("5m")`
 - `BetweenTime(val, start, end)`
     - Like SQL's `BETWEEN`, returns `start <= val && val <= end`
     - e.g.
-        - `BetweenTime(Val.Time, "2019-08-06T00:00:00", "2019-08-06T00:05:00")`
+        - `BetweenTime(Time, "2019-08-06T00:00:00", "2019-08-06T00:05:00")`
 
 ## Usage samples
 

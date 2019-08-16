@@ -331,7 +331,7 @@ sample は [Usage samples](./docs/usage_samples.ja.md) を参照してくださ�
 以下の `/diary/entry/1234` や `/diary/entry/5678` のように、同一のルーティングでパラメータが異なる URI を単純に集計すると、パラメータごとに集計されますが、ルーティングごとに集計したい場合もあるでしょう。
 
 ```console
-$ cat example/logs/ltsv_access.log | alp ltsv --filters "Val.Uri matches '^/diary/entry'"
+$ cat example/logs/ltsv_access.log | alp ltsv --filters "Uri matches '^/diary/entry'"
 +-------+-----+-----+-----+-----+-----+--------+-------------------+-------+-------+-------+-------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+
 | COUNT | 1XX | 2XX | 3XX | 4XX | 5XX | METHOD |        URI        |  MIN  |  MAX  |  SUM  |  AVG  |  P1   |  P50  |  P99  | STDDEV | MIN(BODY) | MAX(BODY) | SUM(BODY) | AVG(BODY) |
 +-------+-----+-----+-----+-----+-----+--------+-------------------+-------+-------+-------+-------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+
@@ -345,7 +345,7 @@ $ cat example/logs/ltsv_access.log | alp ltsv --filters "Val.Uri matches '^/diar
 
 
 ```console
-$ cat example/logs/ltsv_access.log | alp ltsv --filters "Val.Uri matches '^/diary/entry'" -m "/diary/entry/.+"
+$ cat example/logs/ltsv_access.log | alp ltsv --filters "Uri matches '^/diary/entry'" -m "/diary/entry/.+"
 +-------+-----+-----+-----+-----+-----+--------+-----------------+-------+-------+-------+-------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+
 | COUNT | 1XX | 2XX | 3XX | 4XX | 5XX | METHOD |       URI       |  MIN  |  MAX  |  SUM  |  AVG  |  P1   |  P50  |  P99  | STDDEV | MIN(BODY) | MAX(BODY) | SUM(BODY) | AVG(BODY) |
 +-------+-----+-----+-----+-----+-----+--------+-----------------+-------+-------+-------+-------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+
