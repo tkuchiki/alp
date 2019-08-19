@@ -1,43 +1,64 @@
 package alp
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
 
-	"github.com/tkuchiki/alp/flag"
-	"github.com/tkuchiki/gohttpstats"
-	"github.com/tkuchiki/gohttpstats/options"
-	"github.com/tkuchiki/gohttpstats/parsers"
+	"github.com/tkuchiki/alp/helpers"
+
+	"github.com/tkuchiki/alp/errors"
+
+	"github.com/tkuchiki/alp/stats"
+
+	"github.com/tkuchiki/alp/flags"
+	"github.com/tkuchiki/alp/options"
+	"github.com/tkuchiki/alp/parsers"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-const version = "0.4.0"
+const version = "1.0.0-rc1"
 
 type Profiler struct {
 	outWriter    io.Writer
 	errWriter    io.Writer
 	inReader     *os.File
 	optionParser *kingpin.Application
-	flags        *flag.Flags
+	subcmdLTSV   *kingpin.CmdClause
+	subcmdRegexp *kingpin.CmdClause
+	subcmdJSON   *kingpin.CmdClause
+	globalFlags  *flags.GlobalFlags
+	ltsvFlags    *flags.LTSVFlags
+	regexpFlags  *flags.RegexpFlags
+	jsonFlags    *flags.JSONFlags
 }
 
 func NewProfiler(outw, errw io.Writer) *Profiler {
+	app := kingpin.New("alp", "alp is the access log profiler for LTSV, JSON, and others.")
 	p := &Profiler{
 		outWriter:    outw,
 		errWriter:    errw,
 		inReader:     os.Stdin,
-		optionParser: kingpin.New("alp", "Access Log Profiler for LTSV (read from file or stdin)."),
+		optionParser: app,
 	}
-	p.flags = flag.NewFlags()
 
-	p.flags.InitFlags(p.optionParser)
+	p.globalFlags = flags.NewGlobalFlags()
+	p.globalFlags.InitGlobalFlags(p.optionParser)
+
+	p.subcmdLTSV = app.Command("ltsv", "Profile the logs for LTSV")
+	p.ltsvFlags = flags.NewLTSVFlags()
+	p.ltsvFlags.InitFlags(p.subcmdLTSV)
+
+	p.subcmdJSON = app.Command("json", "Profile the logs for JSON")
+	p.jsonFlags = flags.NewJSONFlags()
+	p.jsonFlags.InitFlags(p.subcmdJSON)
+
+	p.subcmdRegexp = app.Command("regexp", "Profile the logs that match a regular expression")
+	p.regexpFlags = flags.NewRegexpFlags()
+	p.regexpFlags.InitFlags(p.subcmdRegexp)
 
 	return p
-}
-
-func (p *Profiler) SetFlags(flags *flag.Flags) {
-	p.flags = flags
 }
 
 func (p *Profiler) SetInReader(f *os.File) {
@@ -57,138 +78,174 @@ func (p *Profiler) Open(filename string) (*os.File, error) {
 	return f, err
 }
 
-func (p *Profiler) Run() error {
-	p.optionParser.Version(version)
-	p.optionParser.Parse(os.Args[1:])
+func (p *Profiler) OpenPosFile(filename string) (*os.File, error) {
+	return os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0644)
+}
 
-	var sort string
-	if p.flags.Max {
-		sort = httpstats.SortMaxResponseTime
-	} else if p.flags.Min {
-		sort = httpstats.SortMinResponseTime
-	} else if p.flags.Avg {
-		sort = httpstats.SortAvgResponseTime
-	} else if p.flags.Sum {
-		sort = httpstats.SortSumResponseTime
-	} else if p.flags.Cnt {
-		sort = httpstats.SortCount
-	} else if p.flags.P1 {
-		sort = httpstats.SortP1ResponseTime
-	} else if p.flags.P50 {
-		sort = httpstats.SortP50ResponseTime
-	} else if p.flags.P99 {
-		sort = httpstats.SortP99ResponseTime
-	} else if p.flags.Stddev {
-		sort = httpstats.SortStddevResponseTime
-	} else if p.flags.SortUri {
-		sort = httpstats.SortUri
-	} else if p.flags.Method {
-		sort = httpstats.SortMethod
-	} else if p.flags.MaxBody {
-		sort = httpstats.SortMaxResponseBodySize
-	} else if p.flags.MinBody {
-		sort = httpstats.SortMinResponseBodySize
-	} else if p.flags.AvgBody {
-		sort = httpstats.SortAvgResponseBodySize
-	} else if p.flags.SumBody {
-		sort = httpstats.SortSumResponseBodySize
-	} else {
-		sort = httpstats.SortMaxResponseTime
+func (p *Profiler) ReadPosFile(f *os.File) (int, error) {
+	reader := bufio.NewReader(f)
+	pos, _, err := reader.ReadLine()
+	if err != nil {
+		return 0, err
 	}
 
+	return helpers.StringToInt(string(pos))
+}
+
+func (p *Profiler) Run(args []string) error {
+	var command string
+	p.optionParser.Version(version)
+	switch kingpin.MustParse(p.optionParser.Parse(args)) {
+	case p.subcmdLTSV.FullCommand():
+		command = p.subcmdLTSV.FullCommand()
+	case p.subcmdRegexp.FullCommand():
+		command = p.subcmdRegexp.FullCommand()
+	case p.subcmdJSON.FullCommand():
+		command = p.subcmdJSON.FullCommand()
+	}
+
+	sort := flags.SortOptions[p.globalFlags.Sort]
+
 	var err error
-	var options *stats_options.Options
-	if p.flags.Config != "" {
-		cf, err := os.Open(p.flags.Config)
+	var opts *options.Options
+	if p.globalFlags.Config != "" {
+		cf, err := os.Open(p.globalFlags.Config)
 		if err != nil {
 			return err
 		}
 		defer cf.Close()
 
-		options, err = stats_options.LoadOptionsFromReader(cf)
+		opts, err = options.LoadOptionsFromReader(cf)
 		if err != nil {
 			return err
 		}
+		sort = flags.SortOptions[opts.Sort]
+
 	} else {
-		options = stats_options.NewOptions()
+		opts = options.NewOptions()
 	}
 
-	options = stats_options.SetOptions(options,
-		stats_options.File(p.flags.File),
-		stats_options.Sort(sort),
-		stats_options.Reverse(p.flags.Reverse),
-		stats_options.QueryString(p.flags.QueryString),
-		stats_options.Tsv(p.flags.Tsv),
-		stats_options.ApptimeLabel(p.flags.ApptimeLabel),
-		stats_options.ReqtimeLabel(p.flags.ReqtimeLabel),
-		stats_options.StatusLabel(p.flags.StatusLabel),
-		stats_options.SizeLabel(p.flags.SizeLabel),
-		stats_options.MethodLabel(p.flags.MethodLabel),
-		stats_options.UriLabel(p.flags.UriLabel),
-		stats_options.TimeLabel(p.flags.TimeLabel),
-		stats_options.Limit(p.flags.Limit),
-		stats_options.NoHeaders(p.flags.NoHeaders),
-		stats_options.StartTime(p.flags.StartTime),
-		stats_options.EndTime(p.flags.EndTime),
-		stats_options.StartTimeDuration(p.flags.StartTimeDuration),
-		stats_options.EndTimeDuration(p.flags.EndTimeDuration),
-		stats_options.CSVIncludes(p.flags.Includes),
-		stats_options.CSVExcludes(p.flags.Excludes),
-		stats_options.CSVIncludeStatuses(p.flags.IncludeStatuses),
-		stats_options.CSVExcludeStatuses(p.flags.ExcludeStatuses),
-		stats_options.CSVAggregates(p.flags.Aggregates),
+	opts = options.SetOptions(opts,
+		options.File(p.globalFlags.File),
+		options.Sort(sort),
+		options.Reverse(p.globalFlags.Reverse),
+		options.QueryString(p.globalFlags.QueryString),
+		options.Format(p.globalFlags.Format),
+		options.Limit(p.globalFlags.Limit),
+		options.Location(p.globalFlags.Location),
+		options.Output(p.globalFlags.Output),
+		options.NoHeaders(p.globalFlags.NoHeaders),
+		options.ShowFooters(p.globalFlags.ShowFooters),
+		options.CSVGroups(p.globalFlags.MatchingGroups),
+		options.Filters(p.globalFlags.Filters),
+		options.PosFile(p.globalFlags.PosFile),
+		options.NoSavePos(p.globalFlags.NoSavePos),
+		// ltsv
+		options.UriLabel(p.ltsvFlags.UriLabel),
+		options.MethodLabel(p.ltsvFlags.MethodLabel),
+		options.TimeLabel(p.ltsvFlags.TimeLabel),
+		options.ApptimeLabel(p.ltsvFlags.ApptimeLabel),
+		options.SizeLabel(p.ltsvFlags.SizeLabel),
+		options.StatusLabel(p.ltsvFlags.StatusLabel),
+		// json
+		options.UriKey(p.jsonFlags.UriKey),
+		options.MethodKey(p.jsonFlags.MethodKey),
+		options.TimeKey(p.jsonFlags.TimeKey),
+		options.ResponseTimeKey(p.jsonFlags.ResponseTimeKey),
+		options.BodyBytesKey(p.jsonFlags.BodyBytesKey),
+		options.StatusKey(p.jsonFlags.StatusKey),
+		// regexp
+		options.UriSubexp(p.regexpFlags.UriSubexp),
+		options.MethodSubexp(p.regexpFlags.MethodSubexp),
+		options.TimeSubexp(p.regexpFlags.TimeSubexp),
+		options.ResponseTimeSubexp(p.regexpFlags.ResponseTimeSubexp),
+		options.BodyBytesSubexp(p.regexpFlags.BodyBytesSubexp),
+		options.StatusSubexp(p.regexpFlags.StatusSubexp),
 	)
 
-	po := httpstats.NewPrintOptions()
-	po.SetWriter(p.outWriter)
-	if options.Tsv {
-		po.SetFormat("tsv")
-	}
-	stats := httpstats.NewHTTPStats(true, false, false, po)
+	sts := stats.NewHTTPStats(true, false, false)
 
-	err = stats.InitFilter(options)
+	err = sts.InitFilter(opts)
 	if err != nil {
 		return err
 	}
 
-	stats.SetOptions(options)
+	sts.SetOptions(opts)
 
-	if p.flags.Load != "" {
-		lf, err := os.Open(p.flags.Load)
+	printer := stats.NewPrinter(p.outWriter, opts.Output, opts.Format, opts.NoHeaders, opts.ShowFooters)
+	if err = printer.Validate(); err != nil {
+		return err
+	}
+
+	if p.globalFlags.Load != "" {
+		lf, err := os.Open(p.globalFlags.Load)
 		if err != nil {
 			return err
 		}
-		err = stats.LoadStats(lf)
+		err = sts.LoadStats(lf)
 		if err != nil {
 			return err
 		}
 		defer lf.Close()
 
-		stats.SortWithOptions()
-		stats.Print()
+		sts.SortWithOptions()
+		printer.Print(sts)
 		return nil
 	}
 
-	f, err := p.Open(options.File)
+	f, err := p.Open(opts.File)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	if len(options.Aggregates) > 0 {
-		err = stats.SetURICapturingGroups(options.Aggregates)
+	if len(opts.MatchingGroups) > 0 {
+		err = sts.SetURIMatchingGroups(opts.MatchingGroups)
 		if err != nil {
 			return err
 		}
 	}
 
-	label := parsers.NewLTSVLabel(options.UriLabel, options.ApptimeLabel, options.ReqtimeLabel,
-		options.SizeLabel, options.StatusLabel, options.MethodLabel, options.TimeLabel,
-	)
+	var parser parsers.Parser
+	switch command {
+	case "ltsv":
+		label := parsers.NewLTSVLabel(opts.LTSV.UriLabel, opts.LTSV.MethodLabel, opts.LTSV.TimeLabel,
+			opts.LTSV.ApptimeLabel, opts.LTSV.SizeLabel, opts.LTSV.StatusLabel,
+		)
+		parser = parsers.NewLTSVParser(f, label, opts.QueryString)
+	case "json":
+		keys := parsers.NewJSONKeys(opts.JSON.UriKey, opts.JSON.MethodKey, opts.JSON.TimeKey,
+			opts.JSON.ResponseTimeKey, opts.JSON.BodyBytesKey, opts.JSON.StatusKey)
+		parser = parsers.NewJSONParser(f, keys, opts.QueryString)
+	case "regexp":
+		names := parsers.NewSubexpNames(opts.Regexp.UriSubexp, opts.Regexp.MethodSubexp, opts.Regexp.TimeSubexp,
+			opts.Regexp.ResponseTimeSubexp, opts.Regexp.BodyBytesSubexp, opts.Regexp.StatusSubexp)
+		parser, err = parsers.NewRegexpParser(f, options.DefaultPatternOption, names, opts.QueryString)
 
-	parser := parsers.NewLTSVParser(f, label, options.QueryString)
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
+	}
+
+	var posfile *os.File
+	if opts.PosFile != "" {
+		posfile, err = p.OpenPosFile(opts.PosFile)
+		if err != nil {
+			return err
+		}
+		defer posfile.Close()
+
+		pos, err := p.ReadPosFile(posfile)
+		if err != nil && err != io.EOF {
+			return err
+		}
+
+		err = parser.Seek(pos)
+		if err != nil {
+			return err
+		}
+
+		parser.SetReadBytes(pos)
 	}
 
 Loop:
@@ -197,35 +254,49 @@ Loop:
 		if err != nil {
 			if err == io.EOF {
 				break
-			} else if err == httpstats.SkipReadLineErr {
+			} else if err == errors.SkipReadLineErr {
 				continue Loop
 			}
 
 			return err
 		}
 
-		if !stats.DoFilter(s.Uri, s.Method, s.Time) {
+		var b bool
+		b, err = sts.DoFilter(s)
+		if err != nil {
+			return err
+		}
+
+		if !b {
 			continue Loop
 		}
 
-		stats.Set(s.Uri, s.Method, s.Status, s.ResponseTime, s.BodySize, 0)
+		sts.Set(s.Uri, s.Method, s.Status, s.ResponseTime, s.BodyBytes, 0)
 
-		if stats.CountUris() > options.Limit {
-			return fmt.Errorf("Too many URI's (%d or less)", options.Limit)
+		if sts.CountUris() > opts.Limit {
+			return fmt.Errorf("Too many URI's (%d or less)", opts.Limit)
 		}
 	}
 
-	if p.flags.Dump != "" {
-		df, err := os.OpenFile(p.flags.Dump, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-		err = stats.DumpStats(df)
+	if p.globalFlags.Dump != "" {
+		df, err := os.OpenFile(p.globalFlags.Dump, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+		err = sts.DumpStats(df)
 		if err != nil {
 			return err
 		}
 		defer df.Close()
 	}
 
-	stats.SortWithOptions()
-	stats.Print()
+	if !opts.NoSavePos && opts.PosFile != "" {
+		posfile.Seek(0, 0)
+		_, err = posfile.Write([]byte(fmt.Sprint(parser.ReadBytes())))
+		if err != nil {
+			return err
+		}
+	}
+
+	sts.SortWithOptions()
+	printer.Print(sts)
 
 	return nil
 }
