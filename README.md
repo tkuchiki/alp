@@ -6,7 +6,7 @@ alp is Access Log Profiler
 
 # Installation
 
-Download from https://github.com/tkuchiki/alp/releasse
+Download from https://github.com/tkuchiki/alp/releases
 
 # How to difference between v0.4.0 and v1.0.0
 
