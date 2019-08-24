@@ -71,7 +71,7 @@ Commands:
         - HTTP Status Code
     - `apptime`
         - Response Time
--`--xxx-label` オプションで、任意のラベル名に変更することができます 
+- `--xxx-label` オプションで、任意のラベル名に変更することができます 
 
 ```console
 $ cat example/logs/ltsv_access.log
