@@ -4,6 +4,8 @@
     - JSON
     - regexp
 - LTSV で apptime ラベルの値がなかったら reqtime ラベルを使うようにする挙動を、apptime ラベルのみ参照するように変更
+    - reqtime ラベルを使っている場合は、`--apptime-label reqtime` または `--config config.yml` で参照するラベルを指定してください
+        - [`--config` の例](https://github.com/tkuchiki/alp/blob/master/example/config.yml#L16)
 - 複数ログフォーマット対応に伴い、フォーマットごとにサブコマンド化
     - LTSV の `--xxx-label` オプションは `alp ltsv` に移行
 - オプションの削減、統合
