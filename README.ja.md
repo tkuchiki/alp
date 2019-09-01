@@ -187,7 +187,7 @@ $ cat example/logs/json_access.log | alp json
 #### Apache
 
 ```
-LogFormat "{\"time\":\"%t\",\"forwardedfor\":\"%{X-Forwarded-For}i\",\"host\":\"%h\",\"req\":\"%r\",\"status\":%>s,\"method\":\"%m\",\"uri\":\"%U%q\",\"body_bytes\":%B,\"referer\":\"%{Referer}i\",\"ua\":\"%{User-Agent}i\",\"reqtime_microsec\":%D,\"response_time\":%D,\"cache\":\"%{X-Cache}o\",\"runtime\":\"%{X-Runtime}o\",\"vhost\":\"%{Host}i\"" json
+LogFormat "{\"time\":\"%t\",\"forwardedfor\":\"%{X-Forwarded-For}i\",\"host\":\"%h\",\"req\":\"%r\",\"status\":%>s,\"method\":\"%m\",\"uri\":\"%U%q\",\"body_bytes\":%B,\"referer\":\"%{Referer}i\",\"ua\":\"%{User-Agent}i\",\"reqtime_microsec\":%D,\"response_time\":%D,\"cache\":\"%{X-Cache}o\",\"runtime\":\"%{X-Runtime}o\",\"vhost\":\"%{Host}i\"}" json
 ```
 
 #### Nginx
@@ -215,7 +215,7 @@ log_format json escape=json '{"time":"$time_local"'
 ```
 access-log:
   escape: json
-  format: '{"time":"%t","host":"%h","ua":"%{User-agent}i","status":%s,"req":"%r","uri":"%U","response_time":%{duration}x,"body_bytes":%b,"method":"%m"'
+  format: '{"time":"%t","host":"%h","ua":"%{User-agent}i","status":%s,"req":"%r","uri":"%U","response_time":%{duration}x,"body_bytes":%b,"method":"%m"}'
 ```
 
 ## regexp
