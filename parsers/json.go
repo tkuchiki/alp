@@ -15,12 +15,13 @@ type JSONParser struct {
 	readBytes   int
 }
 
-func NewJSONKeys(uri, method, time, responseTime, size, status string) *statKeys {
+func NewJSONKeys(uri, method, time, responseTime, requestTime, size, status string) *statKeys {
 	return newStatKeys(
 		uriKey(uri),
 		methodKey(method),
 		timeKey(time),
 		responseTimeKey(responseTime),
+		requestTimeKey(requestTime),
 		bodyBytesKey(size),
 		statusKey(status),
 	)
@@ -53,6 +54,7 @@ func (j *JSONParser) Parse() (*ParsedHTTPStat, error) {
 		j.keys.method,
 		j.keys.time,
 		j.keys.responseTime,
+		j.keys.requestTime,
 		j.keys.bodyBytes,
 		j.keys.status,
 	}

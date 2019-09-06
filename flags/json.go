@@ -10,6 +10,7 @@ type JSONFlags struct {
 	MethodKey       string
 	TimeKey         string
 	ResponseTimeKey string
+	RequestTimeKey  string
 	BodyBytesKey    string
 	StatusKey       string
 }
@@ -27,6 +28,8 @@ func (f *JSONFlags) InitFlags(app *kingpin.CmdClause) {
 		PlaceHolder(options.DefaultTimeKeyOption).StringVar(&f.TimeKey)
 	app.Flag("restime-key", "Change the response_time key").
 		PlaceHolder(options.DefaultResponseTimeKeyOption).StringVar(&f.ResponseTimeKey)
+	app.Flag("reqtime-key", "Change the request_time key").
+		PlaceHolder(options.DefaultRequestTimeKeyOption).StringVar(&f.RequestTimeKey)
 	app.Flag("body-bytes-key", "Change the body_bytes key").
 		PlaceHolder(options.DefaultBodyBytesKeyOption).StringVar(&f.BodyBytesKey)
 	app.Flag("status-key", "Change the status key").

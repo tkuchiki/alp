@@ -145,6 +145,7 @@ func (p *Profiler) Run(args []string) error {
 		options.MethodLabel(p.ltsvFlags.MethodLabel),
 		options.TimeLabel(p.ltsvFlags.TimeLabel),
 		options.ApptimeLabel(p.ltsvFlags.ApptimeLabel),
+		options.ReqtimeLabel(p.ltsvFlags.ReqtimeLabel),
 		options.SizeLabel(p.ltsvFlags.SizeLabel),
 		options.StatusLabel(p.ltsvFlags.StatusLabel),
 		// json
@@ -152,6 +153,7 @@ func (p *Profiler) Run(args []string) error {
 		options.MethodKey(p.jsonFlags.MethodKey),
 		options.TimeKey(p.jsonFlags.TimeKey),
 		options.ResponseTimeKey(p.jsonFlags.ResponseTimeKey),
+		options.RequestTimeKey(p.jsonFlags.RequestTimeKey),
 		options.BodyBytesKey(p.jsonFlags.BodyBytesKey),
 		options.StatusKey(p.jsonFlags.StatusKey),
 		// regexp
@@ -159,6 +161,7 @@ func (p *Profiler) Run(args []string) error {
 		options.MethodSubexp(p.regexpFlags.MethodSubexp),
 		options.TimeSubexp(p.regexpFlags.TimeSubexp),
 		options.ResponseTimeSubexp(p.regexpFlags.ResponseTimeSubexp),
+		options.RequestTimeSubexp(p.regexpFlags.RequestTimeSubexp),
 		options.BodyBytesSubexp(p.regexpFlags.BodyBytesSubexp),
 		options.StatusSubexp(p.regexpFlags.StatusSubexp),
 	)
@@ -210,16 +213,16 @@ func (p *Profiler) Run(args []string) error {
 	switch command {
 	case "ltsv":
 		label := parsers.NewLTSVLabel(opts.LTSV.UriLabel, opts.LTSV.MethodLabel, opts.LTSV.TimeLabel,
-			opts.LTSV.ApptimeLabel, opts.LTSV.SizeLabel, opts.LTSV.StatusLabel,
+			opts.LTSV.ApptimeLabel, opts.LTSV.ReqtimeLabel, opts.LTSV.SizeLabel, opts.LTSV.StatusLabel,
 		)
 		parser = parsers.NewLTSVParser(f, label, opts.QueryString)
 	case "json":
 		keys := parsers.NewJSONKeys(opts.JSON.UriKey, opts.JSON.MethodKey, opts.JSON.TimeKey,
-			opts.JSON.ResponseTimeKey, opts.JSON.BodyBytesKey, opts.JSON.StatusKey)
+			opts.JSON.ResponseTimeKey, opts.JSON.RequestTimeKey, opts.JSON.BodyBytesKey, opts.JSON.StatusKey)
 		parser = parsers.NewJSONParser(f, keys, opts.QueryString)
 	case "regexp":
 		names := parsers.NewSubexpNames(opts.Regexp.UriSubexp, opts.Regexp.MethodSubexp, opts.Regexp.TimeSubexp,
-			opts.Regexp.ResponseTimeSubexp, opts.Regexp.BodyBytesSubexp, opts.Regexp.StatusSubexp)
+			opts.Regexp.ResponseTimeSubexp, opts.Regexp.RequestTimeSubexp, opts.Regexp.BodyBytesSubexp, opts.Regexp.StatusSubexp)
 		parser, err = parsers.NewRegexpParser(f, options.DefaultPatternOption, names, opts.QueryString)
 
 		if err != nil {

@@ -17,6 +17,7 @@ const (
 	DefaultOutputOption   = "all"
 	// ltsv
 	DefaultApptimeLabelOption = "apptime"
+	DefaultReqtimeLabelOption = "reqtime"
 	DefaultStatusLabelOption  = "status"
 	DefaultSizeLabelOption    = "size"
 	DefaultMethodLabelOption  = "method"
@@ -27,6 +28,7 @@ const (
 	DefaultMethodKeyOption       = "method"
 	DefaultTimeKeyOption         = "time"
 	DefaultResponseTimeKeyOption = "response_time"
+	DefaultRequestTimeKeyOption  = "request_time"
 	DefaultBodyBytesKeyOption    = "body_bytes"
 	DefaultStatusKeyOption       = "status"
 	// regexp
@@ -40,12 +42,13 @@ const (
 		`(?P<status>\S+)\s` + // status code
 		`(?P<body_bytes>\S+)\s` + // bytes
 		`"((?:[^"]*(?:\\")?)*)"\s` + // referer
-		`"(.*)"` + // user agent
-		`\s(?P<response_time>.*)$`
+		`"(?:.+)"` + // user agent
+		`\s(?P<response_time>\S+)(?:\s(?P<request_time>\S+))?$`
 	DefaultUriSubexpOption          = "uri"
 	DefaultMethodSubexpOption       = "method"
 	DefaultTimeSubexpOption         = "time"
 	DefaultResponseTimeSubexpOption = "response_time"
+	DefaultRequestTimeSubexpOption  = "request_time"
 	DefaultBodyBytesSubexpOption    = "body_bytes"
 	DefaultStatusSubexpOption       = "status"
 )
@@ -72,6 +75,7 @@ type Options struct {
 
 type LTSVOptions struct {
 	ApptimeLabel string `yaml:"apptime_label"`
+	ReqtimeLabel string `yaml:"reqtime_label"`
 	StatusLabel  string `yaml:"status_label"`
 	SizeLabel    string `yaml:"size_label"`
 	MethodLabel  string `yaml:"method_label"`
@@ -85,6 +89,7 @@ type RegexpOptions struct {
 	MethodSubexp       string `yaml:"method_subexp"`
 	TimeSubexp         string `yaml:"time_subexp"`
 	ResponseTimeSubexp string `yaml:"response_time_subexp"`
+	RequestTimeSubexp  string `yaml:"request_time_subexp"`
 	BodyBytesSubexp    string `yaml:"body_bytes_subexp"`
 	StatusSubexp       string `yaml:"status_subexp"`
 }
@@ -94,6 +99,7 @@ type JSONOptions struct {
 	MethodKey       string `yaml:"method_key"`
 	TimeKey         string `yaml:"time_key"`
 	ResponseTimeKey string `yaml:"response_time_key"`
+	RequestTimeKey  string `yaml:"request_time_key"`
 	BodyBytesKey    string `yaml:"body_bytes_key"`
 	StatusKey       string `yaml:"status_key"`
 }
@@ -230,6 +236,14 @@ func ApptimeLabel(s string) Option {
 	}
 }
 
+func ReqtimeLabel(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.LTSV.ReqtimeLabel = s
+		}
+	}
+}
+
 func StatusLabel(s string) Option {
 	return func(opts *Options) {
 		if s != "" {
@@ -311,6 +325,14 @@ func ResponseTimeSubexp(s string) Option {
 	}
 }
 
+func RequestTimeSubexp(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.Regexp.RequestTimeSubexp = s
+		}
+	}
+}
+
 func BodyBytesSubexp(s string) Option {
 	return func(opts *Options) {
 		if s != "" {
@@ -360,6 +382,14 @@ func ResponseTimeKey(s string) Option {
 	}
 }
 
+func RequestTimeKey(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.JSON.RequestTimeKey = s
+		}
+	}
+}
+
 func BodyBytesKey(s string) Option {
 	return func(opts *Options) {
 		if s != "" {
@@ -379,6 +409,7 @@ func StatusKey(s string) Option {
 func NewOptions(opt ...Option) *Options {
 	ltsv := &LTSVOptions{
 		ApptimeLabel: DefaultApptimeLabelOption,
+		ReqtimeLabel: DefaultReqtimeLabelOption,
 		StatusLabel:  DefaultStatusLabelOption,
 		SizeLabel:    DefaultSizeLabelOption,
 		MethodLabel:  DefaultMethodLabelOption,
@@ -392,6 +423,7 @@ func NewOptions(opt ...Option) *Options {
 		MethodSubexp:       DefaultMethodSubexpOption,
 		TimeSubexp:         DefaultTimeSubexpOption,
 		ResponseTimeSubexp: DefaultResponseTimeSubexpOption,
+		RequestTimeSubexp:  DefaultRequestTimeSubexpOption,
 		BodyBytesSubexp:    DefaultBodyBytesSubexpOption,
 		StatusSubexp:       DefaultStatusSubexpOption,
 	}
@@ -401,6 +433,7 @@ func NewOptions(opt ...Option) *Options {
 		MethodKey:       DefaultMethodKeyOption,
 		TimeKey:         DefaultTimeKeyOption,
 		ResponseTimeKey: DefaultResponseTimeKeyOption,
+		RequestTimeKey:  DefaultRequestTimeKeyOption,
 		BodyBytesKey:    DefaultBodyBytesKeyOption,
 		StatusKey:       DefaultStatusKeyOption,
 	}
@@ -458,6 +491,7 @@ func LoadOptionsFromReader(r io.Reader) (*Options, error) {
 		Filters(configs.Filters),
 		// ltsv
 		ApptimeLabel(configs.LTSV.ApptimeLabel),
+		ReqtimeLabel(configs.LTSV.ReqtimeLabel),
 		StatusLabel(configs.LTSV.StatusLabel),
 		SizeLabel(configs.LTSV.SizeLabel),
 		MethodLabel(configs.LTSV.MethodLabel),
@@ -465,6 +499,7 @@ func LoadOptionsFromReader(r io.Reader) (*Options, error) {
 		TimeLabel(configs.LTSV.TimeLabel),
 		// json
 		ResponseTimeKey(configs.JSON.ResponseTimeKey),
+		RequestTimeKey(configs.JSON.RequestTimeKey),
 		StatusKey(configs.JSON.StatusKey),
 		BodyBytesKey(configs.JSON.BodyBytesKey),
 		MethodKey(configs.JSON.MethodKey),
@@ -473,6 +508,7 @@ func LoadOptionsFromReader(r io.Reader) (*Options, error) {
 		// regexp
 		Pattern(configs.Regexp.Pattern),
 		ResponseTimeSubexp(configs.Regexp.ResponseTimeSubexp),
+		RequestTimeSubexp(configs.Regexp.RequestTimeSubexp),
 		StatusSubexp(configs.Regexp.StatusSubexp),
 		BodyBytesSubexp(configs.Regexp.BodyBytesSubexp),
 		MethodSubexp(configs.Regexp.MethodSubexp),
