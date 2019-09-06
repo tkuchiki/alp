@@ -32,6 +32,7 @@ type statKeys struct {
 	method       string
 	time         string
 	responseTime string
+	requestTime  string
 	bodyBytes    string
 	status       string
 }
@@ -70,6 +71,14 @@ func responseTimeKey(s string) statKey {
 	}
 }
 
+func requestTimeKey(s string) statKey {
+	return func(sk *statKeys) {
+		if s != "" {
+			sk.requestTime = s
+		}
+	}
+}
+
 func bodyBytesKey(s string) statKey {
 	return func(sk *statKeys) {
 		if s != "" {
@@ -92,6 +101,7 @@ func newStatKeys(sk ...statKey) *statKeys {
 		method:       "method",
 		time:         "time",
 		responseTime: "response_time",
+		requestTime:  "request_time",
 		bodyBytes:    "body_bytes",
 		status:       "status",
 	}
@@ -171,7 +181,10 @@ func toStats(parsedValue map[string]string, keys *statKeys, strictMode, queryStr
 
 	resTime, err := helpers.StringToFloat64(parsedValue[keys.responseTime])
 	if err != nil {
-		return nil, errSkipReadLine(strictMode, err)
+		resTime, err = helpers.StringToFloat64(parsedValue[keys.requestTime])
+		if err != nil {
+			return nil, errSkipReadLine(strictMode, err)
+		}
 	}
 
 	bodyBytes, err := helpers.StringToFloat64(parsedValue[keys.bodyBytes])

@@ -18,12 +18,13 @@ type RegexpParser struct {
 
 var errPatternNotMatched = errors.New("pattern not matched")
 
-func NewSubexpNames(uri, method, time, responseTime, size, status string) *statKeys {
+func NewSubexpNames(uri, method, time, responseTime, requestTime, size, status string) *statKeys {
 	return newStatKeys(
 		uriKey(uri),
 		methodKey(method),
 		timeKey(time),
 		responseTimeKey(responseTime),
+		requestTimeKey(requestTime),
 		bodyBytesKey(size),
 		statusKey(status),
 	)

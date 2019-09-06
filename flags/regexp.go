@@ -11,6 +11,7 @@ type RegexpFlags struct {
 	MethodSubexp       string
 	TimeSubexp         string
 	ResponseTimeSubexp string
+	RequestTimeSubexp  string
 	BodyBytesSubexp    string
 	StatusSubexp       string
 }
@@ -30,6 +31,8 @@ func (f *RegexpFlags) InitFlags(app *kingpin.CmdClause) {
 		PlaceHolder(options.DefaultTimeSubexpOption).StringVar(&f.TimeSubexp)
 	app.Flag("restime-subexp", "Change the response_time sub expression").
 		PlaceHolder(options.DefaultResponseTimeSubexpOption).StringVar(&f.ResponseTimeSubexp)
+	app.Flag("reqtime-subexp", "Change the request_time sub expression").
+		PlaceHolder(options.DefaultRequestTimeSubexpOption).StringVar(&f.RequestTimeSubexp)
 	app.Flag("body-bytes-subexp", "Change the body_bytes sub expression").
 		PlaceHolder(options.DefaultBodyBytesSubexpOption).StringVar(&f.BodyBytesSubexp)
 	app.Flag("status-subexp", "Change the status sub expression").

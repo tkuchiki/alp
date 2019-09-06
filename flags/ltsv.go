@@ -10,6 +10,7 @@ type LTSVFlags struct {
 	MethodLabel  string
 	TimeLabel    string
 	ApptimeLabel string
+	ReqtimeLabel string
 	SizeLabel    string
 	StatusLabel  string
 }
@@ -27,6 +28,8 @@ func (f *LTSVFlags) InitFlags(app *kingpin.CmdClause) {
 		PlaceHolder(options.DefaultTimeLabelOption).StringVar(&f.TimeLabel)
 	app.Flag("apptime-label", "Change the apptime label").
 		PlaceHolder(options.DefaultApptimeLabelOption).StringVar(&f.ApptimeLabel)
+	app.Flag("reqtime-label", "Change the reqtime label").
+		PlaceHolder(options.DefaultReqtimeLabelOption).StringVar(&f.ReqtimeLabel)
 	app.Flag("size-label", "Change the size label").
 		PlaceHolder(options.DefaultSizeLabelOption).StringVar(&f.SizeLabel)
 	app.Flag("status-label", "Change the status label").

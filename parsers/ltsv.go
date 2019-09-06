@@ -15,12 +15,13 @@ type LTSVParser struct {
 	readBytes   int
 }
 
-func NewLTSVLabel(uri, method, time, responseTime, size, status string) *statKeys {
+func NewLTSVLabel(uri, method, time, responseTime, requestTime, size, status string) *statKeys {
 	return newStatKeys(
 		uriKey(uri),
 		methodKey(method),
 		timeKey(time),
 		responseTimeKey(responseTime),
+		requestTimeKey(requestTime),
 		bodyBytesKey(size),
 		statusKey(status),
 	)
