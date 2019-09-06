@@ -194,21 +194,21 @@ LogFormat "{\"time\":\"%t\",\"forwardedfor\":\"%{X-Forwarded-For}i\",\"host\":\"
 #### Nginx
 
 ```
-log_format json escape=json '{"time":"$time_local"'
-                '"host":"$remote_addr"'
-                '"forwardedfor":"$http_x_forwarded_for"'
-                '"req":"$request"'
-                '"status":"$status"'
-                '"method":"$request_method"'
-                '"uri":"$request_uri"'
-                '"body_bytes":$body_bytes_sent"'
-                '"referer":"$http_referer"'
-                '"ua":"$http_user_agent"'
-                '"request_time":$request_time"'
-                '"cache":"$upstream_http_x_cache"'
-                '"runtime":$upstream_http_x_runtime"'
-                '"reponse_time":$upstream_response_time"'
-                '"vhost":$host"}';
+    log_format json escape=json '{"time":"$time_local",'
+                                '"host":"$remote_addr",'
+                                '"forwardedfor":"$http_x_forwarded_for",'
+                                '"req":"$request",'
+                                '"status":"$status",'
+                                '"method":"$request_method",'
+                                '"uri":"$request_uri",'
+                                '"body_bytes":$body_bytes_sent,'
+                                '"referer":"$http_referer",'
+                                '"ua":"$http_user_agent",'
+                                '"request_time":$request_time,'
+                                '"cache":"$upstream_http_x_cache",'
+                                '"runtime":"$upstream_http_x_runtime",'
+                                '"rseponse_time":$upstream_response_time,'
+                                '"vhost":"$host"}';
 ```
 
 #### H2O
@@ -267,6 +267,29 @@ $ cat example/logs/combined_access.log | alp regexp
 |     1 |   0 |   1 |   0 |   0 |   0 | GET    | /diary/entry/5678 |  0.432 |  0.432 |  0.432 |  0.432 |  0.432 |  0.432 |  0.432 |  0.000 |    30.000 |    30.000 |    30.000 |    30.000 |
 |     1 |   0 |   0 |   0 |   0 |   1 | GET    | /foo/bar/5xx      | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 |  0.000 |    15.000 |    15.000 |    15.000 |    15.000 |
 +-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
+```
+
+### Log format
+
+#### Apache
+
+```
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\" %D" combined_plus
+```
+
+#### Nginx
+
+```
+    log_format combined_plus '$remote_addr - $remote_user [$time_local] '
+                             '"$request" $status $body_bytes_sent '
+                             '"$http_referer" "$http_user_agent" $upstream_response_time';
+```
+
+#### H2O
+
+```
+access-log:
+  format: "%h %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-agent}i\" %{duration}x"
 ```
 
 ## グローバルオプション
