@@ -11,3 +11,4 @@ time:2015-09-06T06:00:43+09:00	method:GET	uri:/foo/bar	status:400	size:15	apptim
 time:2015-09-06T06:00:43+09:00	method:GET	uri:/diary/entry/1234	status:200	size:15	apptime:0.135
 time:2015-09-06T06:00:43+09:00	method:GET	uri:/diary/entry/5678	status:200	size:30	apptime:0.432
 time:2015-09-06T06:00:43+09:00	method:GET	uri:/foo/bar/5xx	status:504	size:15	apptime:60.000
+time:2015-09-06T06:00:43+09:00	method:GET	uri:/req	status:200	size:15	apptime:-	reqtime:0.321

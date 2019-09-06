@@ -3,9 +3,6 @@
 - LTSV 以外のログフォーマットにも対応
     - JSON
     - regexp
-- LTSV で apptime ラベルの値がなかったら reqtime ラベルを使うようにする挙動を、apptime ラベルのみ参照するように変更
-    - reqtime ラベルを使っている場合は、`--apptime-label reqtime` または `--config config.yml` で参照するラベルを指定してください
-        - [`--config` の例](https://github.com/tkuchiki/alp/blob/master/example/config.yml#L16)
 - 複数ログフォーマット対応に伴い、フォーマットごとにサブコマンド化
     - LTSV の `--xxx-label` オプションは `alp ltsv` に移行
 - オプションの削減、統合
@@ -132,12 +129,13 @@ Profile the logs for LTSV
 
 Flags:
 ...
-      --uri-label="uri"          Change the uri label
-      --method-label="method"    Change the method label
-      --time-label="time"        Change the time label
-      --apptime-label="apptime"  Change the apptime label
-      --size-label="size"        Change the size label
-      --status-label="status"    Change the status label
+      --uri-label=uri          Change the uri label
+      --method-label=method    Change the method label
+      --time-label=time        Change the time label
+      --apptime-label=apptime  Change the apptime label
+      --reqtime-label=reqtime  Change the reqtime label
+      --size-label=size        Change the size label
+      --status-label=status    Change the status label
 ```
 
 ```console
@@ -148,14 +146,16 @@ Profile the logs for JSON
 
 Flags:
 ...
-      --uri-key="uri"        Change the uri key
-      --method-key="method"  Change the method key
-      --time-key="time"      Change the time key
-      --restime-key="response_time"
-                             Change the response_time key
-      --body-bytes-key="body_bytes"
-                             Change the body_bytes key
-      --status-key="status"  Change the status key
+      --uri-key=uri        Change the uri key
+      --method-key=method  Change the method key
+      --time-key=time      Change the time key
+      --restime-key=response_time
+                           Change the response_time key
+      --reqtime-key=request_time
+                           Change the request_time key
+      --body-bytes-key=body_bytes
+                           Change the body_bytes key
+      --status-key=status  Change the status key
 ```
 
 ```console
@@ -166,13 +166,15 @@ Profile the logs that match a regular expression
 
 Flags:
 ...
-      --pattern=PATTERN         Regular expressions pattern matching the log
-      --uri-subexp="uri"        Change the uri sub expression
-      --method-subexp="method"  Change the method sub expression
-      --time-subexp="time"      Change the time sub expression
-      --restime-subexp="response_time"
-                                Change the response_time sub expression
-      --body-bytes-subexp="body_bytes"
-                                Change the body_bytes sub expression
-      --status-subexp="status"  Change the status sub expression
+      --pattern=PATTERN       Regular expressions pattern matching the log
+      --uri-subexp=uri        Change the uri sub expression
+      --method-subexp=method  Change the method sub expression
+      --time-subexp=time      Change the time sub expression
+      --restime-subexp=response_time
+                              Change the response_time sub expression
+      --reqtime-subexp=request_time
+                              Change the request_time sub expression
+      --body-bytes-subexp=body_bytes
+                              Change the body_bytes sub expression
+      --status-subexp=status  Change the status sub expression
 ```
