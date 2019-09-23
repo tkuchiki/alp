@@ -25,7 +25,7 @@ Flags:
       --file=FILE          The access log file
   -d, --dump=DUMP          Dump profiled data as YAML
   -l, --load=LOAD          Load the profiled YAML data
-      --sort=max           Output the results in sorted order
+      --sort=count         Output the results in sorted order
   -r, --reverse            Sort results in reverse order
   -q, --query-string       Include the URI query string.
       --format=table       The output format (table or tsv)
@@ -317,7 +317,7 @@ sample は [Usage samples](./docs/usage_samples.ja.md) を参照してくださ�
 - `-l, --load=LOAD`
     - `-d, --dump` オプションで書き出した解析結果を読み込む際のファイルパス
     - 同じ解析結果に対して、`--sort` や `--reverse` のオプションを変更したい場合に高速に動作することが期待できます
-- `--sort=max`
+- `--sort=count`
     - 解析結果を表示する際にソートする条件
     - 昇順でソートする 
     - `max`, `min`, `sum`, `avg`
@@ -326,7 +326,7 @@ sample は [Usage samples](./docs/usage_samples.ja.md) を参照してくださ�
     - `uri`
     - `method`
     - `count`
-    - デフォルトは `max`
+    - デフォルトは `count`
 - `-r, --reverse`
     - `--sort` オプションのソート結果を降順にします
 - `-q, --query-string`
@@ -377,7 +377,6 @@ $ cat example/logs/ltsv_access.log | alp ltsv --filters "Uri matches '^/diary/en
 
 そのようなケースで、正規表現にマッチした URI を同じ集計対象とするオプションが `-m, --matching-groups=PATTERN,...` です。
 カンマ区切りで複数指定することもできます。
-
 
 ```console
 $ cat example/logs/ltsv_access.log | alp ltsv --filters "Uri matches '^/diary/entry'" -m "/diary/entry/.+"

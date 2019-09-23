@@ -224,6 +224,16 @@ $ stat -c %s example/logs/ltsv_access.log
 1356
 ```
 
+### POSITION_FILE の作成
+
+```
+# linux
+$ stat -c %s example/logs/ltsv_access.log > /tmp/alp.pos
+
+# maxOS
+$ stat -f '%z' example/logs/ltsv_access.log > /tmp/alp.pos
+```
+
 ## `--nosave-pos`
 
 POSITION_FILE を読み込むが、書き込まない。
