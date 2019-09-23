@@ -26,7 +26,7 @@ Flags:
       --file=FILE          The access log file
   -d, --dump=DUMP          Dump profiled data as YAML
   -l, --load=LOAD          Load the profiled YAML data
-      --sort=max           Output the results in sorted order
+      --sort=count         Output the results in sorted order
   -r, --reverse            Sort results in reverse order
   -q, --query-string       Include the URI query string.
       --format=table       The output format (table or tsv)
