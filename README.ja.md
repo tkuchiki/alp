@@ -335,7 +335,9 @@ sample は [Usage samples](./docs/usage_samples.ja.md) を参照してくださ�
     - 解析結果を テーブル、Markdown, TSV, CSV 形式で出力する
     - デフォルトはテーブル形式
 - `--noheaders`
-    - 解析結果を TSV で出力する際、header を表示しない
+    - 解析結果を TSV, CSV で出力する際、header を表示しない
+- `--show-footers`
+    - 解析結果を テーブル, Markdown で出力する際、footer として 1xx ~ 5xx の合計数を表示する
 - `--limit=5000`
     - 解析結果の表示上限数
     - 解析結果の表示数が想定より多かった場合でも、リソースを使いすぎないための設定です
