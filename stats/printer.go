@@ -120,7 +120,12 @@ func (p *Printer) Validate() error {
 	return nil
 }
 
-func generateAllLine(s *HTTPStat) []string {
+func generateAllLine(s *HTTPStat, quoteUri bool) []string {
+	uri := s.Uri
+	if quoteUri && strings.Contains(s.Uri, ",") {
+		uri = fmt.Sprintf(`"%s"`, s.Uri)
+	}
+
 	return []string{
 		s.StrCount(),
 		s.StrStatus1xx(),
@@ -129,7 +134,7 @@ func generateAllLine(s *HTTPStat) []string {
 		s.StrStatus4xx(),
 		s.StrStatus5xx(),
 		s.Method,
-		s.Uri,
+		uri,
 		round(s.MinResponseTime()),
 		round(s.MaxResponseTime()),
 		round(s.SumResponseTime()),
@@ -145,9 +150,9 @@ func generateAllLine(s *HTTPStat) []string {
 	}
 }
 
-func (p *Printer) GenerateLine(s *HTTPStat) []string {
+func (p *Printer) GenerateLine(s *HTTPStat, quoteUri bool) []string {
 	if p.all {
-		return generateAllLine(s)
+		return generateAllLine(s, quoteUri)
 	}
 
 	keyLen := len(p.keywords)
@@ -160,7 +165,12 @@ func (p *Printer) GenerateLine(s *HTTPStat) []string {
 		case "method":
 			line = append(line, s.Method)
 		case "uri":
-			line = append(line, s.Uri)
+			uri := s.Uri
+			if quoteUri && strings.Contains(s.Uri, ",") {
+
+				uri = fmt.Sprintf(`"%s"`, s.Uri)
+			}
+			line = append(line, uri)
 		case "1xx":
 			line = append(line, s.StrStatus1xx())
 		case "2xx":
@@ -243,8 +253,12 @@ func (p *Printer) Print(hs *HTTPStats) {
 	switch p.format {
 	case "table":
 		p.printTable(hs)
+	case "md", "markdown":
+		p.printMarkdown(hs)
 	case "tsv":
 		p.printTSV(hs)
+	case "csv":
+		p.printCSV(hs)
 	}
 }
 
@@ -256,7 +270,7 @@ func (p *Printer) printTable(hs *HTTPStats) {
 	table := tablewriter.NewWriter(p.writer)
 	table.SetHeader(p.headers)
 	for _, s := range hs.stats {
-		data := p.GenerateLine(s)
+		data := p.GenerateLine(s, false)
 		table.Append(data)
 	}
 
@@ -269,12 +283,40 @@ func (p *Printer) printTable(hs *HTTPStats) {
 	table.Render()
 }
 
+func (p *Printer) printMarkdown(hs *HTTPStats) {
+	table := tablewriter.NewWriter(p.writer)
+	table.SetHeader(p.headers)
+	table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
+	table.SetCenterSeparator("|")
+	for _, s := range hs.stats {
+		data := p.GenerateLine(s, false)
+		table.Append(data)
+	}
+
+	if p.showFooters {
+		footer := p.GenerateFooter(hs.CountAll())
+		table.Append(footer)
+	}
+
+	table.Render()
+}
+
 func (p *Printer) printTSV(hs *HTTPStats) {
 	if !p.noHeaders {
 		fmt.Println(strings.Join(p.headers, "\t"))
 	}
 	for _, s := range hs.stats {
-		data := p.GenerateLine(s)
+		data := p.GenerateLine(s, false)
 		fmt.Println(strings.Join(data, "\t"))
+	}
+}
+
+func (p *Printer) printCSV(hs *HTTPStats) {
+	if !p.noHeaders {
+		fmt.Println(strings.Join(p.headers, ","))
+	}
+	for _, s := range hs.stats {
+		data := p.GenerateLine(s, true)
+		fmt.Println(strings.Join(data, ","))
 	}
 }

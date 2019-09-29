@@ -49,7 +49,10 @@ var SortKeys = []string{
 
 var Formats = []string{
 	"table",
+	"md",
+	"markdown",
 	"tsv",
+	"csv",
 }
 
 var SortOptions = map[string]string{
@@ -89,11 +92,11 @@ func (f *GlobalFlags) InitGlobalFlags(app *kingpin.Application) {
 		Short('r').BoolVar(&f.Reverse)
 	app.Flag("query-string", "Include the URI query string.").
 		Short('q').BoolVar(&f.QueryString)
-	app.Flag("format", "The output format (table or tsv)").
+	app.Flag("format", "The output format (table, markdown, tsv and csv)").
 		PlaceHolder(options.DefaultFormatOption).EnumVar(&f.Format, Formats...)
-	app.Flag("noheaders", "Output no header line at all (only --format=tsv)").
+	app.Flag("noheaders", "Output no header line at all (only --format=tsv, csv)").
 		BoolVar(&f.NoHeaders)
-	app.Flag("show-footers", "Output footer line at all (only --format=table)").
+	app.Flag("show-footers", "Output footer line at all (only --format=table, markdown)").
 		BoolVar(&f.ShowFooters)
 	app.Flag("limit", "The maximum number of results to display.").
 		PlaceHolder(fmt.Sprint(options.DefaultLimitOption)).IntVar(&f.Limit)

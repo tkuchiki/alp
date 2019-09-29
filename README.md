@@ -29,12 +29,12 @@ Flags:
       --sort=count         Output the results in sorted order
   -r, --reverse            Sort results in reverse order
   -q, --query-string       Include the URI query string.
-      --format=table       The output format (table or tsv)
-      --noheaders          Output no header line at all (only --format=tsv)
-      --show-footers       Output footer line at all (only --format=table)
+      --format=table       The output format (table, markdown, tsv and csv)
+      --noheaders          Output no header line at all (only --format=tsv, csv)
+      --show-footers       Output footer line at all (only --format=table, markdown)
       --limit=5000         The maximum number of results to display.
-      --location="Local"   Location name for the timezone
-  -o, --output="all"       Specifies the results to display, separated by commas
+      --location=Local     Location name for the timezone
+  -o, --output=all         Specifies the results to display, separated by commas
   -m, --matching-groups=PATTERN,...
                            Specifies URI matching groups separated by commas
   -f, --filters=FILTERS    Only the logs are profiled that match the conditions
@@ -54,8 +54,6 @@ Commands:
 
   regexp [<flags>]
     Profile the logs that match a regular expression
-
-
 ```
 
 ## ltsv
