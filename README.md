@@ -8,11 +8,10 @@ alp is Access Log Profiler
 
 ### Binary distribution
 
-You can pick your download [here](https://github.com/tkuchiki/alp/releases), put it in your PATH as alp, and set it as executable, e.g.
+You can pick your download [here](https://github.com/tkuchiki/alp/releases), and install it as follows:
 
 ```bash
-sudo cp <downloaded file> /usr/local/bin/alp
-sudo chmod a+x /usr/local/bin/alp
+sudo install <downloaded file> /usr/local/bin/alp
 ```
 
 ### Using your distribution's package system
