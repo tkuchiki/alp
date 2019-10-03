@@ -5,7 +5,21 @@ alp はアクセスログ解析ツールです。
 
 # インストール
 
-https://github.com/tkuchiki/alp/releases から環境にあったバイナリが含まれる zip ファイルをダウンロードして、解凍してください。
+### バイナリ配布
+
+[ここ](https://github.com/tkuchiki/alp/releases)から任意のOS向けのバイナリをダウンロードすることができ、次のようにしてインストールすることが可能です。
+
+```bash
+sudo install <ダウンロードしたファイル> /usr/local/bin/alp
+```
+
+### ディストリビューションのパッケージシステムを使用
+
+#### macOS (Homebrew)
+
+Homebrewでalpをインストールします。
+
+- `brew install alp`
 
 # v0.4.0 と v1.0.0 の違い
 

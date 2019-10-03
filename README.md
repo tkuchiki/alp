@@ -6,7 +6,21 @@ alp is Access Log Profiler
 
 # Installation
 
-Download from https://github.com/tkuchiki/alp/releases
+### Binary distribution
+
+You can pick your download [here](https://github.com/tkuchiki/alp/releases), and install it as follows:
+
+```bash
+sudo install <downloaded file> /usr/local/bin/alp
+```
+
+### Using your distribution's package system
+
+#### macOS (Homebrew)
+
+Install alp with Homebrew
+
+- `brew install alp`
 
 # How to difference between v0.4.0 and v1.0.0
 
