@@ -7,11 +7,10 @@ alp はアクセスログ解析ツールです。
 
 ### バイナリ配布
 
-[ここ](https://github.com/tkuchiki/alp/releases)から任意のOS向けのバイナリをダウンロードすることができ、それをalpとして配置し、このように実行可能なように設定します。
+[ここ](https://github.com/tkuchiki/alp/releases)から任意のOS向けのバイナリをダウンロードすることができ、次のようにしてインストールすることが可能です。
 
 ```bash
-sudo cp <ダウンロードしたファイル> /usr/local/bin/alp
-sudo chmod a+x /usr/local/bin/alp
+sudo install <ダウンロードしたファイル> /usr/local/bin/alp
 ```
 
 ### ディストリビューションのパッケージシステムを使用
