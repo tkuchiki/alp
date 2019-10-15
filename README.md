@@ -22,6 +22,16 @@ Install alp with Homebrew
 
 - `brew install alp`
 
+### asdf
+
+Install alp with [asdf](https://github.com/asdf-vm/asdf) and [asdf-alp](https://github.com/asdf-community/asdf-alp)
+
+```bash
+asdf plugin-add alp https://github.com/asdf-community/asdf-alp.git
+asdf install alp <version>
+asdf global alp <version>
+```
+
 # How to difference between v0.4.0 and v1.0.0
 
 TBW
