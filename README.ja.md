@@ -239,7 +239,7 @@ LogFormat "{\"time\":\"%t\",\"forwardedfor\":\"%{X-Forwarded-For}i\",\"host\":\"
                                 '"request_time":$request_time,'
                                 '"cache":"$upstream_http_x_cache",'
                                 '"runtime":"$upstream_http_x_runtime",'
-                                '"rseponse_time":$upstream_response_time,'
+                                '"response_time":$upstream_response_time,'
                                 '"vhost":"$host"}';
 ```
 
