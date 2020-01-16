@@ -164,6 +164,7 @@ func (p *Profiler) Run(args []string) error {
 		options.RequestTimeSubexp(p.regexpFlags.RequestTimeSubexp),
 		options.BodyBytesSubexp(p.regexpFlags.BodyBytesSubexp),
 		options.StatusSubexp(p.regexpFlags.StatusSubexp),
+		options.Pattern(p.regexpFlags.Pattern),
 	)
 
 	sts := stats.NewHTTPStats(true, false, false)
@@ -223,7 +224,7 @@ func (p *Profiler) Run(args []string) error {
 	case "regexp":
 		names := parsers.NewSubexpNames(opts.Regexp.UriSubexp, opts.Regexp.MethodSubexp, opts.Regexp.TimeSubexp,
 			opts.Regexp.ResponseTimeSubexp, opts.Regexp.RequestTimeSubexp, opts.Regexp.BodyBytesSubexp, opts.Regexp.StatusSubexp)
-		parser, err = parsers.NewRegexpParser(f, options.DefaultPatternOption, names, opts.QueryString)
+		parser, err = parsers.NewRegexpParser(f, opts.Regexp.Pattern, names, opts.QueryString)
 
 		if err != nil {
 			return err
