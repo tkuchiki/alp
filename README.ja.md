@@ -375,7 +375,7 @@ sample は [Usage samples](./docs/usage_samples.ja.md) を参照してくださ�
     - デフォルトはすべて出力(`all`)
 - `-m, --matching-groups=PATTERN,...`
     - 正規表現にマッチした URI を同じ集計対象として扱います
-    - 後述の [URI matching groups](#URI matching groups) 参照
+    - 後述の [URI matching groups](#uri-matching-groups) 参照
 - `-f, --filters=FILTERS`
     - 集計対象をフィルタします
     - 後述の[フィルタ](#フィルタ)参照
