@@ -286,3 +286,10 @@ See: https://github.com/antonmedv/expr/blob/master/docs/Language-Definition.md
 ## Usage samples
 
 See: [Usage samples](./docs/usage_samples.md)
+
+## Donation
+
+Donations are welcome as always!  
+My Kyash account is `tkuchiki`.
+
+![kyash](./docs/imgs/kyash.jpg "kyash")
