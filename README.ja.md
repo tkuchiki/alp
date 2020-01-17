@@ -489,3 +489,10 @@ $ cat example/logs/ltsv_access.log | alp ltsv --filters "Uri matches '^/diary/en
 ## 利用例
 
 [Usage samples](./docs/usage_samples.ja.md) を参照してください。
+
+## 寄付
+
+寄付はいつでも歓迎します！  
+Kyash のアカウントは `tkuchiki` です。
+
+![kyash](./docs/imgs/kyash.jpg "kyash")
