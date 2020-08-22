@@ -4,8 +4,6 @@
 
 alp is Access Log Profiler
 
-
-
 [日本語](./README.ja.md)
 
 # Installation
@@ -36,9 +34,9 @@ asdf install alp <version>
 asdf global alp <version>
 ```
 
-# How to difference between v0.4.0 and v1.0.0
+# The difference between v0.4.0 and v1.0.0
 
-TBW
+See: [The difference between v0.4.0 and v1.0.0](./docs/how_to_difference_between_v0_4_0_and_v1_0_0.md)
 
 # Usage
 
@@ -86,7 +84,21 @@ Commands:
 
 ## ltsv
 
-TBW 
+- Parses a log in [LTSV](http://ltsv.org/) format
+- By default, the following labels are parsed:
+    - `time`
+        - datetime
+    - `method`
+        - HTTP Method
+    - `uri`
+        - URI
+    - `status`
+        - HTTP Status Code
+    - `apptime`
+        - Response time from the upstream server
+    - `reqtime`
+        - Request Processing Time (Response time after receiving a request)
+- The `--xxx-label` option can you change the name to any label
 
 ```console
 $ cat example/logs/ltsv_access.log
@@ -121,7 +133,21 @@ $ cat example/logs/ltsv_access.log | alp ltsv
 
 ## json
 
-TBW
+- Parse a log with one JSON per line
+- By default, the following keys are parsed:
+    - `time`
+        - datetime
+    - `method`
+        - HTTP Method
+    - `uri`
+        - URI
+    - `status`
+        - HTTP Status Code
+    - `response_time`
+        - Response time from the upstream server
+    - `request_time`
+        - Request Processing Time (Response time after receiving a request)
+- The `--xxx-key` option can you change the name to any key
 
 ```console
 $ cat example/logs/json_access.log
@@ -156,7 +182,21 @@ $ cat example/logs/json_access.log | alp json
 
 ## regexp
 
-TBW
+- Parses the log to match the regular expression
+- By default, the following named capture groups are parsed:
+    - `time`
+        - datetime
+    - `method`
+        - HTTP Method
+    - `uri`
+        - URI
+    - `status`
+        - HTTP Status Code
+    - `response_time`
+        - Response time from the upstream server
+    - `request_time`
+        - Request Processing Time (Response time after receiving a request)
+- The `--xxx-subexp` option can you change the name to any named capture groups
 
 ```console
 $ cat example/logs/combined_access.log
@@ -192,11 +232,68 @@ $ cat example/logs/combined_access.log | alp regexp
 
 ## Global options
 
-TBW
+See: [Usage samples](./docs/usage_samples.md)
+
+- `-c, --config`
+    - The configuration file
+    - YAML
+- `--file=FILE` 
+    - The access log file
+- `-d, --dump=DUMP`
+    - File path for creating the profile results to a file
+- `-l, --load=LOAD`
+    - File path to read the results of the profile created with the `-d, --dump` option
+    - Can expect it to work fast if you change the `--sort` and `--reverse` options for the same profile results
+- `--sort=count`
+    - Output the results in sorted order
+    - Sort in ascending order
+    - `max`, `min`, `sum`, `avg`
+    - `max-body`, `min-body`, `sum-body`, `avg-body`  
+    - `p1`, `p50`, `p99`, `stddev`
+    - `uri`
+    - `method`
+    - `count`
+    - The default is `count`
+- `-r, --reverse`
+    - Sort in desecending order
+- `-q, --query-string`
+    - URIs up to and including query strings are included in the profile
+- `--format=table`
+    - Print the profile results in a table, Markdown, TSV and CSV format
+    - The default is table format
+- `--noheaders`
+    - Print no header when TSV and CSV format
+- `--show-footers`
+    - Print the total number of each 1xx ~ 5xx in the footer of the table or Markdown format
+- `--limit=5000`
+    - Maximum number of profile results to be printed
+    - This setting is to avoid using too much memory
+    - The default is 5000 lines
+- `--location="Local"`
+    - The timezone of the time specified in the filter condition.
+    - Default is  localhost timezone
+- `-o, --output="all"`
+    - Specify the profile results to be print, separated by commas
+    - `count`,`1xx`, `2xx`, `3xx`, `4xx`, `5xx`, `method`, `uri`, `min`, `max`, `sum`, `avg`, `p1`, `p50`, `p99`, `stddev`, `min_body`, `max_body`, `sum_body`, `avg_body`
+    - The default is `all`
+- `-m, --matching-groups=PATTERN,...`
+    - Treat URIs that match regular expressions as the same URI
+    - See [URI matching groups](#uri-matching-groups)
+- `-f, --filters=FILTERS`
+    - Filters the targets for profile
+    - See [Filter](#filter)
+- `--pos=POSITION_FILE`
+    - Stores the number of bytes to which the file has been read.
+    - If the number of bytes is stored in the POSITION_FILE, the data after that number of bytes will be profiled
+    - You can profile without truncating the file
+        - Also, it is expected to work fast because it seeks and skips files
+- `--nosave-pos`
+    - Data after the number of bytes specified by `--pos` is profiled, but the number of bytes reads is not stored
     
 ## URI matching groups
 
-TBW
+Consider the following cases like `/diary/entry/1234` and `/diary/entry/5678`.
+If you simply profile URIs with different parameters on the same route, they will be profiled by parameter, but you may want to profile them by the route.
 
 ```console
 $ cat example/logs/ltsv_access.log | alp ltsv --filters "Uri matches '^/diary/entry'"
@@ -221,9 +318,12 @@ $ cat example/logs/ltsv_access.log | alp ltsv --filters "Uri matches '^/diary/en
 +-------+-----+-----+-----+-----+-----+--------+-----------------+-------+-------+-------+-------+-------+-------+-------+--------+-----------+-----------+-----------+-----------+
 ```
 
+In such a case, there is an option `-m, --matching-groups=PATTERN,...`.
+You can also specify multiple items separated by commas.
+
 ## Filter
 
-TBW
+It is a function to include or exclude targets according to the conditions.
 
 ### Variables
 
