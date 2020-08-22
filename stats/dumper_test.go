@@ -4,41 +4,50 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	godiff "github.com/kylelemons/godebug/diff"
 )
 
 func TestDumpStats(t *testing.T) {
-	outw := new(bytes.Buffer)
-	po := NewPrintOptions()
-	stats := NewHTTPStats(true, false, false, po)
+	got := new(bytes.Buffer)
+	stats := NewHTTPStats(true, false, false)
 	stats.Set("/foo/bar", "POST", 200, 0.057, 12, 0)
 
-	err := stats.DumpStats(outw)
-	assert.Nil(t, err)
+	err := stats.DumpStats(got)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	data := bytes.NewBufferString(`- uri: /foo/bar
-  cnt: 1
+	want := bytes.NewBufferString(`- uri: /foo/bar
+  count: 1
   status1xx: 0
   status2xx: 1
   status3xx: 0
   status4xx: 0
   status5xx: 0
   method: POST
-  responsetime:
+  response_time:
     max: 0.057
     min: 0.057
     sum: 0.057
+    usepercentile: true
     percentiles:
     - 0.057
-  requestbodysize:
+  request_body_bytes:
     max: 12
     min: 12
     sum: 12
-  responsebodysize:
+    usepercentile: false
+    percentiles: []
+  response_body_bytes:
     max: 0
     min: 0
     sum: 0
+    usepercentile: false
+    percentiles: []
+  time: ""
 `)
 
-	assert.Equal(t, data, outw)
+	if diff := godiff.Diff(got.String(), want.String()); diff != "" {
+		t.Errorf("diff\n%s", diff)
+	}
 }
