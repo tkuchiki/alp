@@ -35,7 +35,7 @@ asdf global alp <バージョン>
 
 # v0.4.0 と v1.0.0 の違い
 
-[v0.4.0 と v1.0.0 の違い](./docs/how_to_difference_between_v0_4_0_and_v1_0_0.ja.md) を参照してください。
+[v0.4.0 と v1.0.0 の違い](./docs/the_difference_between_v0_4_0_and_v1_0_0.ja.md) を参照してください。
 
 # 使い方
 
