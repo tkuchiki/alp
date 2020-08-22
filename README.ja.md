@@ -1,5 +1,7 @@
 # alp
 
+![Test](https://github.com/tkuchiki/alp/workflows/Test/badge.svg?branch=master)
+
 alp はアクセスログ解析ツールです。
 読み方は、[éɪélpíː] または [ælp] です(作者は [éɪélpíː] 派)。
 

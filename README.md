@@ -1,6 +1,10 @@
 # alp
 
+![Test](https://github.com/tkuchiki/alp/workflows/Test/badge.svg?branch=master)
+
 alp is Access Log Profiler
+
+
 
 [日本語](./README.ja.md)
 
