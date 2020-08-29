@@ -36,7 +36,7 @@ asdf global alp <version>
 
 # The difference between v0.4.0 and v1.0.0
 
-See: [The difference between v0.4.0 and v1.0.0](./docs/how_to_difference_between_v0_4_0_and_v1_0_0.md)
+See: [The difference between v0.4.0 and v1.0.0](./docs/the_difference_between_v0_4_0_and_v1_0_0.md)
 
 # Usage
 
