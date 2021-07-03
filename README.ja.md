@@ -65,6 +65,7 @@ Flags:
   -f, --filters=FILTERS    Only the logs are profiled that match the conditions
       --pos=POSITION_FILE  The position file
       --nosave-pos         Do not save position file
+      --percentiles="90,95,99"  Specifies the percentiles separated by commas
       --version            Show application version.
 
 Commands:
@@ -348,11 +349,12 @@ sample は [Usage samples](./docs/usage_samples.ja.md) を参照してくださ�
     - 昇順でソートする 
     - `max`, `min`, `sum`, `avg`
     - `max-body`, `min-body`, `sum-body`, `avg-body`  
-    - `p1`, `p50`, `p99`, `stddev`
+    - `p90`, `p95`, `p99`, `stddev`
     - `uri`
     - `method`
     - `count`
     - デフォルトは `count`
+    - `p90`, `p95`, `p99` は `--percentiles` で指定したパーセンタイル値によって変更されます
 - `-r, --reverse`
     - `--sort` オプションのソート結果を降順にします
 - `-q, --query-string`
@@ -373,7 +375,8 @@ sample は [Usage samples](./docs/usage_samples.ja.md) を参照してくださ�
     - デフォルトは localhost に設定されている timezone
 - `-o, --output="all"`
     - 出力する解析結果をカンマ区切りで指定する
-    - `count`,`1xx`, `2xx`, `3xx`, `4xx`, `5xx`, `method`, `uri`, `min`, `max`, `sum`, `avg`, `p1`, `p50`, `p99`, `stddev`, `min_body`, `max_body`, `sum_body`, `avg_body`
+    - `count`,`1xx`, `2xx`, `3xx`, `4xx`, `5xx`, `method`, `uri`, `min`, `max`, `sum`, `avg`, `p90`, `p95`, `p99`, `stddev`, `min_body`, `max_body`, `sum_body`, `avg_body`
+        - `p90`, `p95`, `p99` は `--percentiles` で指定したパーセンタイル値によって変更されます
     - デフォルトはすべて出力(`all`)
 - `-m, --matching-groups=PATTERN,...`
     - 正規表現にマッチした URI を同じ集計対象として扱います
@@ -388,6 +391,9 @@ sample は [Usage samples](./docs/usage_samples.ja.md) を参照してくださ�
         - また、ファイルを Seek して読み飛ばすので、高速に動作することが見込めます
 - `--nosave-pos`
     - `--pos` で指定したバイト数以降のデータを解析対象としますが、読み込んだバイト数の記録はしないようにします
+- `--percentiles`
+    - 出力するパーセンタイル値をカンマ区切りで指定します
+    - デフォルトは `90,95,99`
     
 ## URI matching groups
 

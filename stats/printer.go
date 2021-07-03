@@ -5,93 +5,147 @@ import (
 	"io"
 	"strings"
 
-	"github.com/tkuchiki/alp/helpers"
-
 	"github.com/olekukonko/tablewriter"
+	"github.com/tkuchiki/alp/helpers"
 )
 
-var headers = map[string]string{
-	"count":    "Count",
-	"1xx":      "1xx",
-	"2xx":      "2xx",
-	"3xx":      "3xx",
-	"4xx":      "4xx",
-	"5xx":      "5xx",
-	"method":   "Method",
-	"uri":      "Uri",
-	"min":      "Min",
-	"max":      "Max",
-	"sum":      "Sum",
-	"avg":      "Avg",
-	"p1":       "P1",
-	"p50":      "P50",
-	"p99":      "P99",
-	"stddev":   "Stddev",
-	"min_body": "Min(Body)",
-	"max_body": "Max(Body)",
-	"sum_body": "Sum(Body)",
-	"avg_body": "Avg(Body)",
+func keywords(percentiles []int) []string {
+	s1 := []string{
+		"count",
+		"1xx",
+		"2xx",
+		"3xx",
+		"4xx",
+		"5xx",
+		"method",
+		"uri",
+		"min",
+		"max",
+		"sum",
+		"avg",
+	}
+
+	s2 := []string{
+		"stddev",
+		"min_body",
+		"max_body",
+		"sum_body",
+		"avg_body",
+	}
+
+	sp := make([]string, 0, len(percentiles))
+	for _, p := range percentiles {
+		sp = append(sp, fmt.Sprintf("p%d", p))
+	}
+
+	s := make([]string, 0, len(s1)+len(s2)+len(sp))
+	s = append(s, s1...)
+	s = append(s, sp...)
+	s = append(s, s2...)
+
+	return s
 }
 
-var keywords = []string{
-	"count",
-	"1xx",
-	"2xx",
-	"3xx",
-	"4xx",
-	"5xx",
-	"method",
-	"uri",
-	"min",
-	"max",
-	"sum",
-	"avg",
-	"p1",
-	"p50",
-	"p99",
-	"stddev",
-	"min_body",
-	"max_body",
-	"sum_body",
-	"avg_body",
+func defaultHeaders(percentiles []int) []string {
+	s1 := []string{
+		"Count",
+		"1xx",
+		"2xx",
+		"3xx",
+		"4xx",
+		"5xx",
+		"Method",
+		"Uri",
+		"Min",
+		"Max",
+		"Sum",
+		"Avg",
+	}
+
+	s2 := []string{
+		"Stddev",
+		"Min(Body)",
+		"Max(Body)",
+		"Sum(Body)",
+		"Avg(Body)",
+	}
+
+	sp := make([]string, 0, len(percentiles))
+	for _, p := range percentiles {
+		sp = append(sp, fmt.Sprintf("P%d", p))
+	}
+
+	s := make([]string, 0, len(s1)+len(s2)+len(sp))
+	s = append(s, s1...)
+	s = append(s, sp...)
+	s = append(s, s2...)
+
+	return s
 }
 
-var defaultHeaders = []string{
-	"Count", "1xx", "2xx", "3xx", "4xx", "5xx", "Method", "Uri",
-	"Min", "Max", "Sum", "Avg",
-	"P1", "P50", "P99", "Stddev",
-	"Min(Body)", "Max(Body)", "Sum(Body)", "Avg(Body)",
+func headersMap(percentiles []int) map[string]string {
+	headers := map[string]string{
+		"count":    "Count",
+		"1xx":      "1xx",
+		"2xx":      "2xx",
+		"3xx":      "3xx",
+		"4xx":      "4xx",
+		"5xx":      "5xx",
+		"method":   "Method",
+		"uri":      "Uri",
+		"min":      "Min",
+		"max":      "Max",
+		"sum":      "Sum",
+		"avg":      "Avg",
+		"stddev":   "Stddev",
+		"min_body": "Min(Body)",
+		"max_body": "Max(Body)",
+		"sum_body": "Sum(Body)",
+		"avg_body": "Avg(Body)",
+	}
+
+	for _, p := range percentiles {
+		key := fmt.Sprintf("p%d", p)
+		val := fmt.Sprintf("P%d", p)
+		headers[key] = val
+	}
+
+	return headers
 }
 
 type Printer struct {
 	keywords    []string
 	format      string
+	percentiles []int
 	noHeaders   bool
 	showFooters bool
 	headers     []string
+	headersMap  map[string]string
 	writer      io.Writer
 	all         bool
 }
 
-func NewPrinter(w io.Writer, val, format string, noHeaders, showFooters bool) *Printer {
+func NewPrinter(w io.Writer, val, format string, percentiles []int, noHeaders, showFooters bool) *Printer {
 	p := &Printer{
 		format:      format,
+		percentiles: percentiles,
+		headersMap:  headersMap(percentiles),
 		writer:      w,
 		showFooters: showFooters,
 		noHeaders:   noHeaders,
 	}
 
 	if val == "all" {
-		p.keywords = keywords
-		p.headers = defaultHeaders
+		p.keywords = keywords(percentiles)
+		p.headers = defaultHeaders(percentiles)
 		p.all = true
 	} else {
 		p.keywords = helpers.SplitCSV(val)
 		for _, key := range p.keywords {
-			p.headers = append(p.headers, headers[key])
+			p.headers = append(p.headers, p.headersMap[key])
 			if key == "all" {
-				p.keywords = keywords
-				p.headers = defaultHeaders
+				p.keywords = keywords(percentiles)
+				p.headers = defaultHeaders(percentiles)
 				p.all = true
 				break
 			}
@@ -108,7 +162,7 @@ func (p *Printer) Validate() error {
 
 	invalids := make([]string, 0)
 	for _, key := range p.keywords {
-		if _, ok := headers[key]; !ok {
+		if _, ok := p.headersMap[key]; !ok {
 			invalids = append(invalids, key)
 		}
 	}
@@ -120,13 +174,13 @@ func (p *Printer) Validate() error {
 	return nil
 }
 
-func generateAllLine(s *HTTPStat, quoteUri bool) []string {
+func generateAllLine(s *HTTPStat, percentiles []int, quoteUri bool) []string {
 	uri := s.Uri
 	if quoteUri && strings.Contains(s.Uri, ",") {
 		uri = fmt.Sprintf(`"%s"`, s.Uri)
 	}
 
-	return []string{
+	l1 := []string{
 		s.StrCount(),
 		s.StrStatus1xx(),
 		s.StrStatus2xx(),
@@ -139,20 +193,32 @@ func generateAllLine(s *HTTPStat, quoteUri bool) []string {
 		round(s.MaxResponseTime()),
 		round(s.SumResponseTime()),
 		round(s.AvgResponseTime()),
-		round(s.P1ResponseTime()),
-		round(s.P50ResponseTime()),
-		round(s.P99ResponseTime()),
+	}
+
+	l2 := []string{
 		round(s.StddevResponseTime()),
 		round(s.MinResponseBodyBytes()),
 		round(s.MaxResponseBodyBytes()),
 		round(s.SumResponseBodyBytes()),
 		round(s.AvgResponseBodyBytes()),
 	}
+
+	lp := make([]string, 0, len(percentiles))
+	for _, p := range percentiles {
+		lp = append(lp, round(s.PNResponseTime(p)))
+	}
+
+	l := make([]string, 0, len(l1)+len(l2)+len(lp))
+	l = append(l, l1...)
+	l = append(l, lp...)
+	l = append(l, l2...)
+
+	return l
 }
 
 func (p *Printer) GenerateLine(s *HTTPStat, quoteUri bool) []string {
 	if p.all {
-		return generateAllLine(s, quoteUri)
+		return generateAllLine(s, p.percentiles, quoteUri)
 	}
 
 	keyLen := len(p.keywords)
@@ -189,12 +255,6 @@ func (p *Printer) GenerateLine(s *HTTPStat, quoteUri bool) []string {
 			line = append(line, round(s.SumResponseTime()))
 		case "avg":
 			line = append(line, round(s.AvgResponseTime()))
-		case "p1":
-			line = append(line, round(s.P1ResponseTime()))
-		case "p50":
-			line = append(line, round(s.P50ResponseTime()))
-		case "p99":
-			line = append(line, round(s.P99ResponseTime()))
 		case "stddev":
 			line = append(line, round(s.StddevResponseTime()))
 		case "min_body":
@@ -205,6 +265,13 @@ func (p *Printer) GenerateLine(s *HTTPStat, quoteUri bool) []string {
 			line = append(line, round(s.SumResponseBodyBytes()))
 		case "avg_body":
 			line = append(line, round(s.AvgResponseBodyBytes()))
+		default: // percentile
+			var n int
+			_, err := fmt.Sscanf(p.keywords[i], "p%d", &n)
+			if err != nil {
+				continue
+			}
+			line = append(line, round(s.PNResponseTime(n)))
 		}
 	}
 

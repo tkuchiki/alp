@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 
 	"github.com/tkuchiki/alp/helpers"
-
 	"gopkg.in/yaml.v2"
 )
 
@@ -53,6 +52,8 @@ const (
 	DefaultStatusSubexpOption       = "status"
 )
 
+var DefaultPercentilesOption = []int{90, 95, 99}
+
 type Options struct {
 	File           string         `yaml:"file"`
 	Sort           string         `yaml:"sort"`
@@ -68,6 +69,7 @@ type Options struct {
 	NoSavePos      bool           `yaml:"nosave_pos"`
 	Location       string         `yaml:"location"`
 	Output         string         `yaml:"output"`
+	Percentiles    []int          `yaml:"percentiles"`
 	LTSV           *LTSVOptions   `yaml:"ltsv"`
 	Regexp         *RegexpOptions `yaml:"regexp"`
 	JSON           *JSONOptions   `yaml:"json"`
@@ -223,6 +225,14 @@ func NoSavePos(b bool) Option {
 	return func(opts *Options) {
 		if b {
 			opts.NoSavePos = b
+		}
+	}
+}
+
+func Percentiles(i []int) Option {
+	return func(opts *Options) {
+		if len(i) > 0 {
+			opts.Percentiles = i
 		}
 	}
 }
@@ -439,14 +449,15 @@ func NewOptions(opt ...Option) *Options {
 	}
 
 	options := &Options{
-		Sort:     DefaultSortOption,
-		Format:   DefaultFormatOption,
-		Limit:    DefaultLimitOption,
-		Location: DefaultLocationOption,
-		Output:   DefaultOutputOption,
-		LTSV:     ltsv,
-		Regexp:   regexp,
-		JSON:     json,
+		Sort:        DefaultSortOption,
+		Format:      DefaultFormatOption,
+		Limit:       DefaultLimitOption,
+		Location:    DefaultLocationOption,
+		Output:      DefaultOutputOption,
+		Percentiles: DefaultPercentilesOption,
+		LTSV:        ltsv,
+		Regexp:      regexp,
+		JSON:        json,
 	}
 
 	for _, o := range opt {
@@ -489,6 +500,7 @@ func LoadOptionsFromReader(r io.Reader) (*Options, error) {
 		NoSavePos(configs.NoSavePos),
 		MatchingGroups(configs.MatchingGroups),
 		Filters(configs.Filters),
+		Percentiles(configs.Percentiles),
 		// ltsv
 		ApptimeLabel(configs.LTSV.ApptimeLabel),
 		ReqtimeLabel(configs.LTSV.ReqtimeLabel),

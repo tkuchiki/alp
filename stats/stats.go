@@ -4,15 +4,13 @@ import (
 	"fmt"
 	"math"
 	"regexp"
+	"sort"
 	"sync"
 
 	"github.com/tkuchiki/alp/errors"
-
 	"github.com/tkuchiki/alp/helpers"
-
-	"github.com/tkuchiki/alp/parsers"
-
 	"github.com/tkuchiki/alp/options"
+	"github.com/tkuchiki/alp/parsers"
 )
 
 type hints struct {
@@ -47,6 +45,7 @@ type HTTPStats struct {
 	useResponseBodyBytesPercentile bool
 	filter                         *Filter
 	options                        *options.Options
+	sortOptions                    *SortOptions
 	uriMatchingGroups              []*regexp.Regexp
 }
 
@@ -92,6 +91,10 @@ func (hs *HTTPStats) SetOptions(options *options.Options) {
 	hs.options = options
 }
 
+func (hs *HTTPStats) SetSortOptions(options *SortOptions) {
+	hs.sortOptions = options
+}
+
 func (hs *HTTPStats) SetURIMatchingGroups(groups []string) error {
 	uriGroups, err := helpers.CompileUriMatchingGroups(groups)
 	if err != nil {
@@ -135,7 +138,7 @@ func (hs *HTTPStats) CountAll() map[string]int {
 }
 
 func (hs *HTTPStats) SortWithOptions() {
-	hs.Sort(hs.options.Sort, hs.options.Reverse)
+	hs.Sort(hs.sortOptions, hs.options.Reverse)
 }
 
 type HTTPStat struct {
@@ -231,20 +234,8 @@ func (hs *HTTPStat) AvgResponseTime() float64 {
 	return hs.ResponseTime.Avg(hs.Cnt)
 }
 
-func (hs *HTTPStat) P1ResponseTime() float64 {
-	return hs.ResponseTime.P1(hs.Cnt)
-}
-
-func (hs *HTTPStat) P50ResponseTime() float64 {
-	return hs.ResponseTime.P50(hs.Cnt)
-}
-
-func (hs *HTTPStat) P90ResponseTime() float64 {
-	return hs.ResponseTime.P90(hs.Cnt)
-}
-
-func (hs *HTTPStat) P99ResponseTime() float64 {
-	return hs.ResponseTime.P99(hs.Cnt)
+func (hs *HTTPStat) PNResponseTime(n int) float64 {
+	return hs.ResponseTime.PN(hs.Cnt, n)
 }
 
 func (hs *HTTPStat) StddevResponseTime() float64 {
@@ -268,20 +259,8 @@ func (hs *HTTPStat) AvgRequestBodyBytes() float64 {
 	return hs.RequestBodyBytes.Avg(hs.Cnt)
 }
 
-func (hs *HTTPStat) P1RequestBodyBytes() float64 {
-	return hs.RequestBodyBytes.P1(hs.Cnt)
-}
-
-func (hs *HTTPStat) P50RequestBodyBytes() float64 {
-	return hs.RequestBodyBytes.P50(hs.Cnt)
-}
-
-func (hs *HTTPStat) P90RequestBodyBytes() float64 {
-	return hs.RequestBodyBytes.P90(hs.Cnt)
-}
-
-func (hs *HTTPStat) P99RequestBodyBytes() float64 {
-	return hs.RequestBodyBytes.P99(hs.Cnt)
+func (hs *HTTPStat) PNRequestBodyBytes(n int) float64 {
+	return hs.RequestBodyBytes.PN(hs.Cnt, n)
 }
 
 func (hs *HTTPStat) StddevRequestBodyBytes() float64 {
@@ -305,33 +284,28 @@ func (hs *HTTPStat) AvgResponseBodyBytes() float64 {
 	return hs.RequestBodyBytes.Avg(hs.Cnt)
 }
 
-func (hs *HTTPStat) P1ResponseBodyBytes() float64 {
-	return hs.RequestBodyBytes.P1(hs.Cnt)
-}
-
-func (hs *HTTPStat) P50ResponseBodyBytes() float64 {
-	return hs.RequestBodyBytes.P50(hs.Cnt)
-}
-
-func (hs *HTTPStat) P90ResponseBodyBytes() float64 {
-	return hs.RequestBodyBytes.P90(hs.Cnt)
-}
-
-func (hs *HTTPStat) P99ResponseBodyBytes() float64 {
-	return hs.RequestBodyBytes.P99(hs.Cnt)
+func (hs *HTTPStat) PNResponseBodyBytes(n int) float64 {
+	return hs.RequestBodyBytes.PN(hs.Cnt, n)
 }
 
 func (hs *HTTPStat) StddevResponseBodyBytes() float64 {
 	return hs.RequestBodyBytes.Stddev(hs.Cnt)
 }
 
-func percentRank(l int, n int) int {
-	pLen := (l * n / 100) - 1
-	if pLen < 0 {
-		pLen = 0
+func percentRank(n int, pi int) int {
+	if pi == 0 {
+		return 0
+	} else if pi == 100 {
+		return n - 1
 	}
 
-	return pLen
+	p := float64(pi) / 100.0
+	pos := int(float64(n+1) * p)
+	if pos < 0 {
+		pos = 0
+	}
+
+	return pos - 1
 }
 
 type responseTime struct {
@@ -369,39 +343,13 @@ func (res *responseTime) Avg(cnt int) float64 {
 	return res.Sum / float64(cnt)
 }
 
-func (res *responseTime) P1(cnt int) float64 {
+func (res *responseTime) PN(cnt, n int) float64 {
 	if !res.UsePercentile {
 		return 0.0
 	}
 
-	plen := percentRank(cnt, 1)
-	return res.Percentiles[plen]
-}
-
-func (res *responseTime) P50(cnt int) float64 {
-	if !res.UsePercentile {
-		return 0.0
-	}
-
-	plen := percentRank(cnt, 50)
-	return res.Percentiles[plen]
-}
-
-func (res *responseTime) P90(cnt int) float64 {
-	if !res.UsePercentile {
-		return 0.0
-	}
-
-	plen := percentRank(cnt, 90)
-	return res.Percentiles[plen]
-}
-
-func (res *responseTime) P99(cnt int) float64 {
-	if !res.UsePercentile {
-		return 0.0
-	}
-
-	plen := percentRank(cnt, 99)
+	plen := percentRank(cnt, n)
+	res.Sort()
 	return res.Percentiles[plen]
 }
 
@@ -419,6 +367,12 @@ func (res *responseTime) Stddev(cnt int) float64 {
 	}
 
 	return math.Sqrt(stdd / n)
+}
+
+func (res *responseTime) Sort() {
+	sort.Slice(res.Percentiles, func(i, j int) bool {
+		return res.Percentiles[i] < res.Percentiles[j]
+	})
 }
 
 type bodyBytes struct {
@@ -456,39 +410,13 @@ func (body *bodyBytes) Avg(cnt int) float64 {
 	return body.Sum / float64(cnt)
 }
 
-func (body *bodyBytes) P1(cnt int) float64 {
+func (body *bodyBytes) PN(cnt, n int) float64 {
 	if !body.UsePercentile {
 		return 0.0
 	}
 
-	plen := percentRank(cnt, 1)
-	return body.Percentiles[plen]
-}
-
-func (body *bodyBytes) P50(cnt int) float64 {
-	if !body.UsePercentile {
-		return 0.0
-	}
-
-	plen := percentRank(cnt, 50)
-	return body.Percentiles[plen]
-}
-
-func (body *bodyBytes) P90(cnt int) float64 {
-	if !body.UsePercentile {
-		return 0.0
-	}
-
-	plen := percentRank(cnt, 90)
-	return body.Percentiles[plen]
-}
-
-func (body *bodyBytes) P99(cnt int) float64 {
-	if !body.UsePercentile {
-		return 0.0
-	}
-
-	plen := percentRank(cnt, 99)
+	plen := percentRank(cnt, n)
+	body.Sort()
 	return body.Percentiles[plen]
 }
 
@@ -506,4 +434,10 @@ func (body *bodyBytes) Stddev(cnt int) float64 {
 	}
 
 	return math.Sqrt(stdd / n)
+}
+
+func (body *bodyBytes) Sort() {
+	sort.Slice(body.Percentiles, func(i, j int) bool {
+		return body.Percentiles[i] < body.Percentiles[j]
+	})
 }

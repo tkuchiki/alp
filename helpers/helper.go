@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -40,4 +41,43 @@ func SplitCSV(val string) []string {
 	}
 
 	return trimedStrs
+}
+
+func SplitCSVIntoInts(val string) ([]int, error) {
+	strs := strings.Split(val, ",")
+	if len(strs) == 1 && strs[0] == "" {
+		return []int{}, nil
+	}
+
+	trimedInts := make([]int, 0, len(strs))
+
+	for _, s := range strs {
+		i, err := strconv.Atoi(strings.Trim(s, " "))
+		if err != nil {
+			return []int{}, err
+		}
+		trimedInts = append(trimedInts, i)
+	}
+
+	for _, i := range trimedInts {
+		if i < 1 && i > 100 {
+			return []int{}, fmt.Errorf(``)
+		}
+	}
+
+	return trimedInts, nil
+}
+
+func ValidatePercentiles(percentiles []int) error {
+	if len(percentiles) == 0 {
+		return nil
+	}
+
+	for _, i := range percentiles {
+		if i < 0 && i > 100 {
+			return fmt.Errorf(`percentiles allowed 0 to 100`)
+		}
+	}
+
+	return nil
 }
