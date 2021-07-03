@@ -12,6 +12,7 @@ filters:         # string
 output:          # string(comma separated)
 pos_file:        # string
 nosave_pos:      # boolean
+percentiles:     # array
 ltsv:
   apptime_label: # apptime
   status_label:  # status code

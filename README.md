@@ -66,6 +66,7 @@ Flags:
   -f, --filters=FILTERS    Only the logs are profiled that match the conditions
       --pos=POSITION_FILE  The position file
       --nosave-pos         Do not save position file
+      --percentiles="90,95,99"  Specifies the percentiles separated by commas
       --version            Show application version.
 
 Commands:
@@ -249,11 +250,12 @@ See: [Usage samples](./docs/usage_samples.md)
     - Sort in ascending order
     - `max`, `min`, `sum`, `avg`
     - `max-body`, `min-body`, `sum-body`, `avg-body`  
-    - `p1`, `p50`, `p99`, `stddev`
+    - `p90`, `p95`, `p99`, `stddev`
     - `uri`
     - `method`
     - `count`
     - The default is `count`
+    - `p90`, `p95`, and `p99` are modified by the values specified in `--percentiles`
 - `-r, --reverse`
     - Sort in desecending order
 - `-q, --query-string`
@@ -274,7 +276,8 @@ See: [Usage samples](./docs/usage_samples.md)
     - Default is  localhost timezone
 - `-o, --output="all"`
     - Specify the profile results to be print, separated by commas
-    - `count`,`1xx`, `2xx`, `3xx`, `4xx`, `5xx`, `method`, `uri`, `min`, `max`, `sum`, `avg`, `p1`, `p50`, `p99`, `stddev`, `min_body`, `max_body`, `sum_body`, `avg_body`
+    - `count`,`1xx`, `2xx`, `3xx`, `4xx`, `5xx`, `method`, `uri`, `min`, `max`, `sum`, `avg`, `p90`, `p95`, `p99`, `stddev`, `min_body`, `max_body`, `sum_body`, `avg_body`
+        - `p90`, `p95`, and `p99` are modified by the values specified in `--percentiles`
     - The default is `all`
 - `-m, --matching-groups=PATTERN,...`
     - Treat URIs that match regular expressions as the same URI
@@ -289,6 +292,9 @@ See: [Usage samples](./docs/usage_samples.md)
         - Also, it is expected to work fast because it seeks and skips files
 - `--nosave-pos`
     - Data after the number of bytes specified by `--pos` is profiled, but the number of bytes reads is not stored
+- `--percentiles`
+    - Specifies the percentile values to output, separated by commas
+    - The default is `90,95,99`
     
 ## URI matching groups
 

@@ -15,6 +15,7 @@ jobs:
         os:
           - ubuntu-latest
         go:
+          - "1.16"
           - "1.15"
           - "1.14"
 

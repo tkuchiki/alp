@@ -5,7 +5,6 @@ import (
 
 	"github.com/tkuchiki/alp/options"
 
-	"github.com/tkuchiki/alp/stats"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -27,24 +26,7 @@ type GlobalFlags struct {
 	Filters        string
 	PosFile        string
 	NoSavePos      bool
-}
-
-var SortKeys = []string{
-	"max",
-	"min",
-	"avg",
-	"sum",
-	"count",
-	"uri",
-	"method",
-	"max-body",
-	"min-body",
-	"avg-body",
-	"sum-body",
-	"p1",
-	"p50",
-	"p99",
-	"stddev",
+	Percentiles    string
 }
 
 var Formats = []string{
@@ -53,24 +35,6 @@ var Formats = []string{
 	"markdown",
 	"tsv",
 	"csv",
-}
-
-var SortOptions = map[string]string{
-	"max":      stats.SortMaxResponseTime,
-	"min":      stats.SortMinResponseTime,
-	"avg":      stats.SortAvgResponseTime,
-	"sum":      stats.SortSumResponseTime,
-	"count":    stats.SortCount,
-	"uri":      stats.SortUri,
-	"method":   stats.SortMethod,
-	"max-body": stats.SortMaxResponseBodyBytes,
-	"min-body": stats.SortMinResponseBodyBytes,
-	"avg-body": stats.SortAvgResponseBodyBytes,
-	"sum-body": stats.SortSumResponseBodyBytes,
-	"p1":       stats.SortP1ResponseTime,
-	"p50":      stats.SortP50ResponseTime,
-	"p99":      stats.SortP99ResponseTime,
-	"stddev":   stats.SortStddevResponseTime,
 }
 
 func NewGlobalFlags() *GlobalFlags {
@@ -87,7 +51,7 @@ func (f *GlobalFlags) InitGlobalFlags(app *kingpin.Application) {
 	app.Flag("load", "Load the profiled YAML data").
 		Short('l').StringVar(&f.Load)
 	app.Flag("sort", "Output the results in sorted order").
-		PlaceHolder(options.DefaultSortOption).EnumVar(&f.Sort, SortKeys...)
+		PlaceHolder(options.DefaultSortOption).Default(options.DefaultSortOption).StringVar(&f.Sort)
 	app.Flag("reverse", "Sort results in reverse order").
 		Short('r').BoolVar(&f.Reverse)
 	app.Flag("query-string", "Include the URI query string.").
@@ -112,4 +76,6 @@ func (f *GlobalFlags) InitGlobalFlags(app *kingpin.Application) {
 		PlaceHolder("POSITION_FILE").StringVar(&f.PosFile)
 	app.Flag("nosave-pos", "Do not save position file").
 		BoolVar(&f.NoSavePos)
+	app.Flag("percentiles", "Specifies the percentiles separated by commas").Default("90,95,99").
+		StringVar(&f.Percentiles)
 }

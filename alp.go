@@ -18,7 +18,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-const version = "1.0.3"
+const version = "1.0.4"
 
 type Profiler struct {
 	outWriter    io.Writer
@@ -104,9 +104,21 @@ func (p *Profiler) Run(args []string) error {
 		command = p.subcmdJSON.FullCommand()
 	}
 
-	sort := flags.SortOptions[p.globalFlags.Sort]
+	percentiles, err := helpers.SplitCSVIntoInts(p.globalFlags.Percentiles)
+	if err != nil {
+		return err
+	}
 
-	var err error
+	if err = helpers.ValidatePercentiles(percentiles); err != nil {
+		return err
+	}
+
+	sortOptions := stats.NewSortOptions()
+	err = sortOptions.SetAndValidate(p.globalFlags.Sort)
+	if err != nil {
+		return err
+	}
+
 	var opts *options.Options
 	if p.globalFlags.Config != "" {
 		cf, err := os.Open(p.globalFlags.Config)
@@ -119,15 +131,20 @@ func (p *Profiler) Run(args []string) error {
 		if err != nil {
 			return err
 		}
-		sort = flags.SortOptions[opts.Sort]
 
+		err = sortOptions.SetAndValidate(opts.Sort)
+		if err != nil {
+			return err
+		}
+
+		percentiles = opts.Percentiles
 	} else {
 		opts = options.NewOptions()
 	}
 
 	opts = options.SetOptions(opts,
 		options.File(p.globalFlags.File),
-		options.Sort(sort),
+		options.Sort(sortOptions.SortType()),
 		options.Reverse(p.globalFlags.Reverse),
 		options.QueryString(p.globalFlags.QueryString),
 		options.Format(p.globalFlags.Format),
@@ -140,6 +157,7 @@ func (p *Profiler) Run(args []string) error {
 		options.Filters(p.globalFlags.Filters),
 		options.PosFile(p.globalFlags.PosFile),
 		options.NoSavePos(p.globalFlags.NoSavePos),
+		options.Percentiles(percentiles),
 		// ltsv
 		options.UriLabel(p.ltsvFlags.UriLabel),
 		options.MethodLabel(p.ltsvFlags.MethodLabel),
@@ -175,8 +193,9 @@ func (p *Profiler) Run(args []string) error {
 	}
 
 	sts.SetOptions(opts)
+	sts.SetSortOptions(sortOptions)
 
-	printer := stats.NewPrinter(p.outWriter, opts.Output, opts.Format, opts.NoHeaders, opts.ShowFooters)
+	printer := stats.NewPrinter(p.outWriter, opts.Output, opts.Format, percentiles, opts.NoHeaders, opts.ShowFooters)
 	if err = printer.Validate(); err != nil {
 		return err
 	}

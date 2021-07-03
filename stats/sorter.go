@@ -1,6 +1,9 @@
 package stats
 
-import "sort"
+import (
+	"fmt"
+	"sort"
+)
 
 const (
 	SortCount                   = "Count"
@@ -10,33 +13,83 @@ const (
 	SortMinResponseTime         = "MinResponseTime"
 	SortSumResponseTime         = "SumResponseTime"
 	SortAvgResponseTime         = "AvgResponseTime"
-	SortP1ResponseTime          = "P1ResponseTime"
-	SortP50ResponseTime         = "P50ResponseTime"
-	SortP90ResponseTime         = "P90ResponseTime"
-	SortP99ResponseTime         = "P99ResponseTime"
+	SortPNResponseTime          = "PNResponseTime"
 	SortStddevResponseTime      = "StddevResponseTime"
 	SortMaxRequestBodyBytes     = "MaxRequestBodyBytes"
 	SortMinRequestBodyBytes     = "MinRequestBodyBytes"
 	SortSumRequestBodyBytes     = "SumRequestBodyBytes"
 	SortAvgRequestBodyBytes     = "AvgRequestBodyBytes"
-	SortP1RequestBodyBytes      = "P1RequestBodyBytes"
-	SortP50RequestBodyBytes     = "P50RequestBodyBytes"
-	SortP90RequestBodyBytes     = "P90RequestBodyBytes"
-	SortP99RequestBodyBytes     = "P99RequestBodyBytes"
+	SortPNRequestBodyBytes      = "PNRequestBodyBytes"
 	SortStddevRequestBodyBytes  = "StddevRequestBodyBytes"
 	SortMaxResponseBodyBytes    = "MaxResponseBodyBytes"
 	SortMinResponseBodyBytes    = "MinResponseBodyBytes"
 	SortSumResponseBodyBytes    = "SumResponseBodyBytes"
 	SortAvgResponseBodyBytes    = "AvgResponseBodyBytes"
-	SortP1ResponseBodyBytes     = "P1ResponseBodyBytes"
-	SortP50ResponseBodyBytes    = "P50ResponseBodyBytes"
-	SortP90ResponseBodyBytes    = "P90ResponseBodyBytes"
-	SortP99ResponseBodyBytes    = "P99ResponseBodyBytes"
+	SortPNResponseBodyBytes     = "PNResponseBodyBytes"
 	SortStddevResponseBodyBytes = "StddevResponseBodyBytes"
 )
 
-func (hs *HTTPStats) Sort(sortType string, reverse bool) {
-	switch sortType {
+type SortOptions struct {
+	options    map[string]string
+	sortType   string
+	percentile int
+}
+
+func NewSortOptions() *SortOptions {
+	options := map[string]string{
+		"max":      SortMaxResponseTime,
+		"min":      SortMinResponseTime,
+		"avg":      SortAvgResponseTime,
+		"sum":      SortSumResponseTime,
+		"count":    SortCount,
+		"uri":      SortUri,
+		"method":   SortMethod,
+		"max-body": SortMaxResponseBodyBytes,
+		"min-body": SortMinResponseBodyBytes,
+		"avg-body": SortAvgResponseBodyBytes,
+		"sum-body": SortSumResponseBodyBytes,
+		"stddev":   SortStddevResponseTime,
+		"pn":       SortPNResponseTime,
+	}
+
+	return &SortOptions{
+		options: options,
+	}
+}
+
+func (so *SortOptions) SetAndValidate(opt string) error {
+	_, ok := so.options[opt]
+	if ok {
+		so.sortType = so.options[opt]
+		return nil
+	}
+
+	var n int
+	_, err := fmt.Sscanf(opt, "p%d", &n)
+	if err != nil {
+		return err
+	}
+
+	if n < 0 && n > 100 {
+		return fmt.Errorf("enum value must be one of max,min,avg,sum,count,uri,method,max-body,min-body,avg-body,sum-body,pN(N = 0 ~ 100),stddev, got '%s'", opt)
+	}
+
+	so.sortType = so.options["pn"]
+	so.percentile = n
+
+	return nil
+}
+
+func (so *SortOptions) SortType() string {
+	return so.sortType
+}
+
+func (so *SortOptions) Percentile() int {
+	return so.percentile
+}
+
+func (hs *HTTPStats) Sort(sortOptions *SortOptions, reverse bool) {
+	switch sortOptions.sortType {
 	case SortCount:
 		hs.SortCount(reverse)
 	case SortUri:
@@ -52,14 +105,8 @@ func (hs *HTTPStats) Sort(sortType string, reverse bool) {
 		hs.SortSumResponseTime(reverse)
 	case SortAvgResponseTime:
 		hs.SortAvgResponseTime(reverse)
-	case SortP1ResponseTime:
-		hs.SortP1ResponseTime(reverse)
-	case SortP50ResponseTime:
-		hs.SortP50ResponseTime(reverse)
-	case SortP90ResponseTime:
-		hs.SortP90ResponseTime(reverse)
-	case SortP99ResponseTime:
-		hs.SortP99ResponseTime(reverse)
+	case SortPNResponseTime:
+		hs.SortPNResponseTime(reverse)
 	case SortStddevResponseTime:
 		hs.SortStddevResponseTime(reverse)
 	// request body bytes
@@ -71,14 +118,8 @@ func (hs *HTTPStats) Sort(sortType string, reverse bool) {
 		hs.SortSumRequestBodyBytes(reverse)
 	case SortAvgRequestBodyBytes:
 		hs.SortAvgRequestBodyBytes(reverse)
-	case SortP1RequestBodyBytes:
-		hs.SortP1RequestBodyBytes(reverse)
-	case SortP50RequestBodyBytes:
-		hs.SortP50RequestBodyBytes(reverse)
-	case SortP90RequestBodyBytes:
-		hs.SortP90RequestBodyBytes(reverse)
-	case SortP99RequestBodyBytes:
-		hs.SortP99RequestBodyBytes(reverse)
+	case SortPNRequestBodyBytes:
+		hs.SortPNRequestBodyBytes(reverse)
 	case SortStddevRequestBodyBytes:
 		hs.SortStddevRequestBodyBytes(reverse)
 	// response body bytes
@@ -90,14 +131,8 @@ func (hs *HTTPStats) Sort(sortType string, reverse bool) {
 		hs.SortSumResponseBodyBytes(reverse)
 	case SortAvgResponseBodyBytes:
 		hs.SortAvgResponseBodyBytes(reverse)
-	case SortP1ResponseBodyBytes:
-		hs.SortP1ResponseBodyBytes(reverse)
-	case SortP50ResponseBodyBytes:
-		hs.SortP50ResponseBodyBytes(reverse)
-	case SortP90ResponseBodyBytes:
-		hs.SortP90ResponseBodyBytes(reverse)
-	case SortP99ResponseBodyBytes:
-		hs.SortP99ResponseBodyBytes(reverse)
+	case SortPNResponseBodyBytes:
+		hs.SortPNResponseBodyBytes(reverse)
 	case SortStddevResponseBodyBytes:
 		hs.SortStddevResponseBodyBytes(reverse)
 	default:
@@ -189,50 +224,14 @@ func (hs *HTTPStats) SortAvgResponseTime(reverse bool) {
 	}
 }
 
-func (hs *HTTPStats) SortP1ResponseTime(reverse bool) {
+func (hs *HTTPStats) SortPNResponseTime(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P1ResponseTime() > hs.stats[j].P1ResponseTime()
+			return hs.stats[i].PNResponseTime(hs.sortOptions.percentile) > hs.stats[j].PNResponseTime(hs.sortOptions.percentile)
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P1ResponseTime() < hs.stats[j].P1ResponseTime()
-		})
-	}
-}
-
-func (hs *HTTPStats) SortP50ResponseTime(reverse bool) {
-	if reverse {
-		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P50ResponseTime() > hs.stats[j].P50ResponseTime()
-		})
-	} else {
-		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P50ResponseTime() < hs.stats[j].P50ResponseTime()
-		})
-	}
-}
-
-func (hs *HTTPStats) SortP90ResponseTime(reverse bool) {
-	if reverse {
-		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P90ResponseTime() > hs.stats[j].P90ResponseTime()
-		})
-	} else {
-		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P90ResponseTime() < hs.stats[j].P90ResponseTime()
-		})
-	}
-}
-
-func (hs *HTTPStats) SortP99ResponseTime(reverse bool) {
-	if reverse {
-		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P99ResponseTime() > hs.stats[j].P99ResponseTime()
-		})
-	} else {
-		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P99ResponseTime() < hs.stats[j].P99ResponseTime()
+			return hs.stats[i].PNResponseTime(hs.sortOptions.percentile) < hs.stats[j].PNResponseTime(hs.sortOptions.percentile)
 		})
 	}
 }
@@ -298,50 +297,14 @@ func (hs *HTTPStats) SortAvgRequestBodyBytes(reverse bool) {
 	}
 }
 
-func (hs *HTTPStats) SortP1RequestBodyBytes(reverse bool) {
+func (hs *HTTPStats) SortPNRequestBodyBytes(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P1RequestBodyBytes() > hs.stats[j].P1RequestBodyBytes()
+			return hs.stats[i].PNRequestBodyBytes(hs.sortOptions.percentile) > hs.stats[j].PNRequestBodyBytes(hs.sortOptions.percentile)
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P1RequestBodyBytes() < hs.stats[j].P1RequestBodyBytes()
-		})
-	}
-}
-
-func (hs *HTTPStats) SortP50RequestBodyBytes(reverse bool) {
-	if reverse {
-		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P50RequestBodyBytes() > hs.stats[j].P50RequestBodyBytes()
-		})
-	} else {
-		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P50RequestBodyBytes() < hs.stats[j].P50RequestBodyBytes()
-		})
-	}
-}
-
-func (hs *HTTPStats) SortP90RequestBodyBytes(reverse bool) {
-	if reverse {
-		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P90RequestBodyBytes() > hs.stats[j].P90RequestBodyBytes()
-		})
-	} else {
-		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P90RequestBodyBytes() < hs.stats[j].P90RequestBodyBytes()
-		})
-	}
-}
-
-func (hs *HTTPStats) SortP99RequestBodyBytes(reverse bool) {
-	if reverse {
-		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P99RequestBodyBytes() > hs.stats[j].P99RequestBodyBytes()
-		})
-	} else {
-		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P99RequestBodyBytes() < hs.stats[j].P99RequestBodyBytes()
+			return hs.stats[i].PNRequestBodyBytes(hs.sortOptions.percentile) < hs.stats[j].PNRequestBodyBytes(hs.sortOptions.percentile)
 		})
 	}
 }
@@ -407,50 +370,14 @@ func (hs *HTTPStats) SortAvgResponseBodyBytes(reverse bool) {
 	}
 }
 
-func (hs *HTTPStats) SortP1ResponseBodyBytes(reverse bool) {
+func (hs *HTTPStats) SortPNResponseBodyBytes(reverse bool) {
 	if reverse {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P1ResponseBodyBytes() > hs.stats[j].P1ResponseBodyBytes()
+			return hs.stats[i].PNResponseBodyBytes(hs.sortOptions.percentile) > hs.stats[j].PNResponseBodyBytes(hs.sortOptions.percentile)
 		})
 	} else {
 		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P1ResponseBodyBytes() < hs.stats[j].P1ResponseBodyBytes()
-		})
-	}
-}
-
-func (hs *HTTPStats) SortP50ResponseBodyBytes(reverse bool) {
-	if reverse {
-		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P50ResponseBodyBytes() > hs.stats[j].P50ResponseBodyBytes()
-		})
-	} else {
-		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P50ResponseBodyBytes() < hs.stats[j].P50ResponseBodyBytes()
-		})
-	}
-}
-
-func (hs *HTTPStats) SortP90ResponseBodyBytes(reverse bool) {
-	if reverse {
-		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P90ResponseBodyBytes() > hs.stats[j].P90ResponseBodyBytes()
-		})
-	} else {
-		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P90ResponseBodyBytes() < hs.stats[j].P90ResponseBodyBytes()
-		})
-	}
-}
-
-func (hs *HTTPStats) SortP99ResponseBodyBytes(reverse bool) {
-	if reverse {
-		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P99ResponseBodyBytes() > hs.stats[j].P99ResponseBodyBytes()
-		})
-	} else {
-		sort.Slice(hs.stats, func(i, j int) bool {
-			return hs.stats[i].P99ResponseBodyBytes() < hs.stats[j].P99ResponseBodyBytes()
+			return hs.stats[i].PNResponseBodyBytes(hs.sortOptions.percentile) < hs.stats[j].PNResponseBodyBytes(hs.sortOptions.percentile)
 		})
 	}
 }
