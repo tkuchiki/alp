@@ -55,24 +55,26 @@ const (
 var DefaultPercentilesOption = []int{90, 95, 99}
 
 type Options struct {
-	File           string         `yaml:"file"`
-	Sort           string         `yaml:"sort"`
-	Reverse        bool           `yaml:"reverse"`
-	QueryString    bool           `yaml:"query_string"`
-	Format         string         `yaml:"format"`
-	NoHeaders      bool           `yaml:"noheaders"`
-	ShowFooters    bool           `yaml:"show_footers"`
-	Limit          int            `yaml:"limit"`
-	MatchingGroups []string       `yaml:"matching_groups"`
-	Filters        string         `yaml:"filters"`
-	PosFile        string         `yaml:"pos_file"`
-	NoSavePos      bool           `yaml:"nosave_pos"`
-	Location       string         `yaml:"location"`
-	Output         string         `yaml:"output"`
-	Percentiles    []int          `yaml:"percentiles"`
-	LTSV           *LTSVOptions   `yaml:"ltsv"`
-	Regexp         *RegexpOptions `yaml:"regexp"`
-	JSON           *JSONOptions   `yaml:"json"`
+	File                    string         `yaml:"file"`
+	Sort                    string         `yaml:"sort"`
+	Reverse                 bool           `yaml:"reverse"`
+	QueryString             bool           `yaml:"query_string"`
+	QueryStringIgnoreValues bool           `yaml:"query_string_ignore_values"`
+	EncodeUri               bool           `yaml:"encode_uri"`
+	Format                  string         `yaml:"format"`
+	NoHeaders               bool           `yaml:"noheaders"`
+	ShowFooters             bool           `yaml:"show_footers"`
+	Limit                   int            `yaml:"limit"`
+	MatchingGroups          []string       `yaml:"matching_groups"`
+	Filters                 string         `yaml:"filters"`
+	PosFile                 string         `yaml:"pos_file"`
+	NoSavePos               bool           `yaml:"nosave_pos"`
+	Location                string         `yaml:"location"`
+	Output                  string         `yaml:"output"`
+	Percentiles             []int          `yaml:"percentiles"`
+	LTSV                    *LTSVOptions   `yaml:"ltsv"`
+	Regexp                  *RegexpOptions `yaml:"regexp"`
+	JSON                    *JSONOptions   `yaml:"json"`
 }
 
 type LTSVOptions struct {
@@ -136,6 +138,22 @@ func QueryString(b bool) Option {
 	return func(opts *Options) {
 		if b {
 			opts.QueryString = b
+		}
+	}
+}
+
+func QueryStringIgnoreValues(b bool) Option {
+	return func(opts *Options) {
+		if b {
+			opts.QueryStringIgnoreValues = b
+		}
+	}
+}
+
+func EncodeUri(b bool) Option {
+	return func(opts *Options) {
+		if b {
+			opts.EncodeUri = b
 		}
 	}
 }
@@ -493,6 +511,8 @@ func LoadOptionsFromReader(r io.Reader) (*Options, error) {
 		Reverse(configs.Reverse),
 		File(configs.File),
 		QueryString(configs.QueryString),
+		QueryStringIgnoreValues(configs.QueryStringIgnoreValues),
+		EncodeUri(configs.EncodeUri),
 		Format(configs.Format),
 		NoHeaders(configs.NoHeaders),
 		ShowFooters(configs.ShowFooters),

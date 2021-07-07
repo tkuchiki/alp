@@ -3,8 +3,10 @@ package stats
 import (
 	"fmt"
 	"math"
+	"net/url"
 	"regexp"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/tkuchiki/alp/errors"
@@ -188,6 +190,31 @@ func (hs *HTTPStat) setStatus(status int) {
 	} else if status >= 500 && status <= 599 {
 		hs.Status5xx++
 	}
+}
+
+func (hs *HTTPStat) UriWithOptions(encode bool) string {
+	if !encode {
+		return hs.Uri
+	}
+
+	uris := strings.SplitN(hs.Uri, "?", 2)
+
+	if len(uris) == 1 {
+		u, err := url.Parse(uris[0])
+		if err != nil {
+			return hs.Uri
+		}
+
+		return u.EscapedPath()
+	}
+
+	u, err := url.Parse(uris[0])
+	if err != nil {
+		return hs.Uri
+	}
+	values := u.Query()
+
+	return fmt.Sprintf("%s?%s", u.EscapedPath(), values.Encode())
 }
 
 func (hs *HTTPStat) StrStatus1xx() string {

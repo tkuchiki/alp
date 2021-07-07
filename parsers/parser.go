@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"strings"
 
 	"github.com/tkuchiki/alp/errors"
 	"github.com/tkuchiki/alp/helpers"
@@ -156,22 +157,29 @@ func NewParsedHTTPStat(uri, method, time string, resTime, bodyBytes float64, sta
 	}
 }
 
-func toStats(parsedValue map[string]string, keys *statKeys, strictMode, queryString bool) (*ParsedHTTPStat, error) {
+func toStats(parsedValue map[string]string, keys *statKeys, strictMode, queryString, qsIgnoreValues bool) (*ParsedHTTPStat, error) {
 	u, err := url.Parse(parsedValue[keys.uri])
 	if err != nil {
 		return nil, errSkipReadLine(strictMode, err)
 	}
 	var uri string
 	if queryString {
-		v := url.Values{}
 		values := u.Query()
 		for q := range values {
-			v.Set(q, "xxx")
+			if qsIgnoreValues {
+				values.Set(q, "xxx")
+			}
 		}
 
-		qs := v.Encode()
-		if qs != "" {
-			uri = fmt.Sprintf("%s?%s", u.Path, qs)
+		var queries []string
+		for k1, _ := range values {
+			for _, v := range values[k1] {
+				queries = append(queries, fmt.Sprintf("%s=%s", k1, v))
+			}
+		}
+
+		if len(queries) > 0 {
+			uri = fmt.Sprintf("%s?%s", u.Path, strings.Join(queries, "&"))
 		} else {
 			uri = u.Path
 		}

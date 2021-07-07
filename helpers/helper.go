@@ -2,7 +2,9 @@ package helpers
 
 import (
 	"fmt"
+	"net/url"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -10,6 +12,40 @@ import (
 func CompileUriMatchingGroups(groups []string) ([]*regexp.Regexp, error) {
 	uriMatchingGroups := make([]*regexp.Regexp, 0, len(groups))
 	for _, pattern := range groups {
+		u, err := url.Parse(pattern)
+		if err == nil {
+			if u.RawQuery != "" {
+				queries := make(map[string][]string)
+				for _, q := range strings.Split(u.RawQuery, "&") {
+					item := strings.SplitN(q, "=", 2)
+					if len(item) > 0 {
+						if len(item) == 2 {
+							queries[item[0]] = append(queries[item[0]], item[1])
+						} else {
+							queries[item[0]] = append(queries[item[0]], "")
+						}
+					}
+				}
+
+				keys := make([]string, 0, len(queries))
+				for k, _ := range queries {
+					keys = append(keys, k)
+				}
+				sort.Strings(keys)
+
+				sortedQueries := make([]string, 0)
+				for _, k := range keys {
+					values := make([]string, 0, len(queries[k]))
+					for _, q := range queries[k] {
+						values = append(values, fmt.Sprintf("%s=%s", k, q))
+					}
+					sortedQueries = append(sortedQueries, strings.Join(values, "="))
+				}
+				sortedRawQuery := strings.Join(sortedQueries, "&")
+				pattern = fmt.Sprintf("%s?%s", u.Path, sortedRawQuery)
+			}
+		}
+
 		re, err := regexp.Compile(pattern)
 		if err != nil {
 			return nil, err

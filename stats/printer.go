@@ -113,26 +113,38 @@ func headersMap(percentiles []int) map[string]string {
 	return headers
 }
 
-type Printer struct {
-	keywords    []string
-	format      string
-	percentiles []int
+type PrintOptions struct {
 	noHeaders   bool
 	showFooters bool
-	headers     []string
-	headersMap  map[string]string
-	writer      io.Writer
-	all         bool
+	encodeUri   bool
 }
 
-func NewPrinter(w io.Writer, val, format string, percentiles []int, noHeaders, showFooters bool) *Printer {
-	p := &Printer{
-		format:      format,
-		percentiles: percentiles,
-		headersMap:  headersMap(percentiles),
-		writer:      w,
-		showFooters: showFooters,
+func NewPrintOptions(noHeaders, showFooters, encodeUri bool) *PrintOptions {
+	return &PrintOptions{
 		noHeaders:   noHeaders,
+		showFooters: showFooters,
+		encodeUri:   encodeUri,
+	}
+}
+
+type Printer struct {
+	keywords     []string
+	format       string
+	percentiles  []int
+	printOptions *PrintOptions
+	headers      []string
+	headersMap   map[string]string
+	writer       io.Writer
+	all          bool
+}
+
+func NewPrinter(w io.Writer, val, format string, percentiles []int, printOptions *PrintOptions) *Printer {
+	p := &Printer{
+		format:       format,
+		percentiles:  percentiles,
+		headersMap:   headersMap(percentiles),
+		writer:       w,
+		printOptions: printOptions,
 	}
 
 	if val == "all" {
@@ -174,8 +186,8 @@ func (p *Printer) Validate() error {
 	return nil
 }
 
-func generateAllLine(s *HTTPStat, percentiles []int, quoteUri bool) []string {
-	uri := s.Uri
+func generateAllLine(s *HTTPStat, percentiles []int, quoteUri, encodeUri bool) []string {
+	uri := s.UriWithOptions(encodeUri)
 	if quoteUri && strings.Contains(s.Uri, ",") {
 		uri = fmt.Sprintf(`"%s"`, s.Uri)
 	}
@@ -218,7 +230,7 @@ func generateAllLine(s *HTTPStat, percentiles []int, quoteUri bool) []string {
 
 func (p *Printer) GenerateLine(s *HTTPStat, quoteUri bool) []string {
 	if p.all {
-		return generateAllLine(s, p.percentiles, quoteUri)
+		return generateAllLine(s, p.percentiles, quoteUri, p.printOptions.encodeUri)
 	}
 
 	keyLen := len(p.keywords)
@@ -231,7 +243,7 @@ func (p *Printer) GenerateLine(s *HTTPStat, quoteUri bool) []string {
 		case "method":
 			line = append(line, s.Method)
 		case "uri":
-			uri := s.Uri
+			uri := s.UriWithOptions(p.printOptions.encodeUri)
 			if quoteUri && strings.Contains(s.Uri, ",") {
 
 				uri = fmt.Sprintf(`"%s"`, s.Uri)
@@ -341,7 +353,7 @@ func (p *Printer) printTable(hs *HTTPStats) {
 		table.Append(data)
 	}
 
-	if p.showFooters {
+	if p.printOptions.showFooters {
 		footer := p.GenerateFooter(hs.CountAll())
 		table.SetFooter(footer)
 		table.SetFooterAlignment(tablewriter.ALIGN_RIGHT)
@@ -360,7 +372,7 @@ func (p *Printer) printMarkdown(hs *HTTPStats) {
 		table.Append(data)
 	}
 
-	if p.showFooters {
+	if p.printOptions.showFooters {
 		footer := p.GenerateFooter(hs.CountAll())
 		table.Append(footer)
 	}
@@ -369,7 +381,7 @@ func (p *Printer) printMarkdown(hs *HTTPStats) {
 }
 
 func (p *Printer) printTSV(hs *HTTPStats) {
-	if !p.noHeaders {
+	if !p.printOptions.noHeaders {
 		fmt.Println(strings.Join(p.headers, "\t"))
 	}
 	for _, s := range hs.stats {
@@ -379,7 +391,7 @@ func (p *Printer) printTSV(hs *HTTPStats) {
 }
 
 func (p *Printer) printCSV(hs *HTTPStats) {
-	if !p.noHeaders {
+	if !p.printOptions.noHeaders {
 		fmt.Println(strings.Join(p.headers, ","))
 	}
 	for _, s := range hs.stats {
