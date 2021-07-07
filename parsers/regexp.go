@@ -8,12 +8,13 @@ import (
 )
 
 type RegexpParser struct {
-	reader      *bufio.Reader
-	subexpNames *statKeys
-	strictMode  bool
-	queryString bool
-	re          *regexp.Regexp
-	readBytes   int
+	reader         *bufio.Reader
+	subexpNames    *statKeys
+	strictMode     bool
+	queryString    bool
+	qsIgnoreValues bool
+	re             *regexp.Regexp
+	readBytes      int
 }
 
 var errPatternNotMatched = errors.New("pattern not matched")
@@ -30,17 +31,18 @@ func NewSubexpNames(uri, method, time, responseTime, requestTime, size, status s
 	)
 }
 
-func NewRegexpParser(r io.Reader, expr string, names *statKeys, query bool) (Parser, error) {
+func NewRegexpParser(r io.Reader, expr string, names *statKeys, query, qsIgnoreValues bool) (Parser, error) {
 	re, err := regexp.Compile(expr)
 	if err != nil {
 		return nil, err
 	}
 
 	return &RegexpParser{
-		reader:      bufio.NewReader(r),
-		re:          re,
-		subexpNames: names,
-		queryString: query,
+		reader:         bufio.NewReader(r),
+		re:             re,
+		subexpNames:    names,
+		queryString:    query,
+		qsIgnoreValues: qsIgnoreValues,
 	}, nil
 }
 
@@ -65,7 +67,7 @@ func (rp *RegexpParser) Parse() (*ParsedHTTPStat, error) {
 		parsedValue[names[i]] = groups[i]
 	}
 
-	return toStats(parsedValue, rp.subexpNames, rp.strictMode, rp.queryString)
+	return toStats(parsedValue, rp.subexpNames, rp.strictMode, rp.queryString, rp.qsIgnoreValues)
 }
 
 func (rp *RegexpParser) ReadBytes() int {

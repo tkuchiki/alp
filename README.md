@@ -47,27 +47,29 @@ usage: alp [<flags>] <command> [<args> ...]
 alp is the access log profiler for LTSV, JSON, and others.
 
 Flags:
-      --help               Show context-sensitive help (also try --help-long and --help-man).
-  -c, --config=CONFIG      The configuration file
-      --file=FILE          The access log file
-  -d, --dump=DUMP          Dump profiled data as YAML
-  -l, --load=LOAD          Load the profiled YAML data
-      --sort=count         Output the results in sorted order
-  -r, --reverse            Sort results in reverse order
-  -q, --query-string       Include the URI query string.
-      --format=table       The output format (table, markdown, tsv and csv)
-      --noheaders          Output no header line at all (only --format=tsv, csv)
-      --show-footers       Output footer line at all (only --format=table, markdown)
-      --limit=5000         The maximum number of results to display.
-      --location=Local     Location name for the timezone
-  -o, --output=all         Specifies the results to display, separated by commas
+      --help                    Show context-sensitive help (also try --help-long and --help-man).
+  -c, --config=CONFIG           The configuration file
+      --file=FILE               The access log file
+  -d, --dump=DUMP               Dump profiled data as YAML
+  -l, --load=LOAD               Load the profiled YAML data
+      --sort=count              Output the results in sorted order
+  -r, --reverse                 Sort results in reverse order
+  -q, --query-string            Include the URI query string
+      --qs-ignore-values        Ignore the value of the query string. Replace all values with xxx (only use with -q)
+      --encode-uri              Encode the URI
+      --format=table            The output format (table, markdown, tsv and csv)
+      --noheaders               Output no header line at all (only --format=tsv, csv)
+      --show-footers            Output footer line at all (only --format=table, markdown)
+      --limit=5000              The maximum number of results to display.
+      --location=Local          Location name for the timezone
+  -o, --output=all              Specifies the results to display, separated by commas
   -m, --matching-groups=PATTERN,...
-                           Specifies URI matching groups separated by commas
-  -f, --filters=FILTERS    Only the logs are profiled that match the conditions
-      --pos=POSITION_FILE  The position file
-      --nosave-pos         Do not save position file
+                                Specifies URI matching groups separated by commas
+  -f, --filters=FILTERS         Only the logs are profiled that match the conditions
+      --pos=POSITION_FILE       The position file
+      --nosave-pos              Do not save position file
       --percentiles="90,95,99"  Specifies the percentiles separated by commas
-      --version            Show application version.
+      --version                 Show application version.
 
 Commands:
   help [<command>...]
@@ -260,6 +262,11 @@ See: [Usage samples](./docs/usage_samples.md)
     - Sort in desecending order
 - `-q, --query-string`
     - URIs up to and including query strings are included in the profile
+- `--qs-ignore-values`
+    - Ignore the value of the query string
+    - It's not enabled unless use with `-q, --query-string`
+- `--encode-uri`
+    - Percent-encode the URI
 - `--format=table`
     - Print the profile results in a table, Markdown, TSV and CSV format
     - The default is table format

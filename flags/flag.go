@@ -9,24 +9,26 @@ import (
 )
 
 type GlobalFlags struct {
-	Config         string
-	File           string
-	Dump           string
-	Load           string
-	Sort           string
-	Reverse        bool
-	QueryString    bool
-	Format         string
-	NoHeaders      bool
-	ShowFooters    bool
-	Limit          int
-	Location       string
-	Output         string
-	MatchingGroups string
-	Filters        string
-	PosFile        string
-	NoSavePos      bool
-	Percentiles    string
+	Config                  string
+	File                    string
+	Dump                    string
+	Load                    string
+	Sort                    string
+	Reverse                 bool
+	QueryString             bool
+	QueryStringIgnoreValues bool
+	EncodeUri               bool
+	Format                  string
+	NoHeaders               bool
+	ShowFooters             bool
+	Limit                   int
+	Location                string
+	Output                  string
+	MatchingGroups          string
+	Filters                 string
+	PosFile                 string
+	NoSavePos               bool
+	Percentiles             string
 }
 
 var Formats = []string{
@@ -54,8 +56,12 @@ func (f *GlobalFlags) InitGlobalFlags(app *kingpin.Application) {
 		PlaceHolder(options.DefaultSortOption).Default(options.DefaultSortOption).StringVar(&f.Sort)
 	app.Flag("reverse", "Sort results in reverse order").
 		Short('r').BoolVar(&f.Reverse)
-	app.Flag("query-string", "Include the URI query string.").
+	app.Flag("query-string", "Include the URI query string").
 		Short('q').BoolVar(&f.QueryString)
+	app.Flag("qs-ignore-values", "Ignore the value of the query string. Replace all values with xxx (only use with -q)").
+		BoolVar(&f.QueryStringIgnoreValues)
+	app.Flag("encode-uri", "Encode the URI").
+		BoolVar(&f.EncodeUri)
 	app.Flag("format", "The output format (table, markdown, tsv and csv)").
 		PlaceHolder(options.DefaultFormatOption).EnumVar(&f.Format, Formats...)
 	app.Flag("noheaders", "Output no header line at all (only --format=tsv, csv)").

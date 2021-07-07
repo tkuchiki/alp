@@ -18,7 +18,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-const version = "1.0.4"
+const version = "1.0.5"
 
 type Profiler struct {
 	outWriter    io.Writer
@@ -147,6 +147,8 @@ func (p *Profiler) Run(args []string) error {
 		options.Sort(sortOptions.SortType()),
 		options.Reverse(p.globalFlags.Reverse),
 		options.QueryString(p.globalFlags.QueryString),
+		options.QueryStringIgnoreValues(p.globalFlags.QueryStringIgnoreValues),
+		options.EncodeUri(p.globalFlags.EncodeUri),
 		options.Format(p.globalFlags.Format),
 		options.Limit(p.globalFlags.Limit),
 		options.Location(p.globalFlags.Location),
@@ -195,7 +197,8 @@ func (p *Profiler) Run(args []string) error {
 	sts.SetOptions(opts)
 	sts.SetSortOptions(sortOptions)
 
-	printer := stats.NewPrinter(p.outWriter, opts.Output, opts.Format, percentiles, opts.NoHeaders, opts.ShowFooters)
+	printOptions := stats.NewPrintOptions(opts.NoHeaders, opts.ShowFooters, opts.EncodeUri)
+	printer := stats.NewPrinter(p.outWriter, opts.Output, opts.Format, percentiles, printOptions)
 	if err = printer.Validate(); err != nil {
 		return err
 	}
@@ -235,15 +238,15 @@ func (p *Profiler) Run(args []string) error {
 		label := parsers.NewLTSVLabel(opts.LTSV.UriLabel, opts.LTSV.MethodLabel, opts.LTSV.TimeLabel,
 			opts.LTSV.ApptimeLabel, opts.LTSV.ReqtimeLabel, opts.LTSV.SizeLabel, opts.LTSV.StatusLabel,
 		)
-		parser = parsers.NewLTSVParser(f, label, opts.QueryString)
+		parser = parsers.NewLTSVParser(f, label, opts.QueryString, opts.QueryStringIgnoreValues)
 	case "json":
 		keys := parsers.NewJSONKeys(opts.JSON.UriKey, opts.JSON.MethodKey, opts.JSON.TimeKey,
 			opts.JSON.ResponseTimeKey, opts.JSON.RequestTimeKey, opts.JSON.BodyBytesKey, opts.JSON.StatusKey)
-		parser = parsers.NewJSONParser(f, keys, opts.QueryString)
+		parser = parsers.NewJSONParser(f, keys, opts.QueryString, opts.QueryStringIgnoreValues)
 	case "regexp":
 		names := parsers.NewSubexpNames(opts.Regexp.UriSubexp, opts.Regexp.MethodSubexp, opts.Regexp.TimeSubexp,
 			opts.Regexp.ResponseTimeSubexp, opts.Regexp.RequestTimeSubexp, opts.Regexp.BodyBytesSubexp, opts.Regexp.StatusSubexp)
-		parser, err = parsers.NewRegexpParser(f, opts.Regexp.Pattern, names, opts.QueryString)
+		parser, err = parsers.NewRegexpParser(f, opts.Regexp.Pattern, names, opts.QueryString, opts.QueryStringIgnoreValues)
 
 		if err != nil {
 			return err

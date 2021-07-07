@@ -8,11 +8,12 @@ import (
 )
 
 type JSONParser struct {
-	reader      *bufio.Reader
-	keys        *statKeys
-	strictMode  bool
-	queryString bool
-	readBytes   int
+	reader         *bufio.Reader
+	keys           *statKeys
+	strictMode     bool
+	queryString    bool
+	qsIgnoreValues bool
+	readBytes      int
 }
 
 func NewJSONKeys(uri, method, time, responseTime, requestTime, size, status string) *statKeys {
@@ -27,11 +28,12 @@ func NewJSONKeys(uri, method, time, responseTime, requestTime, size, status stri
 	)
 }
 
-func NewJSONParser(r io.Reader, keys *statKeys, query bool) Parser {
+func NewJSONParser(r io.Reader, keys *statKeys, query, qsIgnoreValues bool) Parser {
 	return &JSONParser{
-		reader:      bufio.NewReader(r),
-		keys:        keys,
-		queryString: query,
+		reader:         bufio.NewReader(r),
+		keys:           keys,
+		queryString:    query,
+		qsIgnoreValues: qsIgnoreValues,
 	}
 }
 
@@ -63,7 +65,7 @@ func (j *JSONParser) Parse() (*ParsedHTTPStat, error) {
 		parsedValue[key] = fmt.Sprintf("%v", tmp[key])
 	}
 
-	return toStats(parsedValue, j.keys, j.strictMode, j.queryString)
+	return toStats(parsedValue, j.keys, j.strictMode, j.queryString, j.qsIgnoreValues)
 }
 
 func (j *JSONParser) ReadBytes() int {

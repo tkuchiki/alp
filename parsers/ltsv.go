@@ -8,11 +8,12 @@ import (
 )
 
 type LTSVParser struct {
-	reader      *bufio.Reader
-	label       *statKeys
-	strictMode  bool
-	queryString bool
-	readBytes   int
+	reader         *bufio.Reader
+	label          *statKeys
+	strictMode     bool
+	queryString    bool
+	qsIgnoreValues bool
+	readBytes      int
 }
 
 func NewLTSVLabel(uri, method, time, responseTime, requestTime, size, status string) *statKeys {
@@ -27,11 +28,12 @@ func NewLTSVLabel(uri, method, time, responseTime, requestTime, size, status str
 	)
 }
 
-func NewLTSVParser(r io.Reader, l *statKeys, query bool) Parser {
+func NewLTSVParser(r io.Reader, l *statKeys, query, qsIgnoreValues bool) Parser {
 	return &LTSVParser{
-		reader:      bufio.NewReader(r),
-		label:       l,
-		queryString: query,
+		reader:         bufio.NewReader(r),
+		label:          l,
+		queryString:    query,
+		qsIgnoreValues: qsIgnoreValues,
 	}
 }
 
@@ -48,7 +50,7 @@ func (l *LTSVParser) Parse() (*ParsedHTTPStat, error) {
 		return nil, err
 	}
 
-	return toStats(parsedValue, l.label, l.strictMode, l.queryString)
+	return toStats(parsedValue, l.label, l.strictMode, l.queryString, l.qsIgnoreValues)
 }
 
 func (l *LTSVParser) ReadBytes() int {
