@@ -44,7 +44,7 @@ See: [The difference between v0.4.0 and v1.0.0](./docs/the_difference_between_v0
 $ alp --help
 usage: alp [<flags>] <command> [<args> ...]
 
-alp is the access log profiler for LTSV, JSON, and others.
+alp is the access log profiler for LTSV, JSON, PCAP, and others.
 
 Flags:
       --help                    Show context-sensitive help (also try --help-long and --help-man).
@@ -83,6 +83,9 @@ Commands:
 
   regexp [<flags>]
     Profile the logs that match a regular expression
+
+  pcap [<flags>]
+    Profile the HTTP requests for captured packets
 ```
 
 ## ltsv
@@ -230,6 +233,40 @@ $ cat example/logs/combined_access.log | alp regexp
 |     1 |   0 |   0 |   0 |   0 |   1 | GET    | /foo/bar/5xx      | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 |  0.000 |    15.000 |    15.000 |    15.000 |    15.000 |
 +-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
 |  11   |  0  | 10  |  0  |  0  |  1  |
++-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
+```
+
+## pcap
+
+- Parses the pcap file to extract HTTP request/response packets to analyze the stats
+  - Note that the actual response time may time duration from the actual response time because the difference in the timestamp of packet capturing is regarded as the real response time
+  - The IP address and TCP port number of the server are required to distinguish between HTTP requests/responses to the server
+- Able to specify the IP address of the HTTP server with the `--pcap-server-ip` option
+  - This option can be specified more than once
+  - By default, it automatically obtains the IP address from the network interfaces of its own host and uses it
+  - However, `127.0.0.1` and `::1` will be the defaults in environments where permissions to retrieve network interface information are restricted.
+- Able to specify the TCP port of the HTTP server with the `--pcap-server-port` option
+  - The default server port number is 80.
+- Cannot be used with `--pos`. (not yet supported)
+
+```console
+$ sudo tcpdump -i lo port 5000 -s0 -w http.cap -Z $USER
+tcpdump: listening on lo, link-type EN10MB (Ethernet), capture size 262144 bytes
+10000 packets captured
+20000 packets received by filter
+0 packets dropped by kernel
+
+$ alp pcap --file=http.cap --pcap-server-port=5000
++-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
+| COUNT | 1XX | 2XX | 3XX | 4XX | 5XX | METHOD |        URI        |  MIN   |  MAX   |  SUM   |  AVG   |   P1   |  P50   |  P99   | STDDEV | MIN(BODY) | MAX(BODY) | SUM(BODY) | AVG(BODY) |
++-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
+|     1 |   0 |   1 |   0 |   0 |   0 | GET    | /req              |  0.321 |  0.321 |  0.321 |  0.321 |  0.321 |  0.321 |  0.321 |  0.000 |    15.000 |    15.000 |    15.000 |    15.000 |
+|     1 |   0 |   1 |   0 |   0 |   0 | POST   | /hoge/piyo        |  0.234 |  0.234 |  0.234 |  0.234 |  0.234 |  0.234 |  0.234 |  0.000 |    34.000 |    34.000 |    34.000 |    34.000 |
+|     1 |   0 |   1 |   0 |   0 |   0 | GET    | /diary/entry/1234 |  0.135 |  0.135 |  0.135 |  0.135 |  0.135 |  0.135 |  0.135 |  0.000 |    15.000 |    15.000 |    15.000 |    15.000 |
+|     1 |   0 |   1 |   0 |   0 |   0 | GET    | /diary/entry/5678 |  0.432 |  0.432 |  0.432 |  0.432 |  0.432 |  0.432 |  0.432 |  0.000 |    30.000 |    30.000 |    30.000 |    30.000 |
+|     1 |   0 |   0 |   0 |   0 |   1 | GET    | /foo/bar/5xx      | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 | 60.000 |  0.000 |    15.000 |    15.000 |    15.000 |    15.000 |
+|     2 |   0 |   2 |   0 |   0 |   0 | GET    | /foo/bar          |  0.123 |  0.123 |  0.246 |  0.123 |  0.123 |  0.123 |  0.123 |  0.000 |    56.000 |    56.000 |   112.000 |    56.000 |
+|     5 |   0 |   5 |   0 |   0 |   0 | POST   | /foo/bar          |  0.057 |  0.234 |  0.548 |  0.110 |  0.057 |  0.100 |  0.057 |  0.065 |    12.000 |    34.000 |   126.000 |    25.200 |
 +-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
 ```
 
