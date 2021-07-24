@@ -28,14 +28,16 @@ type Profiler struct {
 	subcmdLTSV   *kingpin.CmdClause
 	subcmdRegexp *kingpin.CmdClause
 	subcmdJSON   *kingpin.CmdClause
+	subcmdPcap   *kingpin.CmdClause
 	globalFlags  *flags.GlobalFlags
 	ltsvFlags    *flags.LTSVFlags
 	regexpFlags  *flags.RegexpFlags
 	jsonFlags    *flags.JSONFlags
+	pcapFlags    *flags.PcapFlags
 }
 
 func NewProfiler(outw, errw io.Writer) *Profiler {
-	app := kingpin.New("alp", "alp is the access log profiler for LTSV, JSON, and others.")
+	app := kingpin.New("alp", "alp is the access log profiler for LTSV, JSON, Pcap, and others.")
 	p := &Profiler{
 		outWriter:    outw,
 		errWriter:    errw,
@@ -57,6 +59,10 @@ func NewProfiler(outw, errw io.Writer) *Profiler {
 	p.subcmdRegexp = app.Command("regexp", "Profile the logs that match a regular expression")
 	p.regexpFlags = flags.NewRegexpFlags()
 	p.regexpFlags.InitFlags(p.subcmdRegexp)
+
+	p.subcmdPcap = app.Command("pcap", "Profile the HTTP requests for captured packets")
+	p.pcapFlags = flags.NewPcapFlags()
+	p.pcapFlags.InitFlags(p.subcmdPcap)
 
 	return p
 }
@@ -102,6 +108,8 @@ func (p *Profiler) Run(args []string) error {
 		command = p.subcmdRegexp.FullCommand()
 	case p.subcmdJSON.FullCommand():
 		command = p.subcmdJSON.FullCommand()
+	case p.subcmdPcap.FullCommand():
+		command = p.subcmdPcap.FullCommand()
 	}
 
 	percentiles, err := helpers.SplitCSVIntoInts(p.globalFlags.Percentiles)
@@ -185,6 +193,9 @@ func (p *Profiler) Run(args []string) error {
 		options.BodyBytesSubexp(p.regexpFlags.BodyBytesSubexp),
 		options.StatusSubexp(p.regexpFlags.StatusSubexp),
 		options.Pattern(p.regexpFlags.Pattern),
+		// pcap
+		options.PcapServerIPs(p.pcapFlags.ServerIPs),
+		options.PcapServerPort(p.pcapFlags.ServerPort),
 	)
 
 	sts := stats.NewHTTPStats(true, false, false)
@@ -248,6 +259,11 @@ func (p *Profiler) Run(args []string) error {
 			opts.Regexp.ResponseTimeSubexp, opts.Regexp.RequestTimeSubexp, opts.Regexp.BodyBytesSubexp, opts.Regexp.StatusSubexp)
 		parser, err = parsers.NewRegexpParser(f, opts.Regexp.Pattern, names, opts.QueryString, opts.QueryStringIgnoreValues)
 
+		if err != nil {
+			return err
+		}
+	case "pcap":
+		parser, err = parsers.NewPcapParser(f, opts.Pcap.ServerIPs, opts.Pcap.ServerPort, opts.QueryString, opts.QueryStringIgnoreValues)
 		if err != nil {
 			return err
 		}
