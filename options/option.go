@@ -2,7 +2,7 @@ package options
 
 import (
 	"io"
-	"io/ioutil"
+	"net"
 
 	"github.com/tkuchiki/alp/helpers"
 	"gopkg.in/yaml.v2"
@@ -50,9 +50,13 @@ const (
 	DefaultRequestTimeSubexpOption  = "request_time"
 	DefaultBodyBytesSubexpOption    = "body_bytes"
 	DefaultStatusSubexpOption       = "status"
+	// pcap
+	DefaultPcapServerPortOption = 80
 )
 
 var DefaultPercentilesOption = []int{90, 95, 99}
+
+var DefaultPcapServerIPsOption = getDefaultPcapServerIPsOption()
 
 type Options struct {
 	File                    string         `yaml:"file"`
@@ -75,6 +79,7 @@ type Options struct {
 	LTSV                    *LTSVOptions   `yaml:"ltsv"`
 	Regexp                  *RegexpOptions `yaml:"regexp"`
 	JSON                    *JSONOptions   `yaml:"json"`
+	Pcap                    *PcapOptions   `yaml:"pcap"`
 }
 
 type LTSVOptions struct {
@@ -106,6 +111,11 @@ type JSONOptions struct {
 	RequestTimeKey  string `yaml:"request_time_key"`
 	BodyBytesKey    string `yaml:"body_bytes_key"`
 	StatusKey       string `yaml:"status_key"`
+}
+
+type PcapOptions struct {
+	ServerIPs  []string `yaml:"server_ips"`
+	ServerPort uint16   `yaml:"server_port"`
 }
 
 type Option func(*Options)
@@ -434,6 +444,23 @@ func StatusKey(s string) Option {
 	}
 }
 
+// pcap
+func PcapServerIPs(ss []string) Option {
+	return func(opts *Options) {
+		if len(ss) > 0 {
+			opts.Pcap.ServerIPs = ss
+		}
+	}
+}
+
+func PcapServerPort(n uint16) Option {
+	return func(opts *Options) {
+		if n != 0 {
+			opts.Pcap.ServerPort = n
+		}
+	}
+}
+
 func NewOptions(opt ...Option) *Options {
 	ltsv := &LTSVOptions{
 		ApptimeLabel: DefaultApptimeLabelOption,
@@ -466,6 +493,11 @@ func NewOptions(opt ...Option) *Options {
 		StatusKey:       DefaultStatusKeyOption,
 	}
 
+	pcap := &PcapOptions{
+		ServerIPs:  DefaultPcapServerIPsOption,
+		ServerPort: DefaultPcapServerPortOption,
+	}
+
 	options := &Options{
 		Sort:        DefaultSortOption,
 		Format:      DefaultFormatOption,
@@ -476,6 +508,7 @@ func NewOptions(opt ...Option) *Options {
 		LTSV:        ltsv,
 		Regexp:      regexp,
 		JSON:        json,
+		Pcap:        pcap,
 	}
 
 	for _, o := range opt {
@@ -495,7 +528,7 @@ func SetOptions(options *Options, opt ...Option) *Options {
 
 func LoadOptionsFromReader(r io.Reader) (*Options, error) {
 	opts := NewOptions()
-	buf, err := ioutil.ReadAll(r)
+	buf, err := io.ReadAll(r)
 	if err != nil {
 		return opts, err
 	}
@@ -546,7 +579,33 @@ func LoadOptionsFromReader(r io.Reader) (*Options, error) {
 		MethodSubexp(configs.Regexp.MethodSubexp),
 		UriSubexp(configs.Regexp.UriSubexp),
 		TimeSubexp(configs.Regexp.TimeSubexp),
+		// pcap
+		PcapServerIPs(configs.Pcap.ServerIPs),
+		PcapServerPort(configs.Pcap.ServerPort),
 	)
 
 	return opts, err
+}
+
+func getDefaultPcapServerIPsOption() (ips []string) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		// fallback
+		return []string{"127.0.0.1", "::1"}
+	}
+
+	for _, addr := range addrs {
+		ipNet, isIP := addr.(*net.IPNet)
+		if !isIP {
+			continue
+		}
+
+		ips = append(ips, ipNet.IP.String())
+	}
+	if len(ips) == 0 {
+		// fallback
+		return []string{"127.0.0.1", "::1"}
+	}
+
+	return
 }
