@@ -2,7 +2,6 @@ package options
 
 import (
 	"io"
-	"io/ioutil"
 	"net"
 
 	"github.com/tkuchiki/alp/helpers"
@@ -529,7 +528,7 @@ func SetOptions(options *Options, opt ...Option) *Options {
 
 func LoadOptionsFromReader(r io.Reader) (*Options, error) {
 	opts := NewOptions()
-	buf, err := ioutil.ReadAll(r)
+	buf, err := io.ReadAll(r)
 	if err != nil {
 		return opts, err
 	}

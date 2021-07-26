@@ -2,7 +2,6 @@ package alp
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -24,7 +23,7 @@ func TestRun(t *testing.T) {
 
 	ltsvData := strings.Join(data, "\t")
 
-	tmpfile, err := ioutil.TempFile(os.TempDir(), "alp-mock-stdin")
+	tmpfile, err := os.CreateTemp(os.TempDir(), "alp-mock-stdin")
 	if err != nil {
 		t.Fatal(err)
 	}
