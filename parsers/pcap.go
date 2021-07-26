@@ -108,7 +108,6 @@ func (j *PcapParser) Parse() (*ParsedHTTPStat, error) {
 
 	resBodyBytes := res.ContentLength
 	stat := NewParsedHTTPStat(uri, req.Method, reqTimestamp.Format(time.RFC3339), math.Abs(resTime.Seconds()), float64(resBodyBytes), res.StatusCode)
-	/// pp.Println(stat)
 	return stat, nil
 }
 
@@ -261,7 +260,7 @@ func readAndAssembleAllPackets(packetSource *gopacket.PacketSource, assembler *t
 		}
 
 		if p.NetworkLayer() == nil || p.TransportLayer() == nil || p.TransportLayer().LayerType() != layers.LayerTypeTCP {
-			log.Println("Unusable packet: %v", p)
+			log.Printf("Unusable packet: %v", p)
 			continue
 		}
 
