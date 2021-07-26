@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"regexp"
 	"sort"
-	"strings"
 	"sync"
 
 	"github.com/tkuchiki/alp/errors"
@@ -192,29 +191,25 @@ func (hs *HTTPStat) setStatus(status int) {
 	}
 }
 
-func (hs *HTTPStat) UriWithOptions(encode bool) string {
-	if !encode {
+func (hs *HTTPStat) UriWithOptions(decode bool) string {
+	if !decode {
 		return hs.Uri
 	}
 
-	uris := strings.SplitN(hs.Uri, "?", 2)
-
-	if len(uris) == 1 {
-		u, err := url.Parse(uris[0])
-		if err != nil {
-			return hs.Uri
-		}
-
-		return u.EscapedPath()
-	}
-
-	u, err := url.Parse(uris[0])
+	u, err := url.Parse(hs.Uri)
 	if err != nil {
 		return hs.Uri
 	}
-	values := u.Query()
 
-	return fmt.Sprintf("%s?%s", u.EscapedPath(), values.Encode())
+	if u.RawQuery == "" {
+		unescaped, _ := url.PathUnescape(u.EscapedPath())
+		return unescaped
+	}
+
+	unescaped, _ := url.PathUnescape(u.EscapedPath())
+	decoded, _ := url.QueryUnescape(u.Query().Encode())
+
+	return fmt.Sprintf("%s?%s", unescaped, decoded)
 }
 
 func (hs *HTTPStat) StrStatus1xx() string {

@@ -18,7 +18,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-const version = "1.0.5"
+const version = "1.0.6"
 
 type Profiler struct {
 	outWriter    io.Writer
@@ -156,7 +156,7 @@ func (p *Profiler) Run(args []string) error {
 		options.Reverse(p.globalFlags.Reverse),
 		options.QueryString(p.globalFlags.QueryString),
 		options.QueryStringIgnoreValues(p.globalFlags.QueryStringIgnoreValues),
-		options.EncodeUri(p.globalFlags.EncodeUri),
+		options.DecodeUri(p.globalFlags.DecodeUri),
 		options.Format(p.globalFlags.Format),
 		options.Limit(p.globalFlags.Limit),
 		options.Location(p.globalFlags.Location),
@@ -208,7 +208,7 @@ func (p *Profiler) Run(args []string) error {
 	sts.SetOptions(opts)
 	sts.SetSortOptions(sortOptions)
 
-	printOptions := stats.NewPrintOptions(opts.NoHeaders, opts.ShowFooters, opts.EncodeUri)
+	printOptions := stats.NewPrintOptions(opts.NoHeaders, opts.ShowFooters, opts.DecodeUri)
 	printer := stats.NewPrinter(p.outWriter, opts.Output, opts.Format, percentiles, printOptions)
 	if err = printer.Validate(); err != nil {
 		return err

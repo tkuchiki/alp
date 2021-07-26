@@ -4,7 +4,7 @@ sort:                       # max|min|avg|sum|count|uri|method|max-body|min-body
 reverse:                    # boolean
 query_string:               # boolean
 query_string_ignore_values: # boolean
-encode_uri:                 # boolean
+decode_uri:                 # boolean
 format:                     # string
 limit:                      # 5000
 noheaders:                  # boolean

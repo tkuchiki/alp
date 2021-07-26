@@ -17,7 +17,7 @@ type GlobalFlags struct {
 	Reverse                 bool
 	QueryString             bool
 	QueryStringIgnoreValues bool
-	EncodeUri               bool
+	DecodeUri               bool
 	Format                  string
 	NoHeaders               bool
 	ShowFooters             bool
@@ -60,8 +60,8 @@ func (f *GlobalFlags) InitGlobalFlags(app *kingpin.Application) {
 		Short('q').BoolVar(&f.QueryString)
 	app.Flag("qs-ignore-values", "Ignore the value of the query string. Replace all values with xxx (only use with -q)").
 		BoolVar(&f.QueryStringIgnoreValues)
-	app.Flag("encode-uri", "Encode the URI").
-		BoolVar(&f.EncodeUri)
+	app.Flag("decode-uri", "Decode the URI").
+		BoolVar(&f.DecodeUri)
 	app.Flag("format", "The output format (table, markdown, tsv and csv)").
 		PlaceHolder(options.DefaultFormatOption).EnumVar(&f.Format, Formats...)
 	app.Flag("noheaders", "Output no header line at all (only --format=tsv, csv)").
