@@ -3,10 +3,8 @@ package parsers
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"io"
 	"net/url"
-	"strings"
 
 	"github.com/tkuchiki/alp/errors"
 	"github.com/tkuchiki/alp/helpers"
@@ -162,30 +160,8 @@ func toStats(parsedValue map[string]string, keys *statKeys, strictMode, queryStr
 	if err != nil {
 		return nil, errSkipReadLine(strictMode, err)
 	}
-	var uri string
-	if queryString {
-		values := u.Query()
-		for q := range values {
-			if qsIgnoreValues {
-				values.Set(q, "xxx")
-			}
-		}
 
-		var queries []string
-		for k1, _ := range values {
-			for _, v := range values[k1] {
-				queries = append(queries, fmt.Sprintf("%s=%s", k1, v))
-			}
-		}
-
-		if len(queries) > 0 {
-			uri = fmt.Sprintf("%s?%s", u.Path, strings.Join(queries, "&"))
-		} else {
-			uri = u.Path
-		}
-	} else {
-		uri = u.Path
-	}
+	uri := normalizeURL(u, queryString, qsIgnoreValues)
 
 	resTime, err := helpers.StringToFloat64(parsedValue[keys.responseTime])
 	if err != nil {
@@ -209,6 +185,29 @@ func toStats(parsedValue map[string]string, keys *statKeys, strictMode, queryStr
 	timestr := parsedValue[keys.time]
 
 	return NewParsedHTTPStat(uri, method, timestr, resTime, bodyBytes, status), nil
+}
+
+func normalizeURL(src *url.URL, queryString, qsIgnoreValues bool) string {
+	if src.RawQuery == "" {
+		return src.String()
+	}
+
+	u := *src // basic clone
+	if !queryString {
+		u.RawQuery = ""
+		return u.String()
+	}
+
+	if qsIgnoreValues {
+		values := u.Query()
+		for q := range values {
+			values.Set(q, "xxx")
+		}
+		u.RawQuery = values.Encode()
+	} else {
+		u.RawQuery = u.Query().Encode() // re-encode to sort queries
+	}
+	return u.String()
 }
 
 func errSkipReadLine(strictMode bool, err error) error {

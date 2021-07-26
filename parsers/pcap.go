@@ -91,20 +91,7 @@ func (j *PcapParser) Parse() (*ParsedHTTPStat, error) {
 	}
 	resTime := resTimestamp.Sub(reqTimestamp)
 
-	var uri string
-	if j.queryString {
-		if j.qsIgnoreValues {
-			values := req.URL.Query()
-			for q := range values {
-				values.Set(q, "xxx")
-			}
-			req.URL.RawQuery = values.Encode()
-		}
-		uri = req.URL.String()
-	} else {
-		req.URL.RawQuery = ""
-		uri = req.URL.String()
-	}
+	uri := normalizeURL(req.URL, j.queryString, j.qsIgnoreValues)
 
 	resBodyBytes := res.ContentLength
 	stat := NewParsedHTTPStat(uri, req.Method, reqTimestamp.Format(time.RFC3339), math.Abs(resTime.Seconds()), float64(resBodyBytes), res.StatusCode)
