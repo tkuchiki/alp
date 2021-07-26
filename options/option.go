@@ -64,7 +64,7 @@ type Options struct {
 	Reverse                 bool           `yaml:"reverse"`
 	QueryString             bool           `yaml:"query_string"`
 	QueryStringIgnoreValues bool           `yaml:"query_string_ignore_values"`
-	EncodeUri               bool           `yaml:"encode_uri"`
+	DecodeUri               bool           `yaml:"decode_uri"`
 	Format                  string         `yaml:"format"`
 	NoHeaders               bool           `yaml:"noheaders"`
 	ShowFooters             bool           `yaml:"show_footers"`
@@ -160,10 +160,10 @@ func QueryStringIgnoreValues(b bool) Option {
 	}
 }
 
-func EncodeUri(b bool) Option {
+func DecodeUri(b bool) Option {
 	return func(opts *Options) {
 		if b {
-			opts.EncodeUri = b
+			opts.DecodeUri = b
 		}
 	}
 }
@@ -545,7 +545,7 @@ func LoadOptionsFromReader(r io.Reader) (*Options, error) {
 		File(configs.File),
 		QueryString(configs.QueryString),
 		QueryStringIgnoreValues(configs.QueryStringIgnoreValues),
-		EncodeUri(configs.EncodeUri),
+		DecodeUri(configs.DecodeUri),
 		Format(configs.Format),
 		NoHeaders(configs.NoHeaders),
 		ShowFooters(configs.ShowFooters),
