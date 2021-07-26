@@ -55,7 +55,7 @@ Flags:
   -r, --reverse                 Sort results in reverse order
   -q, --query-string            Include the URI query string
       --qs-ignore-values        Ignore the value of the query string. Replace all values with xxx (only use with -q)
-      --encode-uri              Encode the URI
+      --decode-uri              Decode the URI
       --format=table            The output format (table, markdown, tsv and csv)
       --noheaders               Output no header line at all (only --format=tsv, csv)
       --show-footers            Output footer line at all (only --format=table, markdown)
@@ -401,8 +401,8 @@ sample は [Usage samples](./docs/usage_samples.ja.md) を参照してくださ�
 - `--qs-ignore-values`
     - Query String の値を無視して集計します
     - `-q, --query-string` を指定しないと有効になりません
-- `--encode-uri`
-    - 解析結果の URI をパーセントエンコーディングして表示します
+- `--decode-uri`
+    - 解析結果の URI をデコードして表示します
 - `--format=table`
     - 解析結果を テーブル、Markdown, TSV, CSV 形式で出力する
     - デフォルトはテーブル形式

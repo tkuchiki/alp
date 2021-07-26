@@ -56,7 +56,7 @@ Flags:
   -r, --reverse                 Sort results in reverse order
   -q, --query-string            Include the URI query string
       --qs-ignore-values        Ignore the value of the query string. Replace all values with xxx (only use with -q)
-      --encode-uri              Encode the URI
+      --decode-uri              Decode the URI
       --format=table            The output format (table, markdown, tsv and csv)
       --noheaders               Output no header line at all (only --format=tsv, csv)
       --show-footers            Output footer line at all (only --format=table, markdown)
@@ -302,8 +302,8 @@ See: [Usage samples](./docs/usage_samples.md)
 - `--qs-ignore-values`
     - Ignore the value of the query string
     - It's not enabled unless use with `-q, --query-string`
-- `--encode-uri`
-    - Percent-encode the URI
+- `--decode-uri`
+    - Decode the URI
 - `--format=table`
     - Print the profile results in a table, Markdown, TSV and CSV format
     - The default is table format
