@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"math"
 	"net"
@@ -315,7 +316,7 @@ func conjoinRequestAndResponse(reqCh chan *http.Request, resCh chan *http.Respon
 				}
 
 				// discard HTTP body
-				n, err := io.CopyBuffer(io.Discard, res.Body, copyBuf[:])
+				n, err := io.CopyBuffer(ioutil.Discard, res.Body, copyBuf[:])
 				if err != nil {
 					clientAddr := key
 					timestamp, _ := unixNanoStrToTime(res.Header.Get(timestampPcapKeyHeader))
@@ -436,7 +437,7 @@ func parseHTTPRequest(rs *tcpReaderStream, clientAddr *net.TCPAddr, reqCh chan *
 
 		// discard body
 		if req.ContentLength > 0 && req.Body != http.NoBody {
-			_, err = io.CopyBuffer(io.Discard, req.Body, copyBuf[:])
+			_, err = io.CopyBuffer(ioutil.Discard, req.Body, copyBuf[:])
 			_ = req.Body.Close()
 			if err != nil {
 				log.Printf("Failed to read HTTP body from the client %v at %s: %v", clientAddr, timestamp.Format(time.RFC3339Nano), err)
@@ -495,7 +496,7 @@ func parseHTTPResponse(rs *tcpReaderStream, clientAddr *net.TCPAddr, resCh chan 
 				log.Printf("Failed to read HTTP body to the client %v at %s: %v", clientAddr, timestamp.Format(time.RFC3339Nano), err)
 				return
 			}
-			res.Body = io.NopCloser(&bb)
+			res.Body = ioutil.NopCloser(&bb)
 		}
 
 		// send parsed response
