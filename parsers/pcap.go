@@ -12,14 +12,13 @@ import (
 	"math"
 	"net"
 	"net/http"
-	"os"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
-	"github.com/google/gopacket/pcap"
+	"github.com/google/gopacket/pcapgo"
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
 )
@@ -36,8 +35,8 @@ type PcapParser struct {
 	resCh chan *http.Response // conjoined *http.Response
 }
 
-func NewPcapParser(f *os.File, rawServerIPs []string, serverPort uint16, query, qsIgnoreValues bool) (Parser, error) {
-	h, err := pcap.OpenOfflineFile(f)
+func NewPcapParser(r io.Reader, rawServerIPs []string, serverPort uint16, query, qsIgnoreValues bool) (Parser, error) {
+	h, err := pcapgo.NewReader(r)
 	if err != nil {
 		return nil, err
 	}
