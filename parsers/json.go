@@ -62,7 +62,12 @@ func (j *JSONParser) Parse() (*ParsedHTTPStat, error) {
 	}
 	parsedValue := make(map[string]string, 6)
 	for _, key := range keys {
-		parsedValue[key] = fmt.Sprintf("%v", tmp[key])
+		val, ok := tmp[key]
+		if !ok {
+			continue
+		}
+
+		parsedValue[key] = fmt.Sprintf("%v", val)
 	}
 
 	return toStats(parsedValue, j.keys, j.strictMode, j.queryString, j.qsIgnoreValues)

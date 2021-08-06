@@ -162,6 +162,9 @@ func toStats(parsedValue map[string]string, keys *statKeys, strictMode, queryStr
 	}
 
 	uri := normalizeURL(u, queryString, qsIgnoreValues)
+	if uri == "" {
+		return nil, errSkipReadLine(strictMode, err)
+	}
 
 	resTime, err := helpers.StringToFloat64(parsedValue[keys.responseTime])
 	if err != nil {
