@@ -533,7 +533,7 @@ func LoadOptionsFromReader(r io.Reader) (*Options, error) {
 		return opts, err
 	}
 
-	configs := &Options{}
+	configs := NewOptions()
 	err = yaml.Unmarshal(buf, configs)
 
 	opts = SetOptions(opts,
