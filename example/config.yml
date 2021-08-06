@@ -37,3 +37,6 @@ regexp:
   response_time_subexp: # string
   body_bytes_subexp:    # string
   status_subexp:        # string
+pcap:
+  server_ips:  # array
+  server_port: # number
