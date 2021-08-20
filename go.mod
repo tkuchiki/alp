@@ -4,8 +4,6 @@ require (
 	github.com/Songmu/go-ltsv v0.0.0-20200903131950-a608c3f6a014
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15 // indirect
-	github.com/antlr/antlr4 v0.0.0-20200103163232-691acdc23f1f // indirect
-	github.com/antlr/antlr4/runtime/Go/antlr v0.0.0-20210716071054-a231a1a7f1cc // indirect
 	github.com/antonmedv/expr v1.8.9
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/gopacket v1.1.19
@@ -21,4 +19,9 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-go 1.16
+require (
+	github.com/rivo/uniseg v0.2.0 // indirect
+	github.com/tkuchiki/go-timezone v0.2.2 // indirect
+)
+
+go 1.17
