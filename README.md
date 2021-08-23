@@ -415,6 +415,7 @@ See: [Usage samples](./docs/usage_samples.md)
     - The default is `all`
 - `-m, --matching-groups=PATTERN,...`
     - Treat URIs that match regular expressions as the same URI
+    - Evaluate in the specified order. If matched, no further evaluation is performed.
     - See [URI matching groups](#uri-matching-groups)
 - `-f, --filters=FILTERS`
     - Filters the targets for profile
