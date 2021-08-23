@@ -424,6 +424,7 @@ sample は [Usage samples](./docs/usage_samples.ja.md) を参照してくださ�
     - デフォルトはすべて出力(`all`)
 - `-m, --matching-groups=PATTERN,...`
     - 正規表現にマッチした URI を同じ集計対象として扱います
+    - 指定した順序で正規表現を評価します。マッチした場合、それ以降の正規表現を評価しません。
     - 後述の [URI matching groups](#uri-matching-groups) 参照
 - `-f, --filters=FILTERS`
     - 集計対象をフィルタします
