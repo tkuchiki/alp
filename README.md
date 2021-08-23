@@ -136,6 +136,41 @@ $ cat example/logs/ltsv_access.log | alp ltsv
 +-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
 ```
 
+### Log format 
+
+#### Apache
+
+```
+LogFormat "time:%t\tforwardedfor:%{X-Forwarded-For}i\thost:%h\treq:%r\tstatus:%>s\tmethod:%m\turi:%U%q\tsize:%B\treferer:%{Referer}i\tua:%{User-Agent}i\treqtime_microsec:%D\tapptime:%D\tcache:%{X-Cache}o\truntime:%{X-Runtime}o\tvhost:%{Host}i" ltsv
+```
+
+#### Nginx
+
+```
+log_format ltsv "time:$time_local"
+                "\thost:$remote_addr"
+                "\tforwardedfor:$http_x_forwarded_for"
+                "\treq:$request"
+                "\tstatus:$status"
+                "\tmethod:$request_method"
+                "\turi:$request_uri"
+                "\tsize:$body_bytes_sent"
+                "\treferer:$http_referer"
+                "\tua:$http_user_agent"
+                "\treqtime:$request_time"
+                "\tcache:$upstream_http_x_cache"
+                "\truntime:$upstream_http_x_runtime"
+                "\tapptime:$upstream_response_time"
+                "\tvhost:$host";
+```
+
+#### H2O
+
+```
+access-log:
+  format: "time:%t\thost:%h\tua:\"%{User-agent}i\"\tstatus:%s\treq:%r\turi:%U\tapptime:%{duration}x\tsize:%b\tmethod:%m"
+```
+
 ## json
 
 - Parse a log with one JSON per line
@@ -184,6 +219,42 @@ $ cat example/logs/json_access.log | alp json
 +-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
 ```
 
+### Log format 
+
+#### Apache
+
+```
+LogFormat "{\"time\":\"%t\",\"forwardedfor\":\"%{X-Forwarded-For}i\",\"host\":\"%h\",\"req\":\"%r\",\"status\":%>s,\"method\":\"%m\",\"uri\":\"%U%q\",\"body_bytes\":%B,\"referer\":\"%{Referer}i\",\"ua\":\"%{User-Agent}i\",\"reqtime_microsec\":%D,\"response_time\":%D,\"cache\":\"%{X-Cache}o\",\"runtime\":\"%{X-Runtime}o\",\"vhost\":\"%{Host}i\"}" json
+```
+
+#### Nginx
+
+```
+    log_format json escape=json '{"time":"$time_local",'
+                                '"host":"$remote_addr",'
+                                '"forwardedfor":"$http_x_forwarded_for",'
+                                '"req":"$request",'
+                                '"status":"$status",'
+                                '"method":"$request_method",'
+                                '"uri":"$request_uri",'
+                                '"body_bytes":$body_bytes_sent,'
+                                '"referer":"$http_referer",'
+                                '"ua":"$http_user_agent",'
+                                '"request_time":$request_time,'
+                                '"cache":"$upstream_http_x_cache",'
+                                '"runtime":"$upstream_http_x_runtime",'
+                                '"response_time":"$upstream_response_time",'
+                                '"vhost":"$host"}';
+```
+
+#### H2O
+
+```
+access-log:
+  escape: json
+  format: '{"time":"%t","host":"%h","ua":"%{User-agent}i","status":%s,"req":"%r","uri":"%U","response_time":%{duration}x,"body_bytes":%b,"method":"%m"}'
+```
+
 ## regexp
 
 - Parses the log to match the regular expression
@@ -230,6 +301,29 @@ $ cat example/logs/combined_access.log | alp regexp
 |     2 |   0 |   2 |   0 |   0 |   0 | GET    | /foo/bar          |  0.123 |  0.123 |  0.246 |  0.123 |  0.123 |  0.123 |  0.123 |  0.000 |    56.000 |    56.000 |   112.000 |    56.000 |
 |     5 |   0 |   5 |   0 |   0 |   0 | POST   | /foo/bar          |  0.057 |  0.234 |  0.548 |  0.110 |  0.234 |  0.234 |  0.234 |  0.065 |    12.000 |    34.000 |   126.000 |    25.200 |
 +-------+-----+-----+-----+-----+-----+--------+-------------------+--------+--------+--------+--------+--------+--------+--------+--------+-----------+-----------+-----------+-----------+
+```
+
+### Log format
+
+#### Apache
+
+```
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\" %D" combined_plus
+```
+
+#### Nginx
+
+```
+    log_format combined_plus '$remote_addr - $remote_user [$time_local] '
+                             '"$request" $status $body_bytes_sent '
+                             '"$http_referer" "$http_user_agent" $upstream_response_time $request_time';
+```
+
+#### H2O
+
+```
+access-log:
+  format: "%h %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-agent}i\" %{duration}x"
 ```
 
 ## pcap
