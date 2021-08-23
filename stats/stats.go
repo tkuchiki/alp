@@ -65,6 +65,7 @@ func (hs *HTTPStats) Set(uri, method string, status int, restime, resBodyBytes, 
 			if ok := re.Match([]byte(uri)); ok {
 				pattern := re.String()
 				uri = pattern
+				break
 			}
 		}
 	}
