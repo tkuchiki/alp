@@ -1,0 +1,56 @@
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    main: ./cli/alp/main.go
+    flags:
+      - -trimpath
+    goos:
+      - linux
+      - darwin
+      - windows
+      - freebsd
+      - netbsd
+      - openbsd
+      - solaris
+    goarch:
+      - amd64
+      - arm
+      - arm64
+      - mips64
+      - mips64le
+    ignore:
+      - goos: darwin
+        goarch: 386
+      - goos: freebsd
+        goarch: 386
+      - goos: netbsd
+        goarch: 386
+      - goos: openbsd
+        goarch: 386
+      - goos: linux
+        goarch: 386
+      - goos: windows
+        goarch: 386
+      - goos: freebsd
+        goarch: arm
+      - goos: netbsd
+        goarch: arm
+      - goos: netbsd
+        goarch: arm
+      - goos: linux
+        goarch: arm
+        
+archives:
+  - id: tar-gz
+    name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}'
+    files:
+      - none*
+  - id: zip
+    name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}'
+    files:
+      - none*
+    format: zip
