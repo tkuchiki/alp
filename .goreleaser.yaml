@@ -6,6 +6,10 @@ builds:
   - env:
       - CGO_ENABLED=0
     main: ./cli/alp/main.go
+    binary: alp
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
     flags:
       - -trimpath
     goos:

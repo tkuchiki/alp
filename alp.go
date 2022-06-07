@@ -18,8 +18,6 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-const version = "1.0.8"
-
 type Profiler struct {
 	outWriter    io.Writer
 	errWriter    io.Writer
@@ -34,6 +32,7 @@ type Profiler struct {
 	regexpFlags  *flags.RegexpFlags
 	jsonFlags    *flags.JSONFlags
 	pcapFlags    *flags.PcapFlags
+	version      string
 }
 
 func NewProfiler(outw, errw io.Writer) *Profiler {
@@ -98,9 +97,13 @@ func (p *Profiler) ReadPosFile(f *os.File) (int, error) {
 	return helpers.StringToInt(string(pos))
 }
 
+func (p *Profiler) SetVersion(version string) {
+	p.version = version
+}
+
 func (p *Profiler) Run(args []string) error {
 	var command string
-	p.optionParser.Version(version)
+	p.optionParser.Version(p.version)
 	switch kingpin.MustParse(p.optionParser.Parse(args)) {
 	case p.subcmdLTSV.FullCommand():
 		command = p.subcmdLTSV.FullCommand()
