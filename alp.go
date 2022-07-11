@@ -27,11 +27,13 @@ type Profiler struct {
 	subcmdRegexp *kingpin.CmdClause
 	subcmdJSON   *kingpin.CmdClause
 	subcmdPcap   *kingpin.CmdClause
+	subcmdDiff   *kingpin.CmdClause
 	globalFlags  *flags.GlobalFlags
 	ltsvFlags    *flags.LTSVFlags
 	regexpFlags  *flags.RegexpFlags
 	jsonFlags    *flags.JSONFlags
 	pcapFlags    *flags.PcapFlags
+	diffFlags    *flags.DiffFlags
 	version      string
 }
 
@@ -62,6 +64,10 @@ func NewProfiler(outw, errw io.Writer) *Profiler {
 	p.subcmdPcap = app.Command("pcap", "Profile the HTTP requests for captured packets")
 	p.pcapFlags = flags.NewPcapFlags()
 	p.pcapFlags.InitFlags(p.subcmdPcap)
+
+	p.subcmdDiff = app.Command("diff", "Show the difference between the two profile results")
+	p.diffFlags = flags.NewDiffFlags()
+	p.diffFlags.InitFlags(p.subcmdDiff)
 
 	return p
 }
@@ -113,6 +119,8 @@ func (p *Profiler) Run(args []string) error {
 		command = p.subcmdJSON.FullCommand()
 	case p.subcmdPcap.FullCommand():
 		command = p.subcmdPcap.FullCommand()
+	case p.subcmdDiff.FullCommand():
+		command = p.subcmdDiff.FullCommand()
 	}
 
 	percentiles, err := helpers.SplitCSVIntoInts(p.globalFlags.Percentiles)
@@ -229,7 +237,7 @@ func (p *Profiler) Run(args []string) error {
 		defer lf.Close()
 
 		sts.SortWithOptions()
-		printer.Print(sts)
+		printer.Print(sts, nil)
 		return nil
 	}
 
@@ -270,6 +278,43 @@ func (p *Profiler) Run(args []string) error {
 		if err != nil {
 			return err
 		}
+	case "diff":
+		from, err := os.Open(p.diffFlags.From)
+		if err != nil {
+			return err
+		}
+		err = sts.LoadStats(from)
+		if err != nil {
+			return err
+		}
+		defer from.Close()
+
+		sts.SortWithOptions()
+
+		toSts := stats.NewHTTPStats(true, false, false)
+		err = toSts.InitFilter(opts)
+		if err != nil {
+			return err
+		}
+
+		toSts.SetOptions(opts)
+		toSts.SetSortOptions(sortOptions)
+
+		to, err := os.Open(p.diffFlags.To)
+		if err != nil {
+			return err
+		}
+		err = toSts.LoadStats(to)
+		if err != nil {
+			return err
+		}
+		defer to.Close()
+
+		toSts.SortWithOptions()
+
+		printer.Print(sts, toSts)
+
+		return nil
 	}
 
 	var posfile *os.File
@@ -341,7 +386,7 @@ Loop:
 	}
 
 	sts.SortWithOptions()
-	printer.Print(sts)
+	printer.Print(sts, nil)
 
 	return nil
 }
