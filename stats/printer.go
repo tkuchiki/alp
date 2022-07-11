@@ -186,53 +186,7 @@ func (p *Printer) Validate() error {
 	return nil
 }
 
-func generateAllLine(s *HTTPStat, percentiles []int, quoteUri, decodeUri bool) []string {
-	uri := s.UriWithOptions(decodeUri)
-	if quoteUri && strings.Contains(s.Uri, ",") {
-		uri = fmt.Sprintf(`"%s"`, s.Uri)
-	}
-
-	l1 := []string{
-		s.StrCount(),
-		s.StrStatus1xx(),
-		s.StrStatus2xx(),
-		s.StrStatus3xx(),
-		s.StrStatus4xx(),
-		s.StrStatus5xx(),
-		s.Method,
-		uri,
-		round(s.MinResponseTime()),
-		round(s.MaxResponseTime()),
-		round(s.SumResponseTime()),
-		round(s.AvgResponseTime()),
-	}
-
-	l2 := []string{
-		round(s.StddevResponseTime()),
-		round(s.MinResponseBodyBytes()),
-		round(s.MaxResponseBodyBytes()),
-		round(s.SumResponseBodyBytes()),
-		round(s.AvgResponseBodyBytes()),
-	}
-
-	lp := make([]string, 0, len(percentiles))
-	for _, p := range percentiles {
-		lp = append(lp, round(s.PNResponseTime(p)))
-	}
-
-	l := make([]string, 0, len(l1)+len(l2)+len(lp))
-	l = append(l, l1...)
-	l = append(l, lp...)
-	l = append(l, l2...)
-
-	return l
-}
-
 func (p *Printer) GenerateLine(s *HTTPStat, quoteUri bool) []string {
-	if p.all {
-		return generateAllLine(s, p.percentiles, quoteUri, p.printOptions.decodeUri)
-	}
-
 	keyLen := len(p.keywords)
 	line := make([]string, 0, keyLen)
 
@@ -245,7 +199,6 @@ func (p *Printer) GenerateLine(s *HTTPStat, quoteUri bool) []string {
 		case "uri":
 			uri := s.UriWithOptions(p.printOptions.decodeUri)
 			if quoteUri && strings.Contains(s.Uri, ",") {
-
 				uri = fmt.Sprintf(`"%s"`, s.Uri)
 			}
 			line = append(line, uri)
@@ -290,6 +243,72 @@ func (p *Printer) GenerateLine(s *HTTPStat, quoteUri bool) []string {
 	return line
 }
 
+func formattedLineWithDiff(val, diff string) string {
+	if diff == "+0" || diff == "+0.000" {
+		return val
+	}
+	return fmt.Sprintf("%s (%s)", val, diff)
+}
+
+func (p *Printer) GenerateLineWithDiff(from, to *HTTPStat, quoteUri bool) []string {
+	keyLen := len(p.keywords)
+	line := make([]string, 0, keyLen)
+
+	differ := NewDiffer(from, to)
+
+	for i := 0; i < keyLen; i++ {
+		switch p.keywords[i] {
+		case "count":
+			line = append(line, formattedLineWithDiff(to.StrCount(), differ.DiffCnt()))
+		case "method":
+			line = append(line, to.Method)
+		case "uri":
+			uri := to.UriWithOptions(p.printOptions.decodeUri)
+			if quoteUri && strings.Contains(to.Uri, ",") {
+				uri = fmt.Sprintf(`"%s"`, to.Uri)
+			}
+			line = append(line, uri)
+		case "1xx":
+			line = append(line, formattedLineWithDiff(to.StrStatus1xx(), differ.DiffStatus1xx()))
+		case "2xx":
+			line = append(line, formattedLineWithDiff(to.StrStatus2xx(), differ.DiffStatus2xx()))
+		case "3xx":
+			line = append(line, formattedLineWithDiff(to.StrStatus3xx(), differ.DiffStatus3xx()))
+		case "4xx":
+			line = append(line, formattedLineWithDiff(to.StrStatus4xx(), differ.DiffStatus4xx()))
+		case "5xx":
+			line = append(line, formattedLineWithDiff(to.StrStatus5xx(), differ.DiffStatus5xx()))
+		case "min":
+			line = append(line, formattedLineWithDiff(round(to.MinResponseTime()), differ.DiffMinResponseTime()))
+		case "max":
+			line = append(line, formattedLineWithDiff(round(to.MaxResponseTime()), differ.DiffMaxResponseTime()))
+		case "sum":
+			line = append(line, formattedLineWithDiff(round(to.SumResponseTime()), differ.DiffSumResponseTime()))
+		case "avg":
+			line = append(line, formattedLineWithDiff(round(to.AvgResponseTime()), differ.DiffAvgResponseTime()))
+		case "stddev":
+			line = append(line, formattedLineWithDiff(round(to.StddevResponseTime()), differ.DiffStddevResponseTime()))
+		case "min_body":
+			line = append(line, formattedLineWithDiff(round(to.MinResponseBodyBytes()), differ.DiffMinResponseBodyBytes()))
+		case "max_body":
+			line = append(line, formattedLineWithDiff(round(to.MaxResponseBodyBytes()), differ.DiffMaxResponseBodyBytes()))
+		case "sum_body":
+			line = append(line, formattedLineWithDiff(round(to.SumResponseBodyBytes()), differ.DiffSumResponseBodyBytes()))
+		case "avg_body":
+			line = append(line, formattedLineWithDiff(round(to.AvgResponseBodyBytes()), differ.DiffAvgResponseBodyBytes()))
+		default: // percentile
+			var n int
+			_, err := fmt.Sscanf(p.keywords[i], "p%d", &n)
+			if err != nil {
+				continue
+			}
+			line = append(line, formattedLineWithDiff(round(to.PNResponseTime(n)), differ.DiffPNResponseTime(n)))
+		}
+	}
+
+	return line
+}
+
 func (p *Printer) GenerateFooter(counts map[string]int) []string {
 	keyLen := len(p.keywords)
 	line := make([]string, 0, keyLen)
@@ -316,6 +335,33 @@ func (p *Printer) GenerateFooter(counts map[string]int) []string {
 	return line
 }
 
+func (p *Printer) GenerateFooterWithDiff(countsFrom, countsTo map[string]int) []string {
+	keyLen := len(p.keywords)
+	line := make([]string, 0, keyLen)
+	counts := DiffCountAll(countsFrom, countsTo)
+
+	for i := 0; i < keyLen; i++ {
+		switch p.keywords[i] {
+		case "count":
+			line = append(line, formattedLineWithDiff(fmt.Sprint(countsTo["count"]), counts["count"]))
+		case "1xx":
+			line = append(line, formattedLineWithDiff(fmt.Sprint(countsTo["1xx"]), counts["1xx"]))
+		case "2xx":
+			line = append(line, formattedLineWithDiff(fmt.Sprint(countsTo["2xx"]), counts["2xx"]))
+		case "3xx":
+			line = append(line, formattedLineWithDiff(fmt.Sprint(countsTo["3xx"]), counts["3xx"]))
+		case "4xx":
+			line = append(line, formattedLineWithDiff(fmt.Sprint(countsTo["4xx"]), counts["4xx"]))
+		case "5xx":
+			line = append(line, formattedLineWithDiff(fmt.Sprint(countsTo["5xx"]), counts["5xx"]))
+		default:
+			line = append(line, "")
+		}
+	}
+
+	return line
+}
+
 func (p *Printer) SetFormat(format string) {
 	p.format = format
 }
@@ -328,16 +374,16 @@ func (p *Printer) SetWriter(w io.Writer) {
 	p.writer = w
 }
 
-func (p *Printer) Print(hs *HTTPStats) {
+func (p *Printer) Print(hs, hsTo *HTTPStats) {
 	switch p.format {
 	case "table":
-		p.printTable(hs)
+		p.printTable(hs, hsTo)
 	case "md", "markdown":
-		p.printMarkdown(hs)
+		p.printMarkdown(hs, hsTo)
 	case "tsv":
-		p.printTSV(hs)
+		p.printTSV(hs, hsTo)
 	case "csv":
-		p.printCSV(hs)
+		p.printCSV(hs, hsTo)
 	}
 }
 
@@ -345,57 +391,136 @@ func round(num float64) string {
 	return fmt.Sprintf("%.3f", num)
 }
 
-func (p *Printer) printTable(hs *HTTPStats) {
+func findHTTPStatFrom(hsFrom *HTTPStats, hsTo *HTTPStat) *HTTPStat {
+	for _, sFrom := range hsFrom.stats {
+		if sFrom.Uri == hsTo.Uri && sFrom.Method == hsTo.Method {
+			return sFrom
+		}
+	}
+	return nil
+}
+
+func (p *Printer) printTable(hsFrom, hsTo *HTTPStats) {
 	table := tablewriter.NewWriter(p.writer)
 	table.SetHeader(p.headers)
-	for _, s := range hs.stats {
-		data := p.GenerateLine(s, false)
-		table.Append(data)
+	if hsTo == nil {
+		for _, s := range hsFrom.stats {
+			data := p.GenerateLine(s, false)
+			table.Append(data)
+		}
+	} else {
+		for _, to := range hsTo.stats {
+			from := findHTTPStatFrom(hsFrom, to)
+
+			var data []string
+			if from == nil {
+				data = p.GenerateLine(to, false)
+			} else {
+				data = p.GenerateLineWithDiff(from, to, false)
+			}
+			table.Append(data)
+		}
 	}
 
 	if p.printOptions.showFooters {
-		footer := p.GenerateFooter(hs.CountAll())
+		var footer []string
+		if hsTo == nil {
+			footer = p.GenerateFooter(hsFrom.CountAll())
+		} else {
+			footer = p.GenerateFooterWithDiff(hsFrom.CountAll(), hsTo.CountAll())
+		}
 		table.SetFooter(footer)
-		table.SetFooterAlignment(tablewriter.ALIGN_RIGHT)
+		table.SetFooterAlignment(tablewriter.ALIGN_LEFT)
 	}
 
+	table.SetAlignment(tablewriter.ALIGN_LEFT)
 	table.Render()
 }
 
-func (p *Printer) printMarkdown(hs *HTTPStats) {
+func (p *Printer) printMarkdown(hsFrom, hsTo *HTTPStats) {
 	table := tablewriter.NewWriter(p.writer)
 	table.SetHeader(p.headers)
 	table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
 	table.SetCenterSeparator("|")
-	for _, s := range hs.stats {
-		data := p.GenerateLine(s, false)
-		table.Append(data)
+	if hsTo == nil {
+		for _, s := range hsFrom.stats {
+			data := p.GenerateLine(s, false)
+			table.Append(data)
+		}
+	} else {
+		for _, to := range hsTo.stats {
+			from := findHTTPStatFrom(hsFrom, to)
+
+			var data []string
+			if from == nil {
+				data = p.GenerateLine(to, false)
+			} else {
+				data = p.GenerateLineWithDiff(from, to, false)
+			}
+			table.Append(data)
+		}
 	}
 
 	if p.printOptions.showFooters {
-		footer := p.GenerateFooter(hs.CountAll())
+		var footer []string
+		if hsTo == nil {
+			footer = p.GenerateFooter(hsFrom.CountAll())
+		} else {
+			footer = p.GenerateFooterWithDiff(hsFrom.CountAll(), hsTo.CountAll())
+		}
 		table.Append(footer)
 	}
 
+	table.SetAlignment(tablewriter.ALIGN_LEFT)
 	table.Render()
 }
 
-func (p *Printer) printTSV(hs *HTTPStats) {
+func (p *Printer) printTSV(hsFrom, hsTo *HTTPStats) {
 	if !p.printOptions.noHeaders {
 		fmt.Println(strings.Join(p.headers, "\t"))
 	}
-	for _, s := range hs.stats {
-		data := p.GenerateLine(s, false)
-		fmt.Println(strings.Join(data, "\t"))
+
+	var data []string
+	if hsTo == nil {
+		for _, s := range hsFrom.stats {
+			data = p.GenerateLine(s, false)
+			fmt.Println(strings.Join(data, "\t"))
+		}
+	} else {
+		for _, to := range hsTo.stats {
+			from := findHTTPStatFrom(hsFrom, to)
+
+			if from == nil {
+				data = p.GenerateLine(to, false)
+			} else {
+				data = p.GenerateLineWithDiff(from, to, false)
+			}
+			fmt.Println(strings.Join(data, "\t"))
+		}
 	}
 }
 
-func (p *Printer) printCSV(hs *HTTPStats) {
+func (p *Printer) printCSV(hsFrom, hsTo *HTTPStats) {
 	if !p.printOptions.noHeaders {
 		fmt.Println(strings.Join(p.headers, ","))
 	}
-	for _, s := range hs.stats {
-		data := p.GenerateLine(s, true)
-		fmt.Println(strings.Join(data, ","))
+
+	var data []string
+	if hsTo == nil {
+		for _, s := range hsFrom.stats {
+			data = p.GenerateLine(s, true)
+			fmt.Println(strings.Join(data, ","))
+		}
+	} else {
+		for _, to := range hsTo.stats {
+			from := findHTTPStatFrom(hsFrom, to)
+
+			if from == nil {
+				data = p.GenerateLine(to, false)
+			} else {
+				data = p.GenerateLineWithDiff(from, to, false)
+			}
+			fmt.Println(strings.Join(data, ","))
+		}
 	}
 }
