@@ -56,10 +56,10 @@ Flags:
   -q, --query-string            Include the URI query string
       --qs-ignore-values        Ignore the value of the query string. Replace all values with xxx (only use with -q)
       --decode-uri              Decode the URI
-      --format=table            The output format (table, markdown, tsv and csv)
+      --format=table            The output format (table, markdown, tsv, csv and html)
       --noheaders               Output no header line at all (only --format=tsv, csv)
       --show-footers            Output footer line at all (only --format=table, markdown)
-      --limit=5000              The maximum number of results to display.
+      --limit=5000              The maximum number of results to display
       --location=Local          Location name for the timezone
   -o, --output=all              Specifies the results to display, separated by commas
   -m, --matching-groups=PATTERN,...
@@ -435,7 +435,7 @@ sample は [Usage samples](./docs/usage_samples.ja.md) を参照してくださ�
 - `--decode-uri`
     - 解析結果の URI をデコードして表示します
 - `--format=table`
-    - 解析結果を テーブル、Markdown, TSV, CSV 形式で出力する
+    - 解析結果を テーブル、Markdown, TSV, CSV, HTML 形式で出力する
     - デフォルトはテーブル形式
 - `--noheaders`
     - 解析結果を TSV, CSV で出力する際、header を表示しない
