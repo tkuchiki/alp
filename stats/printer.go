@@ -7,6 +7,7 @@ import (
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/tkuchiki/alp/helpers"
+	"github.com/tkuchiki/alp/html"
 )
 
 func keywords(percentiles []int) []string {
@@ -114,16 +115,18 @@ func headersMap(percentiles []int) map[string]string {
 }
 
 type PrintOptions struct {
-	noHeaders   bool
-	showFooters bool
-	decodeUri   bool
+	noHeaders       bool
+	showFooters     bool
+	decodeUri       bool
+	paginationLimit int
 }
 
-func NewPrintOptions(noHeaders, showFooters, decodeUri bool) *PrintOptions {
+func NewPrintOptions(noHeaders, showFooters, decodeUri bool, paginationLimit int) *PrintOptions {
 	return &PrintOptions{
-		noHeaders:   noHeaders,
-		showFooters: showFooters,
-		decodeUri:   decodeUri,
+		noHeaders:       noHeaders,
+		showFooters:     showFooters,
+		decodeUri:       decodeUri,
+		paginationLimit: paginationLimit,
 	}
 }
 
@@ -384,6 +387,8 @@ func (p *Printer) Print(hs, hsTo *HTTPStats) {
 		p.printTSV(hs, hsTo)
 	case "csv":
 		p.printCSV(hs, hsTo)
+	case "html":
+		p.printHTML(hs, hsTo)
 	}
 }
 
@@ -523,4 +528,26 @@ func (p *Printer) printCSV(hsFrom, hsTo *HTTPStats) {
 			fmt.Println(strings.Join(data, ","))
 		}
 	}
+}
+
+func (p *Printer) printHTML(hsFrom, hsTo *HTTPStats) {
+	var data [][]string
+
+	if hsTo == nil {
+		for _, s := range hsFrom.stats {
+			data = append(data, p.GenerateLine(s, true))
+		}
+	} else {
+		for _, to := range hsTo.stats {
+			from := findHTTPStatFrom(hsFrom, to)
+
+			if from == nil {
+				data = append(data, p.GenerateLine(to, false))
+			} else {
+				data = append(data, p.GenerateLineWithDiff(from, to, false))
+			}
+		}
+	}
+	content, _ := html.RenderTableWithGridJS("alp", p.headers, data, p.printOptions.paginationLimit)
+	fmt.Println(content)
 }

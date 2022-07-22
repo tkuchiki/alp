@@ -219,7 +219,7 @@ func (p *Profiler) Run(args []string) error {
 	sts.SetOptions(opts)
 	sts.SetSortOptions(sortOptions)
 
-	printOptions := stats.NewPrintOptions(opts.NoHeaders, opts.ShowFooters, opts.DecodeUri)
+	printOptions := stats.NewPrintOptions(opts.NoHeaders, opts.ShowFooters, opts.DecodeUri, opts.PaginationLimit)
 	printer := stats.NewPrinter(p.outWriter, opts.Output, opts.Format, percentiles, printOptions)
 	if err = printer.Validate(); err != nil {
 		return err

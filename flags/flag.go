@@ -29,6 +29,7 @@ type GlobalFlags struct {
 	PosFile                 string
 	NoSavePos               bool
 	Percentiles             string
+	PaginationLimit         int
 }
 
 var Formats = []string{
@@ -37,6 +38,7 @@ var Formats = []string{
 	"markdown",
 	"tsv",
 	"csv",
+	"html",
 }
 
 func NewGlobalFlags() *GlobalFlags {
@@ -62,13 +64,13 @@ func (f *GlobalFlags) InitGlobalFlags(app *kingpin.Application) {
 		BoolVar(&f.QueryStringIgnoreValues)
 	app.Flag("decode-uri", "Decode the URI").
 		BoolVar(&f.DecodeUri)
-	app.Flag("format", "The output format (table, markdown, tsv and csv)").
+	app.Flag("format", "The output format (table, markdown, tsv, csv and html)").
 		PlaceHolder(options.DefaultFormatOption).EnumVar(&f.Format, Formats...)
 	app.Flag("noheaders", "Output no header line at all (only --format=tsv, csv)").
 		BoolVar(&f.NoHeaders)
 	app.Flag("show-footers", "Output footer line at all (only --format=table, markdown)").
 		BoolVar(&f.ShowFooters)
-	app.Flag("limit", "The maximum number of results to display.").
+	app.Flag("limit", "The maximum number of results to display").
 		PlaceHolder(fmt.Sprint(options.DefaultLimitOption)).IntVar(&f.Limit)
 	app.Flag("location", "Location name for the timezone").
 		PlaceHolder(options.DefaultLocationOption).StringVar(&f.Location)
@@ -84,4 +86,6 @@ func (f *GlobalFlags) InitGlobalFlags(app *kingpin.Application) {
 		BoolVar(&f.NoSavePos)
 	app.Flag("percentiles", "Specifies the percentiles separated by commas").Default("90,95,99").
 		StringVar(&f.Percentiles)
+	app.Flag("page", "Number of pages of pagination").
+		PlaceHolder(fmt.Sprint(options.DefaultLimitOption)).IntVar(&f.PaginationLimit)
 }

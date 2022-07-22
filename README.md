@@ -57,10 +57,10 @@ Flags:
   -q, --query-string            Include the URI query string
       --qs-ignore-values        Ignore the value of the query string. Replace all values with xxx (only use with -q)
       --decode-uri              Decode the URI
-      --format=table            The output format (table, markdown, tsv and csv)
+      --format=table            The output format (table, markdown, tsv, csv and html)
       --noheaders               Output no header line at all (only --format=tsv, csv)
       --show-footers            Output footer line at all (only --format=table, markdown)
-      --limit=5000              The maximum number of results to display.
+      --limit=5000              The maximum number of results to display
       --location=Local          Location name for the timezone
   -o, --output=all              Specifies the results to display, separated by commas
   -m, --matching-groups=PATTERN,...
@@ -426,7 +426,7 @@ See: [Usage samples](./docs/usage_samples.md)
 - `--decode-uri`
     - Decode the URI
 - `--format=table`
-    - Print the profile results in a table, Markdown, TSV and CSV format
+    - Print the profile results in a table, Markdown, TSV, CSV and HTML format
     - The default is table format
 - `--noheaders`
     - Print no header when TSV and CSV format

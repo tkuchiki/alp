@@ -9,11 +9,12 @@ import (
 )
 
 const (
-	DefaultSortOption     = "count"
-	DefaultFormatOption   = "table"
-	DefaultLimitOption    = 5000
-	DefaultLocationOption = "Local"
-	DefaultOutputOption   = "all"
+	DefaultSortOption      = "count"
+	DefaultFormatOption    = "table"
+	DefaultLimitOption     = 5000
+	DefaultLocationOption  = "Local"
+	DefaultOutputOption    = "all"
+	DefaultPagenationLimit = 100
 	// ltsv
 	DefaultApptimeLabelOption = "apptime"
 	DefaultReqtimeLabelOption = "reqtime"
@@ -76,6 +77,7 @@ type Options struct {
 	Location                string         `yaml:"location"`
 	Output                  string         `yaml:"output"`
 	Percentiles             []int          `yaml:"percentiles"`
+	PaginationLimit         int            `yaml:"pagination_limit"`
 	LTSV                    *LTSVOptions   `yaml:"ltsv"`
 	Regexp                  *RegexpOptions `yaml:"regexp"`
 	JSON                    *JSONOptions   `yaml:"json"`
@@ -261,6 +263,14 @@ func Percentiles(i []int) Option {
 	return func(opts *Options) {
 		if len(i) > 0 {
 			opts.Percentiles = i
+		}
+	}
+}
+
+func PaginationLimit(i int) Option {
+	return func(opts *Options) {
+		if i > 0 {
+			opts.PaginationLimit = i
 		}
 	}
 }
@@ -499,16 +509,17 @@ func NewOptions(opt ...Option) *Options {
 	}
 
 	options := &Options{
-		Sort:        DefaultSortOption,
-		Format:      DefaultFormatOption,
-		Limit:       DefaultLimitOption,
-		Location:    DefaultLocationOption,
-		Output:      DefaultOutputOption,
-		Percentiles: DefaultPercentilesOption,
-		LTSV:        ltsv,
-		Regexp:      regexp,
-		JSON:        json,
-		Pcap:        pcap,
+		Sort:            DefaultSortOption,
+		Format:          DefaultFormatOption,
+		Limit:           DefaultLimitOption,
+		Location:        DefaultLocationOption,
+		Output:          DefaultOutputOption,
+		Percentiles:     DefaultPercentilesOption,
+		PaginationLimit: DefaultPagenationLimit,
+		LTSV:            ltsv,
+		Regexp:          regexp,
+		JSON:            json,
+		Pcap:            pcap,
 	}
 
 	for _, o := range opt {
@@ -554,6 +565,7 @@ func LoadOptionsFromReader(r io.Reader) (*Options, error) {
 		MatchingGroups(configs.MatchingGroups),
 		Filters(configs.Filters),
 		Percentiles(configs.Percentiles),
+		PaginationLimit(configs.PaginationLimit),
 		// ltsv
 		ApptimeLabel(configs.LTSV.ApptimeLabel),
 		ReqtimeLabel(configs.LTSV.ReqtimeLabel),
