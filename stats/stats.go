@@ -316,16 +316,17 @@ func (hs *HTTPStat) StddevResponseBodyBytes() float64 {
 }
 
 func percentRank(n int, pi int) int {
-	if pi == 0 {
+	switch pi {
+	case 0:
 		return 0
-	} else if pi == 100 {
+	case 100:
 		return n - 1
 	}
 
 	p := float64(pi) / 100.0
 	pos := int(float64(n+1) * p)
-	if pos < 0 {
-		pos = 0
+	if pos <= 0 {
+		return 0
 	}
 
 	return pos - 1
