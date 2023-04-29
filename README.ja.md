@@ -41,53 +41,181 @@ asdf global alp <バージョン>
 
 ```console
 $ alp --help
-usage: alp [<flags>] <command> [<args> ...]
+alp is the access log profiler for LTSV, JSON, Pcap, and others.
 
-alp is the access log profiler for LTSV, JSON, PCAP, and others.
+Usage:
+  alp [flags]
+  alp [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  diff        Show the difference between the two profile results
+  help        Help about any command
+  json        Profile the logs for JSON
+  ltsv        Profile the logs for LTSV
+  pcap        Profile the HTTP requests for captured packets
+  regexp      Profile the logs that match a regular expression
 
 Flags:
-      --help                    Show context-sensitive help (also try --help-long and --help-man).
-  -c, --config=CONFIG           The configuration file
-      --file=FILE               The access log file
-  -d, --dump=DUMP               Dump profiled data as YAML
-  -l, --load=LOAD               Load the profiled YAML data
-      --sort=count              Output the results in sorted order
-  -r, --reverse                 Sort results in reverse order
-  -q, --query-string            Include the URI query string
-      --qs-ignore-values        Ignore the value of the query string. Replace all values with xxx (only use with -q)
-      --decode-uri              Decode the URI
-      --format=table            The output format (table, markdown, tsv, csv and html)
-      --noheaders               Output no header line at all (only --format=tsv, csv)
-      --show-footers            Output footer line at all (only --format=table, markdown)
-      --limit=5000              The maximum number of results to display
-      --location=Local          Location name for the timezone
-  -o, --output=all              Specifies the results to display, separated by commas
-  -m, --matching-groups=PATTERN,...
-                                Specifies URI matching groups separated by commas
-  -f, --filters=FILTERS         Only the logs are profiled that match the conditions
-      --pos=POSITION_FILE       The position file
-      --nosave-pos              Do not save position file
-      --percentiles="90,95,99"  Specifies the percentiles separated by commas
-      --version                 Show application version.
+  -h, --help      help for alp
+  -v, --version   version for alp
 
-Commands:
-  help [<command>...]
-    Show help.
+Use "alp [command] --help" for more information about a command.
 
-  ltsv [<flags>]
-    Profile the logs for LTSV
+$ alp ltsv --help
+Profile the logs for LTSV
 
-  json [<flags>]
-    Profile the logs for JSON
+Usage:
+  alp ltsv [flags]
 
-  regexp [<flags>]
-    Profile the logs that match a regular expression
+Flags:
+      --apptime-label string     Change the apptime label (default "apptime")
+      --config string            The configuration file
+      --decode-uri               Decode the URI
+      --dump string              Dump profiled data as YAML
+      --file string              The slowlog file
+  -f, --filters string           Only the logs are profiled that match the conditions
+      --format string            The output format (table, markdown, tsv, csv and html) (default "table")
+  -h, --help                     help for ltsv
+      --limit int                The maximum number of results to display (default 5000)
+      --load string              Load the profiled YAML data
+      --location string          Location name for the timezone (default "Local")
+  -m, --matching-groups string   Specifies Query matching groups separated by commas
+      --method-label string      Change the method label (default "method")
+      --noheaders                Output no header line at all (only --format=tsv, csv)
+      --nosave-pos               Do not save position file
+  -o, --output string            Specifies the results to display, separated by commas (default "all")
+      --page int                 Number of pages of pagination (default 100)
+      --percentiles string       Specifies the percentiles separated by commas
+      --pos string               The position file
+      --qs-ignore-values         Ignore the value of the query string. Replace all values with xxx (only use with -q)
+  -q, --query-string             Include the URI query string
+      --reqtime-label string     Change the reqtime label (default "reqtime")
+  -r, --reverse                  Sort results in reverse order
+      --show-footers             Output footer line at all (only --format=table, markdown)
+      --size-label string        Change the size label (default "size")
+      --sort string              Output the results in sorted order (default "count")
+      --status-label string      Change the status label (default "status")
+      --time-label string        Change the time label (default "time")
+      --uri-label string         Change the uri label (default "uri")
+      
+$ alp json --help
+Profile the logs for JSON
 
-  pcap [<flags>]
-    Profile the HTTP requests for captured packets
+Usage:
+  alp json [flags]
 
-  diff <from> <to>
-    Show the difference between the two profile results
+Flags:
+      --body-bytes-key string    Change the body_bytes key (default "body_bytes")
+      --config string            The configuration file
+      --decode-uri               Decode the URI
+      --dump string              Dump profiled data as YAML
+      --file string              The slowlog file
+  -f, --filters string           Only the logs are profiled that match the conditions
+      --format string            The output format (table, markdown, tsv, csv and html) (default "table")
+  -h, --help                     help for json
+      --limit int                The maximum number of results to display (default 5000)
+      --load string              Load the profiled YAML data
+      --location string          Location name for the timezone (default "Local")
+  -m, --matching-groups string   Specifies Query matching groups separated by commas
+      --method-key string        Change the method key (default "method")
+      --noheaders                Output no header line at all (only --format=tsv, csv)
+      --nosave-pos               Do not save position file
+  -o, --output string            Specifies the results to display, separated by commas (default "all")
+      --page int                 Number of pages of pagination (default 100)
+      --percentiles string       Specifies the percentiles separated by commas
+      --pos string               The position file
+      --qs-ignore-values         Ignore the value of the query string. Replace all values with xxx (only use with -q)
+  -q, --query-string             Include the URI query string
+      --reqtime-key string       Change the request_time key (default "request_time")
+      --restime-key string       Change the response_time key (default "response_time")
+  -r, --reverse                  Sort results in reverse order
+      --show-footers             Output footer line at all (only --format=table, markdown)
+      --sort string              Output the results in sorted order (default "count")
+      --status-key string        Change the status key (default "status")
+      --time-key string          Change the time key (default "time")
+      --uri-key string           Change the uri key (default "uri")
+
+$ alp regexp --help
+Profile the logs that match a regular expression
+
+Usage:
+  alp regexp [flags]
+
+Flags:
+      --body-bytes-subexp string   Change the body_bytes sub expression (default "body_bytes")
+      --config string              The configuration file
+      --decode-uri                 Decode the URI
+      --dump string                Dump profiled data as YAML
+      --file string                The slowlog file
+  -f, --filters string             Only the logs are profiled that match the conditions
+      --format string              The output format (table, markdown, tsv, csv and html) (default "table")
+  -h, --help                       help for regexp
+      --limit int                  The maximum number of results to display (default 5000)
+      --load string                Load the profiled YAML data
+      --location string            Location name for the timezone (default "Local")
+  -m, --matching-groups string     Specifies Query matching groups separated by commas
+      --method-subexp string       Change the method sub expression (default "method")
+      --noheaders                  Output no header line at all (only --format=tsv, csv)
+      --nosave-pos                 Do not save position file
+  -o, --output string              Specifies the results to display, separated by commas (default "all")
+      --page int                   Number of pages of pagination (default 100)
+      --pattern string             Regular expressions pattern matching the log (default "^(\\S+)\\s\\S+\\s+(\\S+\\s+)+\\[(?P<time>[^]]+)\\]\\s\"(?P<method>\\S*)\\s?(?P<uri>(?:[^\"]*(?:\\\\\")?)*)\\s([^\"]*)\"\\s(?P<status>\\S+)\\s(?P<body_bytes>\\S+)\\s\"((?:[^\"]*(?:\\\\\")?)*)\"\\s\"(?:.+)\"\\s(?P<response_time>\\S+)(?:\\s(?P<request_time>\\S+))?$")
+      --percentiles string         Specifies the percentiles separated by commas
+      --pos string                 The position file
+      --qs-ignore-values           Ignore the value of the query string. Replace all values with xxx (only use with -q)
+  -q, --query-string               Include the URI query string
+      --reqtime-subexp string      Change the request_time sub expression (default "request_time")
+      --restime-subexp string      Change the response_time sub expression (default "response_time")
+  -r, --reverse                    Sort results in reverse order
+      --show-footers               Output footer line at all (only --format=table, markdown)
+      --sort string                Output the results in sorted order (default "count")
+      --status-subexp string       Change the status sub expression (default "status")
+      --time-subexp string         Change the time sub expression (default "time")
+      --uri-subexp string          Change the uri sub expression (default "uri")
+      
+$ alp pcap --help
+Profile the HTTP requests for captured packets
+
+Usage:
+  alp pcap [flags]
+
+Flags:
+      --config string             The configuration file
+      --decode-uri                Decode the URI
+      --dump string               Dump profiled data as YAML
+      --file string               The slowlog file
+  -f, --filters string            Only the logs are profiled that match the conditions
+      --format string             The output format (table, markdown, tsv, csv and html) (default "table")
+  -h, --help                      help for pcap
+      --limit int                 The maximum number of results to display (default 5000)
+      --load string               Load the profiled YAML data
+      --location string           Location name for the timezone (default "Local")
+  -m, --matching-groups string    Specifies Query matching groups separated by commas
+      --noheaders                 Output no header line at all (only --format=tsv, csv)
+      --nosave-pos                Do not save position file
+  -o, --output string             Specifies the results to display, separated by commas (default "all")
+      --page int                  Number of pages of pagination (default 100)
+      --pcap-server-ip strings    HTTP server IP address of the captured packets (default [127.0.0.1])
+      --pcap-server-port uint16   HTTP server TCP port of the captured packets (default 80)
+      --percentiles string        Specifies the percentiles separated by commas
+      --pos string                The position file
+      --qs-ignore-values          Ignore the value of the query string. Replace all values with xxx (only use with -q)
+  -q, --query-string              Include the URI query string
+  -r, --reverse                   Sort results in reverse order
+      --show-footers              Output footer line at all (only --format=table, markdown)
+      --sort string               Output the results in sorted order (default "count")
+
+$ alp diff --help
+Show the difference between the two profile results
+
+Usage:
+  alp diff <from> <to> [flags]
+
+Flags:
+      --from string   The comparison source file
+  -h, --help          help for diff
+      --to string     The comparison target file
 ```
 
 - alp は ltsv, json, regexp, pcap, diff の5つのサブコマンドで構成されています

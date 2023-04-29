@@ -1,5 +1,10 @@
+NAME := alp
+GO_LDFLAGS=-s -w
+GIT_COMMIT := $(shell git rev-parse --short HEAD)
+
+.PHONY: build
 build:
-	go build -o ./cli/alp/alp ./cli/alp
+	go build -trimpath -ldflags "$(GO_LDFLAGS) -X=main.version=$(GIT_COMMIT)" -o $(NAME) ./cmd/$(NAME)
 
 run_nginx:
 	docker run -p 18080:80 -v $(PWD)/tmp:/var/log/nginx -v $(PWD)/dockerfiles/nginx/nginx.conf:/etc/nginx/nginx.conf --rm -t nginx:latest

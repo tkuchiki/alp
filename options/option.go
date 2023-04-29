@@ -14,7 +14,7 @@ const (
 	DefaultLimitOption     = 5000
 	DefaultLocationOption  = "Local"
 	DefaultOutputOption    = "all"
-	DefaultPagenationLimit = 100
+	DefaultPaginationLimit = 100
 	// ltsv
 	DefaultApptimeLabelOption = "apptime"
 	DefaultReqtimeLabelOption = "reqtime"
@@ -61,6 +61,8 @@ var DefaultPcapServerIPsOption = getDefaultPcapServerIPsOption()
 
 type Options struct {
 	File                    string         `yaml:"file"`
+	Dump                    string         `yaml:"dump"`
+	Load                    string         `yaml:"dump"`
 	Sort                    string         `yaml:"sort"`
 	Reverse                 bool           `yaml:"reverse"`
 	QueryString             bool           `yaml:"query_string"`
@@ -126,6 +128,22 @@ func File(s string) Option {
 	return func(opts *Options) {
 		if s != "" {
 			opts.File = s
+		}
+	}
+}
+
+func Dump(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.Dump = s
+		}
+	}
+}
+
+func Load(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.Load = s
 		}
 	}
 }
@@ -515,7 +533,7 @@ func NewOptions(opt ...Option) *Options {
 		Location:        DefaultLocationOption,
 		Output:          DefaultOutputOption,
 		Percentiles:     DefaultPercentilesOption,
-		PaginationLimit: DefaultPagenationLimit,
+		PaginationLimit: DefaultPaginationLimit,
 		LTSV:            ltsv,
 		Regexp:          regexp,
 		JSON:            json,
@@ -549,6 +567,8 @@ func LoadOptionsFromReader(r io.Reader) (*Options, error) {
 
 	opts = SetOptions(opts,
 		Sort(configs.Sort),
+		Dump(configs.Dump),
+		Load(configs.Load),
 		Limit(configs.Limit),
 		Location(configs.Location),
 		Output(configs.Output),
