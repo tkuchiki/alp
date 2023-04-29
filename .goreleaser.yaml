@@ -5,7 +5,7 @@ before:
 builds:
   - env:
       - CGO_ENABLED=0
-    main: ./cli/alp/main.go
+    main: ./cmd/alp/main.go
     binary: alp
     ldflags:
       - -s -w

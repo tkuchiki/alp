@@ -1,9 +1,9 @@
+alp
 .idea
 pkg/
 src/
 tmp/
-cli/alp/*
-!cli/alp/main.go
+cmd/alp/alp
 vendor
 dist/
 .envrc
