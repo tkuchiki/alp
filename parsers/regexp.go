@@ -58,7 +58,7 @@ func (rp *RegexpParser) Parse() (*ParsedHTTPStat, error) {
 		return nil, errSkipReadLine(rp.strictMode, errPatternNotMatched)
 	}
 
-	parsedValue := make(map[string]string, 6)
+	parsedValue := make(map[string]string, len(groups))
 	names := rp.re.SubexpNames()
 	for i := 1; i < len(groups); i++ {
 		if names[i] == "" {
@@ -67,7 +67,17 @@ func (rp *RegexpParser) Parse() (*ParsedHTTPStat, error) {
 		parsedValue[names[i]] = groups[i]
 	}
 
-	return toStats(parsedValue, rp.subexpNames, rp.strictMode, rp.queryString, rp.qsIgnoreValues)
+	parsedHTTPStat, err := toStats(parsedValue, rp.subexpNames, rp.strictMode, rp.queryString, rp.qsIgnoreValues)
+	if err != nil {
+		return nil, err
+	}
+
+	logEntries := make(LogEntries)
+	logEntries = parsedValue
+
+	parsedHTTPStat.Entries = logEntries
+
+	return parsedHTTPStat, nil
 }
 
 func (rp *RegexpParser) ReadBytes() int {

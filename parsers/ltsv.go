@@ -50,7 +50,17 @@ func (l *LTSVParser) Parse() (*ParsedHTTPStat, error) {
 		return nil, err
 	}
 
-	return toStats(parsedValue, l.label, l.strictMode, l.queryString, l.qsIgnoreValues)
+	parsedHTTPStat, err := toStats(parsedValue, l.label, l.strictMode, l.queryString, l.qsIgnoreValues)
+	if err != nil {
+		return nil, err
+	}
+
+	logEntries := make(LogEntries)
+	logEntries = parsedValue
+
+	parsedHTTPStat.Entries = logEntries
+
+	return parsedHTTPStat, nil
 }
 
 func (l *LTSVParser) ReadBytes() int {

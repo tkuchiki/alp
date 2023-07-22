@@ -70,7 +70,19 @@ func (j *JSONParser) Parse() (*ParsedHTTPStat, error) {
 		parsedValue[key] = fmt.Sprintf("%v", val)
 	}
 
-	return toStats(parsedValue, j.keys, j.strictMode, j.queryString, j.qsIgnoreValues)
+	parsedHTTPStat, err := toStats(parsedValue, j.keys, j.strictMode, j.queryString, j.qsIgnoreValues)
+	if err != nil {
+		return nil, err
+	}
+
+	logEntries := make(LogEntries)
+	for key, val := range tmp {
+		logEntries[key] = fmt.Sprintf("%v", val)
+	}
+
+	parsedHTTPStat.Entries = logEntries
+
+	return parsedHTTPStat, nil
 }
 
 func (j *JSONParser) ReadBytes() int {
