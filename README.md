@@ -50,6 +50,7 @@ Usage:
 
 Available Commands:
   completion  Generate the autocompletion script for the specified shell
+  count       Count by log entries
   diff        Show the difference between the two profile results
   help        Help about any command
   json        Profile the logs for JSON
@@ -217,6 +218,20 @@ Flags:
       --from string   The comparison source file
   -h, --help          help for diff
       --to string     The comparison target file
+
+$ alp count --help
+Count by log entries
+
+Usage:
+  alp count [flags]
+
+Flags:
+      --file string      The access log file
+      --format string    Log format (json,ltsv,regexp) (default "json")
+  -h, --help             help for count
+      --keys string      Log key names (comma separated)
+      --pattern string   Regular expressions pattern matching the log. (only use with --format=regexp) (default "^(\\S+)\\s\\S+\\s+(\\S+\\s+)+\\[(?P<time>[^]]+)\\]\\s\"(?P<method>\\S*)\\s?(?P<uri>(?:[^\"]*(?:\\\\\")?)*)\\s([^\"]*)\"\\s(?P<status>\\S+)\\s(?P<body_bytes>\\S+)\\s\"((?:[^\"]*(?:\\\\\")?)*)\"\\s\"(?:.+)\"\\s(?P<response_time>\\S+)(?:\\s(?P<request_time>\\S+))?$")
+  -r, --reverse          Sort results in reverse order
 ```
 
 ## ltsv
