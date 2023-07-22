@@ -12,7 +12,7 @@ import (
 
 func defineOptions(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringP("config", "", "", "The configuration file")
-	cmd.PersistentFlags().StringP("file", "", "", "The slowlog file")
+	cmd.PersistentFlags().StringP("file", "", "", "The access log file")
 	cmd.PersistentFlags().StringP("dump", "", "", "Dump profiled data as YAML")
 	cmd.PersistentFlags().StringP("load", "", "", "Load the profiled YAML data")
 	cmd.PersistentFlags().StringP("format", "", options.DefaultFormatOption, "The output format (table, markdown, tsv, csv and html)")

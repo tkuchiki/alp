@@ -24,7 +24,10 @@ type ParsedHTTPStat struct {
 	ResponseTime float64
 	BodyBytes    float64
 	Status       int
+	Entries      LogEntries
 }
+
+type LogEntries map[string]string
 
 type statKeys struct {
 	uri          string

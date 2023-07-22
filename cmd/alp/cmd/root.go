@@ -28,6 +28,7 @@ func NewRootCmd(version string) *cobra.Command {
 	rootCmd.AddCommand(NewRegexpCmd(rootCmd))
 	rootCmd.AddCommand(NewPcapCmd(rootCmd))
 	rootCmd.AddCommand(NewDiffCmd(rootCmd))
+	rootCmd.AddCommand(NewCountCmd())
 	rootCmd.SetVersionTemplate(fmt.Sprintln(version))
 
 	return rootCmd
