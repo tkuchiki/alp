@@ -45,6 +45,16 @@ func createOptions(cmd *cobra.Command, sortOptions *stats.SortOptions) (*options
 		return nil, err
 	}
 
+	dump, err := cmd.PersistentFlags().GetString("dump")
+	if err != nil {
+		return nil, err
+	}
+
+	load, err := cmd.PersistentFlags().GetString("load")
+	if err != nil {
+		return nil, err
+	}
+
 	format, err := cmd.PersistentFlags().GetString("format")
 	if err != nil {
 		return nil, err
@@ -172,6 +182,8 @@ func createOptions(cmd *cobra.Command, sortOptions *stats.SortOptions) (*options
 
 	return options.SetOptions(opts,
 		options.File(file),
+		options.Dump(dump),
+		options.Load(load),
 		options.Sort(sortOptions.SortType()),
 		options.Reverse(reverse),
 		options.Format(format),
