@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -8,14 +9,14 @@ import (
 )
 
 func NewDiffCmd(rootCmd *cobra.Command) *cobra.Command {
-	var diffCmd = &cobra.Command{
+	diffCmd := &cobra.Command{
 		Use:   "diff <from> <to>",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.RangeArgs(0, 2),
 		Short: "Show the difference between the two profile results",
 		Long:  `Show the difference between the two profile results`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			sortOptions := stats.NewSortOptions()
-			opts, err := createOptions(rootCmd, sortOptions)
+			opts, err := createOptions(cmd, sortOptions)
 			if err != nil {
 				return err
 			}
@@ -24,10 +25,22 @@ func NewDiffCmd(rootCmd *cobra.Command) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if from == "" {
+				if len(args) < 1 {
+					return fmt.Errorf("from is required")
+				}
+				from = args[0]
+			}
 
 			to, err := cmd.PersistentFlags().GetString("to")
 			if err != nil {
 				return err
+			}
+			if to == "" {
+				if len(args) < 2 {
+					return fmt.Errorf("to is required")
+				}
+				to = args[1]
 			}
 
 			sts := stats.NewHTTPStats(true, false, false)
@@ -85,8 +98,10 @@ func NewDiffCmd(rootCmd *cobra.Command) *cobra.Command {
 		},
 	}
 
-	//app.Arg("from", "").Required().StringVar(&f.From)
-	//app.Arg("to", "").Required().StringVar(&f.To)
+	// app.Arg("from", "").Required().StringVar(&f.From)
+	// app.Arg("to", "").Required().StringVar(&f.To)
+
+	defineOptions(diffCmd)
 
 	diffCmd.PersistentFlags().StringP("from", "", "", "The comparison source file")
 	diffCmd.PersistentFlags().StringP("to", "", "", "The comparison target file")
