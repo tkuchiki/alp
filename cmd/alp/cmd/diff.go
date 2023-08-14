@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -11,7 +10,7 @@ import (
 func NewDiffCmd(rootCmd *cobra.Command) *cobra.Command {
 	diffCmd := &cobra.Command{
 		Use:   "diff <from> <to>",
-		Args:  cobra.RangeArgs(0, 2),
+		Args:  cobra.ExactArgs(2),
 		Short: "Show the difference between the two profile results",
 		Long:  `Show the difference between the two profile results`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -21,17 +20,8 @@ func NewDiffCmd(rootCmd *cobra.Command) *cobra.Command {
 				return err
 			}
 
-			var from string
-			if len(args) < 1 {
-				return fmt.Errorf("from is required")
-			}
-			from = args[0]
-
-			var to string
-			if len(args) < 2 {
-				return fmt.Errorf("to is required")
-			}
-			to = args[1]
+			from := args[0]
+			to := args[1]
 
 			sts := stats.NewHTTPStats(true, false, false)
 
