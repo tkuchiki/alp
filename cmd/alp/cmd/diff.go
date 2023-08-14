@@ -21,27 +21,17 @@ func NewDiffCmd(rootCmd *cobra.Command) *cobra.Command {
 				return err
 			}
 
-			from, err := cmd.PersistentFlags().GetString("from")
-			if err != nil {
-				return err
+			var from string
+			if len(args) < 1 {
+				return fmt.Errorf("from is required")
 			}
-			if from == "" {
-				if len(args) < 1 {
-					return fmt.Errorf("from is required")
-				}
-				from = args[0]
-			}
+			from = args[0]
 
-			to, err := cmd.PersistentFlags().GetString("to")
-			if err != nil {
-				return err
+			var to string
+			if len(args) < 2 {
+				return fmt.Errorf("to is required")
 			}
-			if to == "" {
-				if len(args) < 2 {
-					return fmt.Errorf("to is required")
-				}
-				to = args[1]
-			}
+			to = args[1]
 
 			sts := stats.NewHTTPStats(true, false, false)
 
@@ -98,13 +88,7 @@ func NewDiffCmd(rootCmd *cobra.Command) *cobra.Command {
 		},
 	}
 
-	// app.Arg("from", "").Required().StringVar(&f.From)
-	// app.Arg("to", "").Required().StringVar(&f.To)
-
 	defineOptions(diffCmd)
-
-	diffCmd.PersistentFlags().StringP("from", "", "", "The comparison source file")
-	diffCmd.PersistentFlags().StringP("to", "", "", "The comparison target file")
 
 	return diffCmd
 }
