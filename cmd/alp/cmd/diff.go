@@ -8,27 +8,20 @@ import (
 )
 
 func NewDiffCmd(rootCmd *cobra.Command) *cobra.Command {
-	var diffCmd = &cobra.Command{
+	diffCmd := &cobra.Command{
 		Use:   "diff <from> <to>",
 		Args:  cobra.ExactArgs(2),
 		Short: "Show the difference between the two profile results",
 		Long:  `Show the difference between the two profile results`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			sortOptions := stats.NewSortOptions()
-			opts, err := createOptions(rootCmd, sortOptions)
+			opts, err := createOptions(cmd, sortOptions)
 			if err != nil {
 				return err
 			}
 
-			from, err := cmd.PersistentFlags().GetString("from")
-			if err != nil {
-				return err
-			}
-
-			to, err := cmd.PersistentFlags().GetString("to")
-			if err != nil {
-				return err
-			}
+			from := args[0]
+			to := args[1]
 
 			sts := stats.NewHTTPStats(true, false, false)
 
@@ -85,11 +78,7 @@ func NewDiffCmd(rootCmd *cobra.Command) *cobra.Command {
 		},
 	}
 
-	//app.Arg("from", "").Required().StringVar(&f.From)
-	//app.Arg("to", "").Required().StringVar(&f.To)
-
-	diffCmd.PersistentFlags().StringP("from", "", "", "The comparison source file")
-	diffCmd.PersistentFlags().StringP("to", "", "", "The comparison target file")
+	defineOptions(diffCmd)
 
 	return diffCmd
 }
