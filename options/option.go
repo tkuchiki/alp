@@ -62,7 +62,7 @@ var DefaultPcapServerIPsOption = getDefaultPcapServerIPsOption()
 type Options struct {
 	File                    string         `yaml:"file"`
 	Dump                    string         `yaml:"dump"`
-	Load                    string         `yaml:"dump"`
+	Load                    string         `yaml:"load"`
 	Sort                    string         `yaml:"sort"`
 	Reverse                 bool           `yaml:"reverse"`
 	QueryString             bool           `yaml:"query_string"`
