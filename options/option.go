@@ -1,11 +1,9 @@
 package options
 
 import (
-	"io"
 	"net"
 
 	"github.com/tkuchiki/alp/helpers"
-	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -553,70 +551,6 @@ func SetOptions(options *Options, opt ...Option) *Options {
 	}
 
 	return options
-}
-
-func LoadOptionsFromReader(r io.Reader) (*Options, error) {
-	opts := NewOptions()
-	buf, err := io.ReadAll(r)
-	if err != nil {
-		return opts, err
-	}
-
-	configs := NewOptions()
-	err = yaml.Unmarshal(buf, configs)
-
-	opts = SetOptions(opts,
-		Sort(configs.Sort),
-		Dump(configs.Dump),
-		Load(configs.Load),
-		Limit(configs.Limit),
-		Location(configs.Location),
-		Output(configs.Output),
-		Reverse(configs.Reverse),
-		File(configs.File),
-		QueryString(configs.QueryString),
-		QueryStringIgnoreValues(configs.QueryStringIgnoreValues),
-		DecodeUri(configs.DecodeUri),
-		Format(configs.Format),
-		NoHeaders(configs.NoHeaders),
-		ShowFooters(configs.ShowFooters),
-		PosFile(configs.PosFile),
-		NoSavePos(configs.NoSavePos),
-		MatchingGroups(configs.MatchingGroups),
-		Filters(configs.Filters),
-		Percentiles(configs.Percentiles),
-		PaginationLimit(configs.PaginationLimit),
-		// ltsv
-		ApptimeLabel(configs.LTSV.ApptimeLabel),
-		ReqtimeLabel(configs.LTSV.ReqtimeLabel),
-		StatusLabel(configs.LTSV.StatusLabel),
-		SizeLabel(configs.LTSV.SizeLabel),
-		MethodLabel(configs.LTSV.MethodLabel),
-		UriLabel(configs.LTSV.UriLabel),
-		TimeLabel(configs.LTSV.TimeLabel),
-		// json
-		ResponseTimeKey(configs.JSON.ResponseTimeKey),
-		RequestTimeKey(configs.JSON.RequestTimeKey),
-		StatusKey(configs.JSON.StatusKey),
-		BodyBytesKey(configs.JSON.BodyBytesKey),
-		MethodKey(configs.JSON.MethodKey),
-		UriKey(configs.JSON.UriKey),
-		TimeKey(configs.JSON.TimeKey),
-		// regexp
-		Pattern(configs.Regexp.Pattern),
-		ResponseTimeSubexp(configs.Regexp.ResponseTimeSubexp),
-		RequestTimeSubexp(configs.Regexp.RequestTimeSubexp),
-		StatusSubexp(configs.Regexp.StatusSubexp),
-		BodyBytesSubexp(configs.Regexp.BodyBytesSubexp),
-		MethodSubexp(configs.Regexp.MethodSubexp),
-		UriSubexp(configs.Regexp.UriSubexp),
-		TimeSubexp(configs.Regexp.TimeSubexp),
-		// pcap
-		PcapServerIPs(configs.Pcap.ServerIPs),
-		PcapServerPort(configs.Pcap.ServerPort),
-	)
-
-	return opts, err
 }
 
 func getDefaultPcapServerIPsOption() (ips []string) {
