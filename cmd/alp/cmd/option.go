@@ -1,11 +1,10 @@
 package cmd
 
 import (
-	"os"
-
 	"github.com/tkuchiki/alp/helpers"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/tkuchiki/alp/options"
 	"github.com/tkuchiki/alp/stats"
 )
@@ -32,14 +31,10 @@ func defineOptions(cmd *cobra.Command) {
 	cmd.PersistentFlags().BoolP("nosave-pos", "", false, "Do not save position file")
 	cmd.PersistentFlags().StringP("percentiles", "", "", "Specifies the percentiles separated by commas")
 	cmd.PersistentFlags().IntP("page", "", options.DefaultPaginationLimit, "Number of pages of pagination")
+
 }
 
-func createOptions(cmd *cobra.Command, sortOptions *stats.SortOptions) (*options.Options, error) {
-	config, err := cmd.PersistentFlags().GetString("config")
-	if err != nil {
-		return nil, err
-	}
-
+func createCommonOptionsFromFlags(cmd *cobra.Command, sortOptions *stats.SortOptions) (*options.Options, error) {
 	file, err := cmd.PersistentFlags().GetString("file")
 	if err != nil {
 		return nil, err
@@ -157,28 +152,7 @@ func createOptions(cmd *cobra.Command, sortOptions *stats.SortOptions) (*options
 		return nil, err
 	}
 
-	var opts *options.Options
-	if config != "" {
-		cf, err := os.Open(config)
-		if err != nil {
-			return nil, err
-		}
-		defer cf.Close()
-
-		opts, err = options.LoadOptionsFromReader(cf)
-		if err != nil {
-			return nil, err
-		}
-
-		err = sortOptions.SetAndValidate(opts.Sort)
-		if err != nil {
-			return nil, err
-		}
-
-		percentiles = opts.Percentiles
-	} else {
-		opts = options.NewOptions()
-	}
+	opts := options.NewOptions()
 
 	return options.SetOptions(opts,
 		options.File(file),
@@ -202,4 +176,47 @@ func createOptions(cmd *cobra.Command, sortOptions *stats.SortOptions) (*options
 		options.Percentiles(percentiles),
 		options.PaginationLimit(paginationLimit),
 	), nil
+}
+
+func createOptionsFromConfig(cmd *cobra.Command, sortOptions *stats.SortOptions, config string) (*options.Options, error) {
+	opts := options.NewOptions()
+	viper.SetConfigFile(config)
+
+	if err := viper.ReadInConfig(); err != nil {
+		return nil, err
+	}
+
+	if err := viper.Unmarshal(opts); err != nil {
+		return nil, err
+	}
+
+	if err := sortOptions.SetAndValidate(opts.Sort); err != nil {
+		return nil, err
+	}
+	opts.Sort = sortOptions.SortType()
+
+	return opts, nil
+}
+
+func bindCommonFlags(cmd *cobra.Command) {
+	viper.BindPFlag("file", cmd.PersistentFlags().Lookup("file"))
+	viper.BindPFlag("dump", cmd.PersistentFlags().Lookup("dump"))
+	viper.BindPFlag("load", cmd.PersistentFlags().Lookup("load"))
+	viper.BindPFlag("sort", cmd.PersistentFlags().Lookup("sort"))
+	viper.BindPFlag("reverse", cmd.PersistentFlags().Lookup("reverse"))
+	viper.BindPFlag("query_string", cmd.PersistentFlags().Lookup("query-string"))
+	viper.BindPFlag("query_string_ignore_values", cmd.PersistentFlags().Lookup("qs-ignore-values"))
+	viper.BindPFlag("decode_uri", cmd.PersistentFlags().Lookup("decode-uri"))
+	viper.BindPFlag("format", cmd.PersistentFlags().Lookup("format"))
+	viper.BindPFlag("noheaders", cmd.PersistentFlags().Lookup("noheaders"))
+	viper.BindPFlag("show_footers", cmd.PersistentFlags().Lookup("show-footers"))
+	viper.BindPFlag("limit", cmd.PersistentFlags().Lookup("limit"))
+	viper.BindPFlag("matching_groups", cmd.PersistentFlags().Lookup("matching-groups"))
+	viper.BindPFlag("filters", cmd.PersistentFlags().Lookup("filters"))
+	viper.BindPFlag("pos_file", cmd.PersistentFlags().Lookup("pos"))
+	viper.BindPFlag("nosave_pos", cmd.PersistentFlags().Lookup("nosave-pos"))
+	viper.BindPFlag("location", cmd.PersistentFlags().Lookup("location"))
+	viper.BindPFlag("output", cmd.PersistentFlags().Lookup("output"))
+	viper.BindPFlag("percentiles", cmd.PersistentFlags().Lookup("percentiles"))
+	viper.BindPFlag("pagenation_limit", cmd.PersistentFlags().Lookup("page"))
 }
