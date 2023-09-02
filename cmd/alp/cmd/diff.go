@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/tkuchiki/alp/options"
 	"github.com/tkuchiki/alp/stats"
 )
 
@@ -15,7 +16,20 @@ func NewDiffCmd(rootCmd *cobra.Command) *cobra.Command {
 		Long:  `Show the difference between the two profile results`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			sortOptions := stats.NewSortOptions()
-			opts, err := createOptions(cmd, sortOptions)
+			var opts *options.Options
+
+			config, err := cmd.PersistentFlags().GetString("config")
+			if err != nil {
+				return err
+			}
+
+			if config != "" {
+				bindCommonFlags(cmd)
+				opts, err = createOptionsFromConfig(cmd, sortOptions, config)
+			} else {
+				opts, err = createCommonOptionsFromFlags(cmd, sortOptions)
+			}
+
 			if err != nil {
 				return err
 			}

@@ -1,11 +1,9 @@
 package options
 
 import (
-	"io"
 	"net"
 
 	"github.com/tkuchiki/alp/helpers"
-	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -60,61 +58,61 @@ var DefaultPercentilesOption = []int{90, 95, 99}
 var DefaultPcapServerIPsOption = getDefaultPcapServerIPsOption()
 
 type Options struct {
-	File                    string         `yaml:"file"`
-	Dump                    string         `yaml:"dump"`
-	Load                    string         `yaml:"load"`
-	Sort                    string         `yaml:"sort"`
-	Reverse                 bool           `yaml:"reverse"`
-	QueryString             bool           `yaml:"query_string"`
-	QueryStringIgnoreValues bool           `yaml:"query_string_ignore_values"`
-	DecodeUri               bool           `yaml:"decode_uri"`
-	Format                  string         `yaml:"format"`
-	NoHeaders               bool           `yaml:"noheaders"`
-	ShowFooters             bool           `yaml:"show_footers"`
-	Limit                   int            `yaml:"limit"`
-	MatchingGroups          []string       `yaml:"matching_groups"`
-	Filters                 string         `yaml:"filters"`
-	PosFile                 string         `yaml:"pos_file"`
-	NoSavePos               bool           `yaml:"nosave_pos"`
-	Location                string         `yaml:"location"`
-	Output                  string         `yaml:"output"`
-	Percentiles             []int          `yaml:"percentiles"`
-	PaginationLimit         int            `yaml:"pagination_limit"`
-	LTSV                    *LTSVOptions   `yaml:"ltsv"`
-	Regexp                  *RegexpOptions `yaml:"regexp"`
-	JSON                    *JSONOptions   `yaml:"json"`
-	Pcap                    *PcapOptions   `yaml:"pcap"`
+	File                    string         `mapstructure:"file"`
+	Dump                    string         `mapstructure:"dump"`
+	Load                    string         `mapstructure:"load"`
+	Sort                    string         `mapstructure:"sort"`
+	Reverse                 bool           `mapstructure:"reverse"`
+	QueryString             bool           `mapstructure:"query_string"`
+	QueryStringIgnoreValues bool           `mapstructure:"query_string_ignore_values"`
+	DecodeUri               bool           `mapstructure:"decode_uri"`
+	Format                  string         `mapstructure:"format"`
+	NoHeaders               bool           `mapstructure:"noheaders"`
+	ShowFooters             bool           `mapstructure:"show_footers"`
+	Limit                   int            `mapstructure:"limit"`
+	MatchingGroups          []string       `mapstructure:"matching_groups"`
+	Filters                 string         `mapstructure:"filters"`
+	PosFile                 string         `mapstructure:"pos_file"`
+	NoSavePos               bool           `mapstructure:"nosave_pos"`
+	Location                string         `mapstructure:"location"`
+	Output                  string         `mapstructure:"output"`
+	Percentiles             []int          `mapstructure:"percentiles"`
+	PaginationLimit         int            `mapstructure:"pagination_limit"`
+	LTSV                    *LTSVOptions   `mapstructure:"ltsv"`
+	Regexp                  *RegexpOptions `mapstructure:"regexp"`
+	JSON                    *JSONOptions   `mapstructure:"json"`
+	Pcap                    *PcapOptions   `mapstructure:"pcap"`
 }
 
 type LTSVOptions struct {
-	ApptimeLabel string `yaml:"apptime_label"`
-	ReqtimeLabel string `yaml:"reqtime_label"`
-	StatusLabel  string `yaml:"status_label"`
-	SizeLabel    string `yaml:"size_label"`
-	MethodLabel  string `yaml:"method_label"`
-	UriLabel     string `yaml:"uri_label"`
-	TimeLabel    string `yaml:"time_label"`
+	ApptimeLabel string `mapstructure:"apptime_label"`
+	ReqtimeLabel string `mapstructure:"reqtime_label"`
+	StatusLabel  string `mapstructure:"status_label"`
+	SizeLabel    string `mapstructure:"size_label"`
+	MethodLabel  string `mapstructure:"method_label"`
+	UriLabel     string `mapstructure:"uri_label"`
+	TimeLabel    string `mapstructure:"time_label"`
 }
 
 type RegexpOptions struct {
-	Pattern            string `yaml:"pattern"`
-	UriSubexp          string `yaml:"uri_subexp"`
-	MethodSubexp       string `yaml:"method_subexp"`
-	TimeSubexp         string `yaml:"time_subexp"`
-	ResponseTimeSubexp string `yaml:"response_time_subexp"`
-	RequestTimeSubexp  string `yaml:"request_time_subexp"`
-	BodyBytesSubexp    string `yaml:"body_bytes_subexp"`
-	StatusSubexp       string `yaml:"status_subexp"`
+	Pattern            string `mapstructure:"pattern"`
+	UriSubexp          string `mapstructure:"uri_subexp"`
+	MethodSubexp       string `mapstructure:"method_subexp"`
+	TimeSubexp         string `mapstructure:"time_subexp"`
+	ResponseTimeSubexp string `mapstructure:"response_time_subexp"`
+	RequestTimeSubexp  string `mapstructure:"request_time_subexp"`
+	BodyBytesSubexp    string `mapstructure:"body_bytes_subexp"`
+	StatusSubexp       string `mapstructure:"status_subexp"`
 }
 
 type JSONOptions struct {
-	UriKey          string `yaml:"uri_key"`
-	MethodKey       string `yaml:"method_key"`
-	TimeKey         string `yaml:"time_key"`
-	ResponseTimeKey string `yaml:"response_time_key"`
-	RequestTimeKey  string `yaml:"request_time_key"`
-	BodyBytesKey    string `yaml:"body_bytes_key"`
-	StatusKey       string `yaml:"status_key"`
+	UriKey          string `mapstructure:"uri_key"`
+	MethodKey       string `mapstructure:"method_key"`
+	TimeKey         string `mapstructure:"time_key"`
+	ResponseTimeKey string `mapstructure:"response_time_key"`
+	RequestTimeKey  string `mapstructure:"request_time_key"`
+	BodyBytesKey    string `mapstructure:"body_bytes_key"`
+	StatusKey       string `mapstructure:"status_key"`
 }
 
 type PcapOptions struct {
@@ -553,70 +551,6 @@ func SetOptions(options *Options, opt ...Option) *Options {
 	}
 
 	return options
-}
-
-func LoadOptionsFromReader(r io.Reader) (*Options, error) {
-	opts := NewOptions()
-	buf, err := io.ReadAll(r)
-	if err != nil {
-		return opts, err
-	}
-
-	configs := NewOptions()
-	err = yaml.Unmarshal(buf, configs)
-
-	opts = SetOptions(opts,
-		Sort(configs.Sort),
-		Dump(configs.Dump),
-		Load(configs.Load),
-		Limit(configs.Limit),
-		Location(configs.Location),
-		Output(configs.Output),
-		Reverse(configs.Reverse),
-		File(configs.File),
-		QueryString(configs.QueryString),
-		QueryStringIgnoreValues(configs.QueryStringIgnoreValues),
-		DecodeUri(configs.DecodeUri),
-		Format(configs.Format),
-		NoHeaders(configs.NoHeaders),
-		ShowFooters(configs.ShowFooters),
-		PosFile(configs.PosFile),
-		NoSavePos(configs.NoSavePos),
-		MatchingGroups(configs.MatchingGroups),
-		Filters(configs.Filters),
-		Percentiles(configs.Percentiles),
-		PaginationLimit(configs.PaginationLimit),
-		// ltsv
-		ApptimeLabel(configs.LTSV.ApptimeLabel),
-		ReqtimeLabel(configs.LTSV.ReqtimeLabel),
-		StatusLabel(configs.LTSV.StatusLabel),
-		SizeLabel(configs.LTSV.SizeLabel),
-		MethodLabel(configs.LTSV.MethodLabel),
-		UriLabel(configs.LTSV.UriLabel),
-		TimeLabel(configs.LTSV.TimeLabel),
-		// json
-		ResponseTimeKey(configs.JSON.ResponseTimeKey),
-		RequestTimeKey(configs.JSON.RequestTimeKey),
-		StatusKey(configs.JSON.StatusKey),
-		BodyBytesKey(configs.JSON.BodyBytesKey),
-		MethodKey(configs.JSON.MethodKey),
-		UriKey(configs.JSON.UriKey),
-		TimeKey(configs.JSON.TimeKey),
-		// regexp
-		Pattern(configs.Regexp.Pattern),
-		ResponseTimeSubexp(configs.Regexp.ResponseTimeSubexp),
-		RequestTimeSubexp(configs.Regexp.RequestTimeSubexp),
-		StatusSubexp(configs.Regexp.StatusSubexp),
-		BodyBytesSubexp(configs.Regexp.BodyBytesSubexp),
-		MethodSubexp(configs.Regexp.MethodSubexp),
-		UriSubexp(configs.Regexp.UriSubexp),
-		TimeSubexp(configs.Regexp.TimeSubexp),
-		// pcap
-		PcapServerIPs(configs.Pcap.ServerIPs),
-		PcapServerPort(configs.Pcap.ServerPort),
-	)
-
-	return opts, err
 }
 
 func getDefaultPcapServerIPsOption() (ips []string) {
