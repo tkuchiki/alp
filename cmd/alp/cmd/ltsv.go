@@ -12,7 +12,7 @@ import (
 	"github.com/tkuchiki/alp/stats"
 )
 
-func NewLTSVCmd(rootCmd *cobra.Command) *cobra.Command {
+func NewLTSVCmd() *cobra.Command {
 	var ltsvCmd = &cobra.Command{
 		Use:   "ltsv",
 		Short: "Profile the logs for LTSV",

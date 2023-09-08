@@ -12,7 +12,7 @@ import (
 	"github.com/tkuchiki/alp/stats"
 )
 
-func NewJSONCmd(rootCmd *cobra.Command) *cobra.Command {
+func NewJSONCmd() *cobra.Command {
 	var jsonCmd = &cobra.Command{
 		Use:   "json",
 		Short: "Profile the logs for JSON",

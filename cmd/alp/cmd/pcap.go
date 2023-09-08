@@ -12,7 +12,7 @@ import (
 	"github.com/tkuchiki/alp/stats"
 )
 
-func NewPcapCmd(rootCmd *cobra.Command) *cobra.Command {
+func NewPcapCmd() *cobra.Command {
 	var pcapCmd = &cobra.Command{
 		Use:   "pcap",
 		Short: "Profile the HTTP requests for captured packets",

@@ -8,7 +8,7 @@ import (
 	"github.com/tkuchiki/alp/stats"
 )
 
-func NewDiffCmd(rootCmd *cobra.Command) *cobra.Command {
+func NewDiffCmd() *cobra.Command {
 	diffCmd := &cobra.Command{
 		Use:   "diff <from> <to>",
 		Args:  cobra.ExactArgs(2),
