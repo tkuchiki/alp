@@ -1,0 +1,201 @@
+- uri: /foo/bar
+  count: 5
+  status1xx: 0
+  status2xx: 5
+  status3xx: 0
+  status4xx: 0
+  status5xx: 0
+  method: POST
+  response_time:
+    max: 0.334
+    min: 0.017
+    sum: 0.648
+    usepercentile: true
+    percentiles:
+    - 0.017
+    - 0.05
+    - 0.334
+    - 0.157
+    - 0.09
+  request_body_bytes:
+    max: 34
+    min: 12
+    sum: 126
+    usepercentile: false
+    percentiles: []
+  response_body_bytes:
+    max: 0
+    min: 0
+    sum: 0
+    usepercentile: false
+    percentiles: []
+  time: ""
+- uri: /foo/bar
+  count: 2
+  status1xx: 0
+  status2xx: 2
+  status3xx: 0
+  status4xx: 0
+  status5xx: 0
+  method: GET
+  response_time:
+    max: 0.123
+    min: 0.113
+    sum: 0.236
+    usepercentile: true
+    percentiles:
+    - 0.123
+    - 0.113
+  request_body_bytes:
+    max: 56
+    min: 56
+    sum: 112
+    usepercentile: false
+    percentiles: []
+  response_body_bytes:
+    max: 0
+    min: 0
+    sum: 0
+    usepercentile: false
+    percentiles: []
+  time: ""
+- uri: /hoge/piyo
+  count: 1
+  status1xx: 0
+  status2xx: 1
+  status3xx: 0
+  status4xx: 0
+  status5xx: 0
+  method: POST
+  response_time:
+    max: 1.234
+    min: 1.234
+    sum: 1.234
+    usepercentile: true
+    percentiles:
+    - 1.234
+  request_body_bytes:
+    max: 34
+    min: 34
+    sum: 34
+    usepercentile: false
+    percentiles: []
+  response_body_bytes:
+    max: 0
+    min: 0
+    sum: 0
+    usepercentile: false
+    percentiles: []
+  time: ""
+- uri: /diary/entry/1234
+  count: 1
+  status1xx: 0
+  status2xx: 1
+  status3xx: 0
+  status4xx: 0
+  status5xx: 0
+  method: GET
+  response_time:
+    max: 0.335
+    min: 0.335
+    sum: 0.335
+    usepercentile: true
+    percentiles:
+    - 0.335
+  request_body_bytes:
+    max: 15
+    min: 15
+    sum: 15
+    usepercentile: false
+    percentiles: []
+  response_body_bytes:
+    max: 0
+    min: 0
+    sum: 0
+    usepercentile: false
+    percentiles: []
+  time: ""
+- uri: /diary/entry/5678
+  count: 1
+  status1xx: 0
+  status2xx: 1
+  status3xx: 0
+  status4xx: 0
+  status5xx: 0
+  method: GET
+  response_time:
+    max: 0.332
+    min: 0.332
+    sum: 0.332
+    usepercentile: true
+    percentiles:
+    - 0.332
+  request_body_bytes:
+    max: 30
+    min: 30
+    sum: 30
+    usepercentile: false
+    percentiles: []
+  response_body_bytes:
+    max: 0
+    min: 0
+    sum: 0
+    usepercentile: false
+    percentiles: []
+  time: ""
+- uri: /foo/bar/5xx
+  count: 1
+  status1xx: 0
+  status2xx: 0
+  status3xx: 0
+  status4xx: 0
+  status5xx: 1
+  method: GET
+  response_time:
+    max: 48
+    min: 48
+    sum: 48
+    usepercentile: true
+    percentiles:
+    - 48
+  request_body_bytes:
+    max: 15
+    min: 15
+    sum: 15
+    usepercentile: false
+    percentiles: []
+  response_body_bytes:
+    max: 0
+    min: 0
+    sum: 0
+    usepercentile: false
+    percentiles: []
+  time: ""
+- uri: /req
+  count: 1
+  status1xx: 0
+  status2xx: 1
+  status3xx: 0
+  status4xx: 0
+  status5xx: 0
+  method: GET
+  response_time:
+    max: 0.121
+    min: 0.121
+    sum: 0.121
+    usepercentile: true
+    percentiles:
+    - 0.121
+  request_body_bytes:
+    max: 15
+    min: 15
+    sum: 15
+    usepercentile: false
+    percentiles: []
+  response_body_bytes:
+    max: 0
+    min: 0
+    sum: 0
+    usepercentile: false
+    percentiles: []
+  time: ""

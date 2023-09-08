@@ -181,6 +181,7 @@ func createCommonOptionsFromFlags(cmd *cobra.Command, sortOptions *stats.SortOpt
 func createOptionsFromConfig(cmd *cobra.Command, sortOptions *stats.SortOptions, config string) (*options.Options, error) {
 	opts := options.NewOptions()
 	viper.SetConfigFile(config)
+	viper.SetConfigType("yaml")
 
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, err

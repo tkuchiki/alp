@@ -23,11 +23,11 @@ func NewRootCmd(version string) *cobra.Command {
 		},
 	}
 
-	rootCmd.AddCommand(NewLTSVCmd(rootCmd))
-	rootCmd.AddCommand(NewJSONCmd(rootCmd))
-	rootCmd.AddCommand(NewRegexpCmd(rootCmd))
-	rootCmd.AddCommand(NewPcapCmd(rootCmd))
-	rootCmd.AddCommand(NewDiffCmd(rootCmd))
+	rootCmd.AddCommand(NewLTSVCmd())
+	rootCmd.AddCommand(NewJSONCmd())
+	rootCmd.AddCommand(NewRegexpCmd())
+	rootCmd.AddCommand(NewPcapCmd())
+	rootCmd.AddCommand(NewDiffCmd())
 	rootCmd.AddCommand(NewCountCmd())
 	rootCmd.SetVersionTemplate(fmt.Sprintln(version))
 

@@ -12,7 +12,7 @@ import (
 	"github.com/tkuchiki/alp/stats"
 )
 
-func NewRegexpCmd(rootCmd *cobra.Command) *cobra.Command {
+func NewRegexpCmd() *cobra.Command {
 	var regexpCmd = &cobra.Command{
 		Use:   "regexp",
 		Short: "Profile the logs that match a regular expression",
