@@ -19,7 +19,7 @@ func TestLTSVCmd(t *testing.T) {
 
 	ltsvLog := testutil.LTSVLog(keys)
 
-	tempFile, err := testutil.CreateTempDirAndFile(t.TempDir(), ltsvLog)
+	tempFile, err := testutil.CreateTempDirAndFile(t.TempDir(), "test_ltsv_cmd_temp_file", ltsvLog)
 	if err != nil {
 		t.Fatal(err)
 	}

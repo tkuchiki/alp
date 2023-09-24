@@ -10,22 +10,22 @@ import (
 func TestCommonFlags(t *testing.T) {
 	tempDir := t.TempDir()
 
-	tempLog, err := testutil.CreateTempDirAndFile(tempDir, testutil.JsonLog(testutil.NewJsonLogKeys()))
+	tempLog, err := testutil.CreateTempDirAndFile(tempDir, "test_common_flags_temp_log", testutil.JsonLog(testutil.NewJsonLogKeys()))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	tempConfig, err := testutil.CreateTempDirAndFile(tempDir, testutil.ConfigFile())
+	tempConfig, err := testutil.CreateTempDirAndFile(tempDir, "test_common_flags_temp_config", testutil.ConfigFile())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	tempPos, err := testutil.CreateTempDirAndFile(tempDir, "")
+	tempPos, err := testutil.CreateTempDirAndFile(tempDir, "test_common_flags_temp_pos", "")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	tempDump, err := testutil.CreateTempDirAndFile(tempDir, "")
+	tempDump, err := testutil.CreateTempDirAndFile(tempDir, "test_common_flags_temp_dump", "")
 	if err != nil {
 		t.Fatal(err)
 	}

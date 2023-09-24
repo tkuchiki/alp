@@ -1,11 +1,14 @@
 package testutil
 
 import (
-	"fmt"
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
+	"text/template"
+
+	"github.com/tkuchiki/alp/options"
+	"github.com/tkuchiki/alp/stats"
 )
 
 type LogKeys struct {
@@ -42,8 +45,8 @@ func NewLTSVLogKeys() LogKeys {
 	}
 }
 
-func CreateTempDirAndFile(dir, content string) (string, error) {
-	fpath := filepath.Join(dir, fmt.Sprint(time.Now().UnixNano()))
+func CreateTempDirAndFile(dir, filename, content string) (string, error) {
+	fpath := filepath.Join(dir, filename)
 	err := os.WriteFile(fpath, []byte(content), 0644)
 
 	return fpath, err
@@ -107,4 +110,214 @@ func ConfigFile() string {
 	return `sort: max
 reverse: true
 query_string: true`
+}
+
+func DummyOptions(sort string) *options.Options {
+	sortOptions := stats.NewSortOptions()
+	sortOptions.SetAndValidate(sort)
+
+	return &options.Options{
+		File:                    "/path/to/file",
+		Sort:                    sortOptions.SortType(),
+		Location:                "dummy",
+		Reverse:                 false,
+		QueryString:             false,
+		QueryStringIgnoreValues: false,
+		DecodeUri:               false,
+		Format:                  "markdown",
+		Limit:                   100,
+		NoHeaders:               false,
+		ShowFooters:             false,
+		MatchingGroups: []string{
+			"/foo/.+",
+		},
+		Filters:         ".Uri == '/foo/bar'",
+		Output:          "count,uri,min,max",
+		PosFile:         "/path/to/pos",
+		NoSavePos:       false,
+		Percentiles:     []int{1, 5},
+		PaginationLimit: 10,
+		LTSV: &options.LTSVOptions{
+			UriLabel:     "u",
+			MethodLabel:  "m",
+			TimeLabel:    "t",
+			ApptimeLabel: "a",
+			ReqtimeLabel: "r",
+			SizeLabel:    "sz",
+			StatusLabel:  "st",
+		},
+		JSON: &options.JSONOptions{
+			UriKey:          "u",
+			MethodKey:       "m",
+			TimeKey:         "t",
+			ResponseTimeKey: "res",
+			RequestTimeKey:  "req",
+			BodyBytesKey:    "b",
+			StatusKey:       "s",
+		},
+		Regexp: &options.RegexpOptions{
+			Pattern:            "dummy pattern",
+			UriSubexp:          "u",
+			MethodSubexp:       "m",
+			TimeSubexp:         "t",
+			ResponseTimeSubexp: "res",
+			RequestTimeSubexp:  "req",
+			BodyBytesSubexp:    "b",
+			StatusSubexp:       "s",
+		},
+		Pcap: &options.PcapOptions{
+			ServerIPs: []string{
+				"192.168.1.10",
+			},
+			ServerPort: 12345,
+		},
+		Count: &options.CountOptions{
+			Keys: []string{
+				"ua",
+			},
+		},
+	}
+}
+
+func DummyOverwrittenOptions(sort string) *options.Options {
+	sortOptions := stats.NewSortOptions()
+	sortOptions.SetAndValidate(sort)
+
+	return &options.Options{
+		File:                    "/path/to/overwritten/file",
+		Sort:                    sortOptions.SortType(),
+		Location:                "overwritten location",
+		Reverse:                 true,
+		QueryString:             true,
+		QueryStringIgnoreValues: true,
+		DecodeUri:               true,
+		Format:                  "tsv",
+		Limit:                   200,
+		NoHeaders:               true,
+		ShowFooters:             true,
+		MatchingGroups: []string{
+			"/foo/bar/.+",
+			"/bar/.+",
+		},
+		Filters:         ".Status == 200",
+		Output:          "uri,avg",
+		PosFile:         "/path/to/overwritten/pos",
+		NoSavePos:       true,
+		Percentiles:     []int{5, 9},
+		PaginationLimit: 20,
+		LTSV: &options.LTSVOptions{
+			UriLabel:     "u2",
+			MethodLabel:  "m2",
+			TimeLabel:    "t2",
+			ApptimeLabel: "a2",
+			ReqtimeLabel: "r2",
+			SizeLabel:    "sz2",
+			StatusLabel:  "st2",
+		},
+		JSON: &options.JSONOptions{
+			UriKey:          "u2",
+			MethodKey:       "m2",
+			TimeKey:         "t2",
+			ResponseTimeKey: "res2",
+			RequestTimeKey:  "req2",
+			BodyBytesKey:    "b2",
+			StatusKey:       "s2",
+		},
+		Regexp: &options.RegexpOptions{
+			UriSubexp:          "u2",
+			MethodSubexp:       "m2",
+			TimeSubexp:         "t2",
+			ResponseTimeSubexp: "res2",
+			RequestTimeSubexp:  "req2",
+			BodyBytesSubexp:    "b2",
+			StatusSubexp:       "s2",
+		},
+		Pcap: &options.PcapOptions{
+			ServerIPs: []string{
+				"192.168.1.20",
+			},
+			ServerPort: 54321,
+		},
+		Count: &options.CountOptions{
+			Keys: []string{
+				"host",
+				"user_agent",
+			},
+		},
+	}
+}
+
+func DummyConfigFile(sort string, dummyOpts *options.Options) string {
+	configTmpl := `file: {{ .File }}
+sort: ` + sort + `
+reverse: {{ .Reverse }}
+query_string: {{ .QueryString }}
+query_string_ignore_values: {{ .QueryStringIgnoreValues }}
+decode_uri: {{ .DecodeUri }}
+format: {{ .Format }}
+limit: {{ .Limit }}
+noheaders: {{ .NoHeaders }}
+show_footers: {{ .ShowFooters }}
+matching_groups:
+{{ range .MatchingGroups }}
+  - {{ . }}
+{{ end }}
+filters: {{ .Filters }}
+output: {{ .Output }}
+pos_file: {{ .PosFile }}
+nosave_pos: {{ .NoSavePos }}
+location: {{ .Location }}
+percentiles:
+{{ range .Percentiles }}
+  - {{ . }}
+{{ end }}
+pagination_limit: {{ .PaginationLimit }}
+ltsv:
+  uri_label: {{ .LTSV.UriLabel }}
+  method_label: {{ .LTSV.MethodLabel }}
+  time_label: {{ .LTSV.TimeLabel }}
+  apptime_label: {{ .LTSV.ApptimeLabel }}
+  reqtime_label: {{ .LTSV.ReqtimeLabel }}
+  size_label: {{ .LTSV.SizeLabel }}
+  status_label: {{ .LTSV.StatusLabel }}
+json:
+  uri_key: {{ .JSON.UriKey }}
+  method_key: {{ .JSON.MethodKey }}
+  time_key: {{ .JSON.TimeKey }}
+  response_time_key: {{ .JSON.ResponseTimeKey }}
+  request_time_key: {{ .JSON.RequestTimeKey }}
+  body_bytes_key: {{ .JSON.BodyBytesKey }}
+  status_key: {{ .JSON.StatusKey }}
+regexp:
+  pattern: {{ .Regexp.Pattern }}
+  uri_subexp: {{ .Regexp.UriSubexp }}
+  method_subexp: {{ .Regexp.MethodSubexp }}
+  time_subexp: {{ .Regexp.TimeSubexp }}
+  response_time_subexp: {{ .Regexp.ResponseTimeSubexp }}
+  request_time_subexp: {{ .Regexp.RequestTimeSubexp }}
+  body_bytes_subexp: {{ .Regexp.BodyBytesSubexp }}
+  status_subexp: {{ .Regexp.StatusSubexp }}
+pcap:
+  server_ips:
+{{ range .Pcap.ServerIPs }}
+    - {{ . }}
+{{ end }}
+  server_port: {{ .Pcap.ServerPort }}
+count:
+  keys:
+{{ range .Count.Keys }}
+    - {{ . }}
+{{ end }}
+`
+	t, err := template.New("dummy_config").Parse(configTmpl)
+	if err != nil {
+		panic(err)
+	}
+
+	var buf bytes.Buffer
+	if err = t.Execute(&buf, dummyOpts); err != nil {
+		panic(err)
+	}
+
+	return buf.String()
 }

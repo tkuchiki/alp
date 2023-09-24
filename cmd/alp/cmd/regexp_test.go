@@ -19,7 +19,7 @@ func TestRegexpCmd(t *testing.T) {
 
 	regexpLog := testutil.RegexpLog()
 
-	tempFile, err := testutil.CreateTempDirAndFile(t.TempDir(), regexpLog)
+	tempFile, err := testutil.CreateTempDirAndFile(t.TempDir(), "test_regexp_cmd_temp_file", regexpLog)
 	if err != nil {
 		t.Fatal(err)
 	}

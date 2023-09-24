@@ -3,6 +3,7 @@ module github.com/tkuchiki/alp
 require (
 	github.com/Songmu/go-ltsv v0.0.0-20200903131950-a608c3f6a014
 	github.com/antonmedv/expr v1.8.9
+	github.com/google/go-cmp v0.5.9
 	github.com/google/gopacket v1.1.19
 	github.com/kylelemons/godebug v1.1.0
 	github.com/olekukonko/tablewriter v0.0.5
