@@ -23,12 +23,16 @@ func NewRootCmd(version string) *cobra.Command {
 		},
 	}
 
-	rootCmd.AddCommand(NewLTSVCmd())
-	rootCmd.AddCommand(NewJSONCmd())
-	rootCmd.AddCommand(NewRegexpCmd())
-	rootCmd.AddCommand(NewPcapCmd())
-	rootCmd.AddCommand(NewDiffCmd())
-	rootCmd.AddCommand(NewCountCmd())
+	commandFlags := newFlags()
+
+	commandFlags.defineGlobalOptions(rootCmd)
+
+	rootCmd.AddCommand(NewLTSVCmd(commandFlags))
+	rootCmd.AddCommand(NewJSONCmd(commandFlags))
+	rootCmd.AddCommand(NewRegexpCmd(commandFlags))
+	rootCmd.AddCommand(NewPcapCmd(commandFlags))
+	rootCmd.AddCommand(NewDiffCmd(commandFlags))
+	rootCmd.AddCommand(NewCountCmd(commandFlags))
 	rootCmd.SetVersionTemplate(fmt.Sprintln(version))
 
 	return rootCmd

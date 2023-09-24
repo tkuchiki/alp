@@ -82,6 +82,7 @@ type Options struct {
 	Regexp                  *RegexpOptions `mapstructure:"regexp"`
 	JSON                    *JSONOptions   `mapstructure:"json"`
 	Pcap                    *PcapOptions   `mapstructure:"pcap"`
+	Count                   *CountOptions  `mapstructure:"count"`
 }
 
 type LTSVOptions struct {
@@ -116,8 +117,12 @@ type JSONOptions struct {
 }
 
 type PcapOptions struct {
-	ServerIPs  []string `yaml:"server_ips"`
-	ServerPort uint16   `yaml:"server_port"`
+	ServerIPs  []string `mapstructure:"server_ips"`
+	ServerPort uint16   `mapstructure:"server_port"`
+}
+
+type CountOptions struct {
+	Keys []string `mapstructure:"keys"`
 }
 
 type Option func(*Options)
@@ -487,6 +492,15 @@ func PcapServerPort(n uint16) Option {
 	}
 }
 
+// count
+func CountKeys(ss []string) Option {
+	return func(opts *Options) {
+		if len(ss) > 0 {
+			opts.Count.Keys = ss
+		}
+	}
+}
+
 func NewOptions(opt ...Option) *Options {
 	ltsv := &LTSVOptions{
 		ApptimeLabel: DefaultApptimeLabelOption,
@@ -524,6 +538,8 @@ func NewOptions(opt ...Option) *Options {
 		ServerPort: DefaultPcapServerPortOption,
 	}
 
+	count := &CountOptions{}
+
 	options := &Options{
 		Sort:            DefaultSortOption,
 		Format:          DefaultFormatOption,
@@ -536,6 +552,7 @@ func NewOptions(opt ...Option) *Options {
 		Regexp:          regexp,
 		JSON:            json,
 		Pcap:            pcap,
+		Count:           count,
 	}
 
 	for _, o := range opt {

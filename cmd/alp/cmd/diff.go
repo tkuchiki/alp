@@ -4,32 +4,17 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/tkuchiki/alp/options"
 	"github.com/tkuchiki/alp/stats"
 )
 
-func NewDiffCmd() *cobra.Command {
+func NewDiffCmd(commandFlags *flags) *cobra.Command {
 	diffCmd := &cobra.Command{
 		Use:   "diff <from> <to>",
 		Args:  cobra.ExactArgs(2),
 		Short: "Show the difference between the two profile results",
 		Long:  `Show the difference between the two profile results`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			sortOptions := stats.NewSortOptions()
-			var opts *options.Options
-
-			config, err := cmd.PersistentFlags().GetString("config")
-			if err != nil {
-				return err
-			}
-
-			if config != "" {
-				bindCommonFlags(cmd)
-				opts, err = createOptionsFromConfig(cmd, sortOptions, config)
-			} else {
-				opts, err = createCommonOptionsFromFlags(cmd, sortOptions)
-			}
-
+			opts, err := commandFlags.createDiffOptions(cmd)
 			if err != nil {
 				return err
 			}
@@ -45,7 +30,7 @@ func NewDiffCmd() *cobra.Command {
 			}
 
 			sts.SetOptions(opts)
-			sts.SetSortOptions(sortOptions)
+			sts.SetSortOptions(commandFlags.sortOptions)
 
 			printOptions := stats.NewPrintOptions(opts.NoHeaders, opts.ShowFooters, opts.DecodeUri, opts.PaginationLimit)
 			printer := stats.NewPrinter(os.Stdout, opts.Output, opts.Format, opts.Percentiles, printOptions)
@@ -72,7 +57,7 @@ func NewDiffCmd() *cobra.Command {
 			}
 
 			toSts.SetOptions(opts)
-			toSts.SetSortOptions(sortOptions)
+			toSts.SetSortOptions(commandFlags.sortOptions)
 
 			tof, err := os.Open(to)
 			if err != nil {
@@ -92,7 +77,11 @@ func NewDiffCmd() *cobra.Command {
 		},
 	}
 
-	defineOptions(diffCmd)
+	commandFlags.defineDiffOptions(diffCmd)
+
+	diffCmd.Flags().SortFlags = false
+	diffCmd.PersistentFlags().SortFlags = false
+	diffCmd.InheritedFlags().SortFlags = false
 
 	return diffCmd
 }

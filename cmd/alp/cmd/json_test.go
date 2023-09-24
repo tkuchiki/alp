@@ -19,7 +19,7 @@ func TestJSONCmd(t *testing.T) {
 
 	jsonLog := testutil.JsonLog(keys)
 
-	tempFile, err := testutil.CreateTempDirAndFile(t.TempDir(), jsonLog)
+	tempFile, err := testutil.CreateTempDirAndFile(t.TempDir(), "test_json_cmd_temp_file", jsonLog)
 	if err != nil {
 		t.Fatal(err)
 	}
