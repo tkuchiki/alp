@@ -10,13 +10,13 @@ import (
 	"github.com/tkuchiki/alp/parsers"
 )
 
-func NewCountCmd(commandFlags *flags) *cobra.Command {
+func newCountCmd(flags *flags) *cobra.Command {
 	var countCmd = &cobra.Command{
 		Use:   "count",
 		Short: "Count by log entries",
 		Long:  `Count by log entries`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			opts, err := commandFlags.createCountOptions(cmd)
+			opts, err := flags.createCountOptions(cmd)
 			if err != nil {
 				return err
 			}
@@ -75,7 +75,7 @@ func NewCountCmd(commandFlags *flags) *cobra.Command {
 		},
 	}
 
-	commandFlags.defineCountOptions(countCmd)
+	flags.defineCountOptions(countCmd)
 
 	// TODO: Remove these after implementing `alp (json|ltsv|regex) count`.
 	countCmd.PersistentFlags().StringP("pattern", "", options.DefaultPatternOption, "Regular expressions pattern matching the log")

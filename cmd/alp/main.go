@@ -9,7 +9,8 @@ import (
 var version string
 
 func main() {
-	if err := cmd.Execute(version); err != nil {
+	command := cmd.NewCommand(version)
+	if err := command.Execute(); err != nil {
 		log.Fatal(err)
 	}
 }

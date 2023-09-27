@@ -4,17 +4,19 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/tkuchiki/alp/parsers"
+	"github.com/tkuchiki/alp/profiler"
 	"github.com/tkuchiki/alp/stats"
 )
 
-func NewDiffCmd(commandFlags *flags) *cobra.Command {
+func newDiffCmd(flags *flags) *cobra.Command {
 	diffCmd := &cobra.Command{
 		Use:   "diff <from> <to>",
 		Args:  cobra.ExactArgs(2),
 		Short: "Show the difference between the two profile results",
 		Long:  `Show the difference between the two profile results`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			opts, err := commandFlags.createDiffOptions(cmd)
+			opts, err := flags.createDiffOptions(cmd)
 			if err != nil {
 				return err
 			}
@@ -30,7 +32,7 @@ func NewDiffCmd(commandFlags *flags) *cobra.Command {
 			}
 
 			sts.SetOptions(opts)
-			sts.SetSortOptions(commandFlags.sortOptions)
+			sts.SetSortOptions(flags.sortOptions)
 
 			printOptions := stats.NewPrintOptions(opts.NoHeaders, opts.ShowFooters, opts.DecodeUri, opts.PaginationLimit)
 			printer := stats.NewPrinter(os.Stdout, opts.Output, opts.Format, opts.Percentiles, printOptions)
@@ -57,7 +59,7 @@ func NewDiffCmd(commandFlags *flags) *cobra.Command {
 			}
 
 			toSts.SetOptions(opts)
-			toSts.SetSortOptions(commandFlags.sortOptions)
+			toSts.SetSortOptions(flags.sortOptions)
 
 			tof, err := os.Open(to)
 			if err != nil {
@@ -77,11 +79,40 @@ func NewDiffCmd(commandFlags *flags) *cobra.Command {
 		},
 	}
 
-	commandFlags.defineDiffOptions(diffCmd)
+	flags.defineDiffOptions(diffCmd)
 
 	diffCmd.Flags().SortFlags = false
 	diffCmd.PersistentFlags().SortFlags = false
 	diffCmd.InheritedFlags().SortFlags = false
 
 	return diffCmd
+}
+
+func newDiffSubCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "diff [<from>] <to>",
+		Args:  cobra.RangeArgs(1, 2),
+		Short: "Show the difference between the two access logs",
+		Long:  `Show the difference between the two access logs`,
+	}
+}
+
+func getFromTo(load string, args []string) (string, string) {
+	if load != "" {
+		return "", args[0]
+	}
+
+	return args[0], args[1]
+}
+
+func runDiff(sortOptions *stats.SortOptions,
+	fromProf *profiler.Profiler, fromParser parsers.Parser,
+	toProf *profiler.Profiler, toParser parsers.Parser) error {
+
+	fromSts, err := fromProf.Profile(sortOptions, fromParser)
+	if err != nil {
+		return err
+	}
+
+	return toProf.Run(sortOptions, toParser, fromSts)
 }

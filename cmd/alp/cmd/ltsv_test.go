@@ -35,11 +35,73 @@ func TestLTSVCmd(t *testing.T) {
 		"--status-label", keys.Status,
 	}
 
-	rootCmd := NewRootCmd("test")
-	rootCmd.SetArgs(args)
+	command := NewCommand("test")
+	command.setArgs(args)
 
-	err = rootCmd.Execute()
+	err = command.Execute()
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestLTSVDiffCmd(t *testing.T) {
+	keys := testutil.LogKeys{
+		Uri:          "u",
+		Method:       "m",
+		Time:         "t",
+		ResponseTime: "r",
+		RequestTime:  "r2",
+		BodyBytes:    "b",
+		Status:       "s",
+	}
+
+	ltsvLog := testutil.LTSVLog(keys)
+
+	tempDir := t.TempDir()
+
+	tempFromFile, err := testutil.CreateTempDirAndFile(tempDir, "test_ltsv_diff_cmd_temp_from_file", ltsvLog)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tempToFile, err := testutil.CreateTempDirAndFile(tempDir, "test_ltsv_diff_cmd_temp_to_file", ltsvLog)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tempDump, err := testutil.CreateTempDirAndFile(tempDir, "test_ltsv_diff_cmd_temp_dump", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("alp ltsv diff <from> <to>", func(t *testing.T) {
+		args := []string{"ltsv", "diff",
+			tempFromFile,
+			tempToFile,
+			"--dump", tempDump,
+		}
+
+		command := NewCommand("test")
+		command.setArgs(args)
+
+		err = command.Execute()
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("alp ltsv diff --load <dumpfile> <to>", func(t *testing.T) {
+		args := []string{"ltsv", "diff",
+			"--load", tempDump,
+			tempToFile,
+		}
+
+		command := NewCommand("test")
+		command.setArgs(args)
+
+		err = command.Execute()
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
 }

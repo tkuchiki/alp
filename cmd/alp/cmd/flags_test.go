@@ -13,28 +13,20 @@ import (
 
 func Test_createOptionsFromConfig(t *testing.T) {
 	viper.Reset()
-	rootCmd := NewRootCmd("test")
-	flags := newFlags()
-
-	flags.defineProfileOptions(rootCmd)
-	flags.defineJSONOptions(rootCmd)
-	flags.defineLTSVOptions(rootCmd)
-	flags.defineRegexpOptions(rootCmd)
-	flags.definePcapOptions(rootCmd)
-	flags.defineCountKeys(rootCmd)
+	command := NewCommand("test")
 
 	tempDir := t.TempDir()
 	sort := "max"
 	dummyOpts := testutil.DummyOptions(sort)
 
 	var err error
-	flags.config, err = testutil.CreateTempDirAndFile(tempDir, "test_create_options_from_config_config", testutil.DummyConfigFile(sort, dummyOpts))
+	command.flags.config, err = testutil.CreateTempDirAndFile(tempDir, "test_create_options_from_config_config", testutil.DummyConfigFile(sort, dummyOpts))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	var opts *options.Options
-	opts, err = flags.createOptionsFromConfig(rootCmd)
+	opts, err = command.flags.createOptionsFromConfig(command.rootCmd)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,15 +37,7 @@ func Test_createOptionsFromConfig(t *testing.T) {
 }
 
 func Test_createOptionsFromConfig_overwrite(t *testing.T) {
-	rootCmd := NewRootCmd("test")
-	flags := newFlags()
-
-	flags.defineProfileOptions(rootCmd)
-	flags.defineJSONOptions(rootCmd)
-	flags.defineLTSVOptions(rootCmd)
-	flags.defineRegexpOptions(rootCmd)
-	flags.definePcapOptions(rootCmd)
-	flags.defineCountKeys(rootCmd)
+	command := NewCommand("test")
 
 	tempDir := t.TempDir()
 	sort := "max"
@@ -62,7 +46,7 @@ func Test_createOptionsFromConfig_overwrite(t *testing.T) {
 	overwrittenOpts := testutil.DummyOverwrittenOptions(overwrittenSort)
 
 	var err error
-	flags.config, err = testutil.CreateTempDirAndFile(tempDir, "test_create_options_from_config_overwrite_config", testutil.DummyConfigFile(sort, overwrittenOpts))
+	command.flags.config, err = testutil.CreateTempDirAndFile(tempDir, "test_create_options_from_config_overwrite_config", testutil.DummyConfigFile(sort, overwrittenOpts))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +108,7 @@ func Test_createOptionsFromConfig_overwrite(t *testing.T) {
 	viper.Set("count.keys", overwrittenOpts.Count.Keys)
 
 	var opts *options.Options
-	opts, err = flags.createOptionsFromConfig(rootCmd)
+	opts, err = command.flags.createOptionsFromConfig(command.rootCmd)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -350,6 +350,32 @@ func (f *flags) defineDiffOptions(cmd *cobra.Command) {
 	f.definePage(cmd)
 }
 
+func (f *flags) defineDiffSubCommandOptions(cmd *cobra.Command) {
+	// overwrite and hidden => remove flag
+	cmd.LocalFlags().String(flagFile, "", "")
+	cmd.LocalFlags().MarkHidden(flagFile)
+
+	f.defineDump(cmd)
+	f.defineLoad(cmd)
+	f.defineFormat(cmd)
+	f.defineSort(cmd)
+	f.defineReverse(cmd)
+	f.defineNoHeaders(cmd)
+	f.defineShowFooters(cmd)
+	f.defineLimit(cmd)
+	f.defineOutput(cmd)
+	f.defineQueryString(cmd)
+	f.defineQueryStringIgnoreValues(cmd)
+	f.defineLocation(cmd)
+	f.defineDecodeUri(cmd)
+	f.defineMatchingGroups(cmd)
+	f.defineFilters(cmd)
+	f.definePositionFile(cmd)
+	f.defineNoSavePositionFile(cmd)
+	f.definePercentiles(cmd)
+	f.definePage(cmd)
+}
+
 func (f *flags) bindFlags(cmd *cobra.Command) {
 	viper.BindPFlag("file", cmd.PersistentFlags().Lookup(flagFile))
 	viper.BindPFlag("dump", cmd.PersistentFlags().Lookup(flagDump))
@@ -614,7 +640,6 @@ func (f *flags) setOptions(cmd *cobra.Command, opts *options.Options, flags []st
 
 func (f *flags) setProfileOptions(cmd *cobra.Command, opts *options.Options) (*options.Options, error) {
 	_flags := []string{
-		flagConfig,
 		flagFile,
 		flagDump,
 		flagLoad,
@@ -836,6 +861,32 @@ func (f *flags) setDiffOptions(cmd *cobra.Command, opts *options.Options) (*opti
 	return f.setOptions(cmd, opts, _flags)
 }
 
+func (f *flags) setDiffSubCommandOptions(cmd *cobra.Command, opts *options.Options) (*options.Options, error) {
+	_flags := []string{
+		flagDump,
+		flagLoad,
+		flagFormat,
+		flagSort,
+		flagReverse,
+		flagNoHeaders,
+		flagShowFooters,
+		flagLimit,
+		flagOutput,
+		flagQueryString,
+		flagQueryStringIgnoreValues,
+		flagLocation,
+		flagDecodeUri,
+		flagMatchingGroups,
+		flagFilters,
+		flagPositionFile,
+		flagNoSavePositionFile,
+		flagPercentiles,
+		flagPage,
+	}
+
+	return f.setOptions(cmd, opts, _flags)
+}
+
 func (f *flags) createJSONOptions(cmd *cobra.Command) (*options.Options, error) {
 	if f.config != "" {
 		f.bindFlags(cmd)
@@ -843,6 +894,20 @@ func (f *flags) createJSONOptions(cmd *cobra.Command) (*options.Options, error) 
 	}
 
 	opts, err := f.setProfileOptions(cmd, options.NewOptions())
+	if err != nil {
+		return nil, err
+	}
+
+	return f.setJSONOptions(cmd, opts)
+}
+
+func (f *flags) createJSONDiffOptions(cmd *cobra.Command) (*options.Options, error) {
+	if f.config != "" {
+		f.bindFlags(cmd)
+		return f.createOptionsFromConfig(cmd)
+	}
+
+	opts, err := f.setDiffSubCommandOptions(cmd, options.NewOptions())
 	if err != nil {
 		return nil, err
 	}
@@ -864,6 +929,20 @@ func (f *flags) createLTSVOptions(cmd *cobra.Command) (*options.Options, error) 
 	return f.setLTSVOptions(cmd, opts)
 }
 
+func (f *flags) createLTSVDiffOptions(cmd *cobra.Command) (*options.Options, error) {
+	if f.config != "" {
+		f.bindFlags(cmd)
+		return f.createOptionsFromConfig(cmd)
+	}
+
+	opts, err := f.setDiffSubCommandOptions(cmd, options.NewOptions())
+	if err != nil {
+		return nil, err
+	}
+
+	return f.setLTSVOptions(cmd, opts)
+}
+
 func (f *flags) createRegexpOptions(cmd *cobra.Command) (*options.Options, error) {
 	if f.config != "" {
 		f.bindFlags(cmd)
@@ -878,6 +957,20 @@ func (f *flags) createRegexpOptions(cmd *cobra.Command) (*options.Options, error
 	return f.setRegexpOptions(cmd, opts)
 }
 
+func (f *flags) createRegexpDiffOptions(cmd *cobra.Command) (*options.Options, error) {
+	if f.config != "" {
+		f.bindFlags(cmd)
+		return f.createOptionsFromConfig(cmd)
+	}
+
+	opts, err := f.setDiffSubCommandOptions(cmd, options.NewOptions())
+	if err != nil {
+		return nil, err
+	}
+
+	return f.setRegexpOptions(cmd, opts)
+}
+
 func (f *flags) createPcapOptions(cmd *cobra.Command) (*options.Options, error) {
 	if f.config != "" {
 		f.bindFlags(cmd)
@@ -885,6 +978,20 @@ func (f *flags) createPcapOptions(cmd *cobra.Command) (*options.Options, error) 
 	}
 
 	opts, err := f.setProfileOptions(cmd, options.NewOptions())
+	if err != nil {
+		return nil, err
+	}
+
+	return f.setPcapOptions(cmd, opts)
+}
+
+func (f *flags) createPcapDiffOptions(cmd *cobra.Command) (*options.Options, error) {
+	if f.config != "" {
+		f.bindFlags(cmd)
+		return f.createOptionsFromConfig(cmd)
+	}
+
+	opts, err := f.setDiffSubCommandOptions(cmd, options.NewOptions())
 	if err != nil {
 		return nil, err
 	}

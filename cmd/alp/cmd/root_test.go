@@ -3,9 +3,9 @@ package cmd
 import "testing"
 
 func TestNewRootCmd(t *testing.T) {
-	rootCmd := NewRootCmd("test")
+	command := NewCommand("test")
 
-	err := rootCmd.Execute()
+	err := command.Execute()
 	if err != nil {
 		t.Fatal(err)
 	}

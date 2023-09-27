@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewRootCmd(version string) *cobra.Command {
+func newRootCmd(version string) *cobra.Command {
 	var rootCmd = &cobra.Command{
 		Use:           "alp",
 		Short:         "Access Log Profiler",
@@ -23,22 +23,11 @@ func NewRootCmd(version string) *cobra.Command {
 		},
 	}
 
-	commandFlags := newFlags()
-
-	commandFlags.defineGlobalOptions(rootCmd)
-
-	rootCmd.AddCommand(NewLTSVCmd(commandFlags))
-	rootCmd.AddCommand(NewJSONCmd(commandFlags))
-	rootCmd.AddCommand(NewRegexpCmd(commandFlags))
-	rootCmd.AddCommand(NewPcapCmd(commandFlags))
-	rootCmd.AddCommand(NewDiffCmd(commandFlags))
-	rootCmd.AddCommand(NewCountCmd(commandFlags))
 	rootCmd.SetVersionTemplate(fmt.Sprintln(version))
 
-	return rootCmd
-}
+	rootCmd.Flags().SortFlags = false
+	rootCmd.PersistentFlags().SortFlags = false
+	rootCmd.InheritedFlags().SortFlags = false
 
-func Execute(version string) error {
-	rootCmd := NewRootCmd(version)
-	return rootCmd.Execute()
+	return rootCmd
 }

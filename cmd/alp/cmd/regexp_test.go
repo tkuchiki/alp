@@ -36,11 +36,63 @@ func TestRegexpCmd(t *testing.T) {
 		"--status-subexp", keys.Status,
 	}
 
-	rootCmd := NewRootCmd("test")
-	rootCmd.SetArgs(args)
+	command := NewCommand("test")
+	command.setArgs(args)
 
-	err = rootCmd.Execute()
+	err = command.Execute()
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestRegexpDiffCmd(t *testing.T) {
+	regexpLog := testutil.RegexpLog()
+
+	tempDir := t.TempDir()
+
+	tempFromFile, err := testutil.CreateTempDirAndFile(tempDir, "test_regexp_diff_cmd_temp_from_file", regexpLog)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tempToFile, err := testutil.CreateTempDirAndFile(tempDir, "test_regexp_diff_cmd_temp_to_file", regexpLog)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tempDump, err := testutil.CreateTempDirAndFile(tempDir, "test_regexp_diff_cmd_temp_dump", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("alp regexp diff <from> <to>", func(t *testing.T) {
+		args := []string{"regexp", "diff",
+			tempFromFile,
+			tempToFile,
+			"--dump", tempDump,
+		}
+
+		command := NewCommand("test")
+		command.setArgs(args)
+
+		err = command.Execute()
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	t.Run("alp regexp diff --load <dumpfile> <to>", func(t *testing.T) {
+		args := []string{"regexp", "diff",
+			"--load", tempDump,
+			tempToFile,
+		}
+
+		command := NewCommand("test")
+		command.setArgs(args)
+
+		err = command.Execute()
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
 }
