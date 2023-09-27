@@ -9,10 +9,10 @@ func TestDiffCmd(t *testing.T) {
 		from, to,
 	}
 
-	rootCmd := NewRootCmd("test")
-	rootCmd.SetArgs(args)
+	command := NewCommand("test")
+	command.setArgs(args)
 
-	err := rootCmd.Execute()
+	err := command.Execute()
 	if err != nil {
 		t.Fatal(err)
 	}

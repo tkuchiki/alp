@@ -99,10 +99,10 @@ func TestCommonFlags(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(strings.Join(tt.args, " "), func(t *testing.T) {
-			rootCmd := NewRootCmd("test")
-			rootCmd.SetArgs(tt.args)
+			command := NewCommand("test")
+			command.setArgs(tt.args)
 
-			err := rootCmd.Execute()
+			err := command.Execute()
 			if err != nil {
 				t.Fatal(err)
 			}
