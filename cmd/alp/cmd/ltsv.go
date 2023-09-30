@@ -3,6 +3,8 @@ package cmd
 import (
 	"os"
 
+	"github.com/tkuchiki/alp/log_reader"
+
 	"github.com/spf13/cobra"
 	"github.com/tkuchiki/alp/options"
 	"github.com/tkuchiki/alp/parsers"
@@ -12,8 +14,8 @@ import (
 func newLTSVCmd(flags *flags) *cobra.Command {
 	var ltsvCmd = &cobra.Command{
 		Use:   "ltsv",
-		Short: "Profile the logs for LTSV",
-		Long:  `Profile the logs for LTSV`,
+		Short: "Profile the log_reader for LTSV",
+		Long:  `Profile the log_reader for LTSV`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts, err := flags.createLTSVOptions(cmd)
 			if err != nil {
@@ -107,4 +109,40 @@ func newLTSVDiffCmd(flags *flags) *cobra.Command {
 	ltsvDiffCmd.InheritedFlags().SortFlags = false
 
 	return ltsvDiffCmd
+}
+
+func newLTSVTopNCmd(flags *flags) *cobra.Command {
+	ltsvTopNCmd := newTopNSubCmd()
+	ltsvTopNCmd.RunE = func(cmd *cobra.Command, args []string) error {
+		opts, err := flags.createLTSVTopNOptions(cmd)
+		if err != nil {
+			return err
+		}
+
+		n, err := getN(args)
+		if err != nil {
+			return err
+		}
+
+		logReader := log_reader.NewAccessLogReader(os.Stdout, os.Stderr, opts, n)
+
+		f, err := logReader.Open(opts.File)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		parser := newLTSVParser(opts, f)
+
+		return runTopN(logReader, parser)
+	}
+
+	flags.defineTopNSubCommandOptions(ltsvTopNCmd)
+	flags.defineLTSVOptions(ltsvTopNCmd)
+
+	ltsvTopNCmd.Flags().SortFlags = false
+	ltsvTopNCmd.PersistentFlags().SortFlags = false
+	ltsvTopNCmd.InheritedFlags().SortFlags = false
+
+	return ltsvTopNCmd
 }

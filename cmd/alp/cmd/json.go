@@ -3,6 +3,8 @@ package cmd
 import (
 	"os"
 
+	"github.com/tkuchiki/alp/log_reader"
+
 	"github.com/spf13/cobra"
 	"github.com/tkuchiki/alp/options"
 	"github.com/tkuchiki/alp/parsers"
@@ -12,8 +14,8 @@ import (
 func newJSONCmd(flags *flags) *cobra.Command {
 	var jsonCmd = &cobra.Command{
 		Use:   "json",
-		Short: "Profile the logs for JSON",
-		Long:  `Profile the logs for JSON`,
+		Short: "Profile the log_reader for JSON",
+		Long:  `Profile the log_reader for JSON`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts, err := flags.createJSONOptions(cmd)
 			if err != nil {
@@ -106,4 +108,40 @@ func newJsonDiffCmd(flags *flags) *cobra.Command {
 	jsonDiffCmd.InheritedFlags().SortFlags = false
 
 	return jsonDiffCmd
+}
+
+func newJsonTopNCmd(flags *flags) *cobra.Command {
+	jsonTopNCmd := newTopNSubCmd()
+	jsonTopNCmd.RunE = func(cmd *cobra.Command, args []string) error {
+		opts, err := flags.createJSONTopNOptions(cmd)
+		if err != nil {
+			return err
+		}
+
+		n, err := getN(args)
+		if err != nil {
+			return err
+		}
+
+		logReader := log_reader.NewAccessLogReader(os.Stdout, os.Stderr, opts, n)
+
+		f, err := logReader.Open(opts.File)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		parser := newJsonParser(opts, f)
+
+		return runTopN(logReader, parser)
+	}
+
+	flags.defineTopNSubCommandOptions(jsonTopNCmd)
+	flags.defineJSONOptions(jsonTopNCmd)
+
+	jsonTopNCmd.Flags().SortFlags = false
+	jsonTopNCmd.PersistentFlags().SortFlags = false
+	jsonTopNCmd.InheritedFlags().SortFlags = false
+
+	return jsonTopNCmd
 }

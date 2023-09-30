@@ -3,6 +3,8 @@ package cmd
 import (
 	"os"
 
+	"github.com/tkuchiki/alp/log_reader"
+
 	"github.com/spf13/cobra"
 	"github.com/tkuchiki/alp/options"
 	"github.com/tkuchiki/alp/parsers"
@@ -115,4 +117,43 @@ func newPcapDiffCmd(flags *flags) *cobra.Command {
 	pcapDiffCmd.InheritedFlags().SortFlags = false
 
 	return pcapDiffCmd
+}
+
+func newPcapTopNCmd(flags *flags) *cobra.Command {
+	pcapTopNCmd := newTopNSubCmd()
+	pcapTopNCmd.RunE = func(cmd *cobra.Command, args []string) error {
+		opts, err := flags.createPcapTopNOptions(cmd)
+		if err != nil {
+			return err
+		}
+
+		n, err := getN(args)
+		if err != nil {
+			return err
+		}
+
+		logReader := log_reader.NewAccessLogReader(os.Stdout, os.Stderr, opts, n)
+
+		f, err := logReader.Open(opts.File)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		parser, err := newPcapParser(opts, f)
+		if err != nil {
+			return err
+		}
+
+		return runTopN(logReader, parser)
+	}
+
+	flags.defineTopNSubCommandOptions(pcapTopNCmd)
+	flags.definePcapOptions(pcapTopNCmd)
+
+	pcapTopNCmd.Flags().SortFlags = false
+	pcapTopNCmd.PersistentFlags().SortFlags = false
+	pcapTopNCmd.InheritedFlags().SortFlags = false
+
+	return pcapTopNCmd
 }

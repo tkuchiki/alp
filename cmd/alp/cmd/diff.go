@@ -92,8 +92,8 @@ func newDiffSubCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "diff [<from>] <to>",
 		Args:  cobra.RangeArgs(1, 2),
-		Short: "Show the difference between the two access logs",
-		Long:  `Show the difference between the two access logs`,
+		Short: "Show the difference between the two access log_reader",
+		Long:  `Show the difference between the two access log_reader`,
 	}
 }
 

@@ -3,6 +3,8 @@ package cmd
 import (
 	"os"
 
+	"github.com/tkuchiki/alp/log_reader"
+
 	"github.com/spf13/cobra"
 	"github.com/tkuchiki/alp/options"
 	"github.com/tkuchiki/alp/parsers"
@@ -12,8 +14,8 @@ import (
 func newRegexpCmd(flags *flags) *cobra.Command {
 	var regexpCmd = &cobra.Command{
 		Use:   "regexp",
-		Short: "Profile the logs that match a regular expression",
-		Long:  `Profile the logs that match a regular expression`,
+		Short: "Profile the log_reader that match a regular expression",
+		Long:  `Profile the log_reader that match a regular expression`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts, err := flags.createRegexpOptions(cmd)
 			if err != nil {
@@ -114,4 +116,43 @@ func newRegexpDiffCmd(flags *flags) *cobra.Command {
 	regexpDiffCmd.InheritedFlags().SortFlags = false
 
 	return regexpDiffCmd
+}
+
+func newRegexpTopNCmd(flags *flags) *cobra.Command {
+	regexpTopNCmd := newTopNSubCmd()
+	regexpTopNCmd.RunE = func(cmd *cobra.Command, args []string) error {
+		opts, err := flags.createRegexpTopNOptions(cmd)
+		if err != nil {
+			return err
+		}
+
+		n, err := getN(args)
+		if err != nil {
+			return err
+		}
+
+		logReader := log_reader.NewAccessLogReader(os.Stdout, os.Stderr, opts, n)
+
+		f, err := logReader.Open(opts.File)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		parser, err := newRegexpParser(opts, f)
+		if err != nil {
+			return err
+		}
+
+		return runTopN(logReader, parser)
+	}
+
+	flags.defineTopNSubCommandOptions(regexpTopNCmd)
+	flags.defineRegexpOptions(regexpTopNCmd)
+
+	regexpTopNCmd.Flags().SortFlags = false
+	regexpTopNCmd.PersistentFlags().SortFlags = false
+	regexpTopNCmd.InheritedFlags().SortFlags = false
+
+	return regexpTopNCmd
 }
