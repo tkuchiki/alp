@@ -3,6 +3,8 @@ package cmd
 import (
 	"testing"
 
+	"github.com/tkuchiki/alp/log_reader"
+
 	"github.com/tkuchiki/alp/internal/testutil"
 )
 
@@ -104,4 +106,44 @@ func TestJSONDiffCmd(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+}
+
+func TestJSONTopNCmd(t *testing.T) {
+	keys := testutil.LogKeys{
+		Uri:          "u",
+		Method:       "m",
+		Time:         "t",
+		ResponseTime: "r",
+		RequestTime:  "r2",
+		BodyBytes:    "b",
+		Status:       "s",
+	}
+
+	jsonLog := testutil.JsonLog(keys)
+
+	tempFile, err := testutil.CreateTempDirAndFile(t.TempDir(), "test_json_topN_cmd_temp_file", jsonLog)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	args := []string{"json", "topN", "10",
+		"--file", tempFile,
+		"--uri-key", keys.Uri,
+		"--method-key", keys.Method,
+		"--time-key", keys.Time,
+		"--restime-key", keys.ResponseTime,
+		"--reqtime-key", keys.RequestTime,
+		"--body-bytes-key", keys.BodyBytes,
+		"--status-key", keys.Status,
+		"--reverse",
+		"--sort", log_reader.SortBodyBytes,
+	}
+
+	command := NewCommand("test")
+	command.setArgs(args)
+
+	err = command.Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
 }

@@ -3,6 +3,8 @@ package cmd
 import (
 	"testing"
 
+	"github.com/tkuchiki/alp/log_reader"
+
 	"github.com/tkuchiki/alp/internal/testutil"
 )
 
@@ -95,4 +97,45 @@ func TestRegexpDiffCmd(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+}
+
+func TestRegexpTopNCmd(t *testing.T) {
+	keys := testutil.LogKeys{
+		Uri:          "u",
+		Method:       "m",
+		Time:         "t",
+		ResponseTime: "r",
+		RequestTime:  "r2",
+		BodyBytes:    "b",
+		Status:       "s",
+	}
+
+	regexpLog := testutil.RegexpLog()
+
+	tempFile, err := testutil.CreateTempDirAndFile(t.TempDir(), "test_regexp_topN_cmd_temp_file", regexpLog)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	args := []string{"regexp", "topN", "10",
+		"--file", tempFile,
+		"--pattern", testutil.RegexpPattern(keys),
+		"--uri-subexp", keys.Uri,
+		"--method-subexp", keys.Method,
+		"--time-subexp", keys.Time,
+		"--restime-subexp", keys.ResponseTime,
+		"--reqtime-subexp", keys.RequestTime,
+		"--body-bytes-subexp", keys.BodyBytes,
+		"--status-subexp", keys.Status,
+		"--reverse",
+		"--sort", log_reader.SortBodyBytes,
+	}
+
+	command := NewCommand("test")
+	command.setArgs(args)
+
+	err = command.Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
 }

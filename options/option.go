@@ -51,6 +51,8 @@ const (
 	DefaultStatusSubexpOption       = "status"
 	// pcap
 	DefaultPcapServerPortOption = 80
+	// topN
+	DefaultTopNSortOption = "restime"
 )
 
 var DefaultPercentilesOption = []int{90, 95, 99}
@@ -83,6 +85,7 @@ type Options struct {
 	JSON                    *JSONOptions   `mapstructure:"json"`
 	Pcap                    *PcapOptions   `mapstructure:"pcap"`
 	Count                   *CountOptions  `mapstructure:"count"`
+	TopN                    *TopNOptions   `mapstructure:"topN"`
 }
 
 type LTSVOptions struct {
@@ -123,6 +126,11 @@ type PcapOptions struct {
 
 type CountOptions struct {
 	Keys []string `mapstructure:"keys"`
+}
+
+type TopNOptions struct {
+	Sort    string `mapstructure:"sort"`
+	Reverse bool   `mapstructure:"reverse"`
 }
 
 type Option func(*Options)
@@ -501,6 +509,23 @@ func CountKeys(ss []string) Option {
 	}
 }
 
+// topN
+func TopNSort(s string) Option {
+	return func(opts *Options) {
+		if s != "" {
+			opts.TopN.Sort = s
+		}
+	}
+}
+
+func TopNReverse(b bool) Option {
+	return func(opts *Options) {
+		if b {
+			opts.TopN.Reverse = b
+		}
+	}
+}
+
 func NewOptions(opt ...Option) *Options {
 	ltsv := &LTSVOptions{
 		ApptimeLabel: DefaultApptimeLabelOption,
@@ -540,6 +565,10 @@ func NewOptions(opt ...Option) *Options {
 
 	count := &CountOptions{}
 
+	topN := &TopNOptions{
+		Sort: DefaultTopNSortOption,
+	}
+
 	options := &Options{
 		Sort:            DefaultSortOption,
 		Format:          DefaultFormatOption,
@@ -553,6 +582,7 @@ func NewOptions(opt ...Option) *Options {
 		JSON:            json,
 		Pcap:            pcap,
 		Count:           count,
+		TopN:            topN,
 	}
 
 	for _, o := range opt {

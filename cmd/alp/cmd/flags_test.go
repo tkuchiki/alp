@@ -107,6 +107,10 @@ func Test_createOptionsFromConfig_overwrite(t *testing.T) {
 	// count
 	viper.Set("count.keys", overwrittenOpts.Count.Keys)
 
+	// count
+	viper.Set("topN.sort", overwrittenOpts.TopN.Sort)
+	viper.Set("topN.reverse", overwrittenOpts.TopN.Reverse)
+
 	var opts *options.Options
 	opts, err = command.flags.createOptionsFromConfig(command.rootCmd)
 	if err != nil {

@@ -176,6 +176,10 @@ func DummyOptions(sort string) *options.Options {
 				"ua",
 			},
 		},
+		TopN: &options.TopNOptions{
+			Sort:    "restime",
+			Reverse: false,
+		},
 	}
 }
 
@@ -244,6 +248,10 @@ func DummyOverwrittenOptions(sort string) *options.Options {
 				"user_agent",
 			},
 		},
+		TopN: &options.TopNOptions{
+			Sort:    "bytes",
+			Reverse: true,
+		},
 	}
 }
 
@@ -308,6 +316,9 @@ count:
 {{ range .Count.Keys }}
     - {{ . }}
 {{ end }}
+topN:
+  sort: {{ .TopN.Sort }}
+  reverse: {{ .TopN.Reverse }}
 `
 	t, err := template.New("dummy_config").Parse(configTmpl)
 	if err != nil {

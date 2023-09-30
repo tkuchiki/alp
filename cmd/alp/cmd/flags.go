@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"strings"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tkuchiki/alp/helpers"
@@ -102,6 +104,10 @@ func (f *flags) defineSort(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringP(flagSort, "", options.DefaultSortOption, "Output the results in sorted order")
 }
 
+func (f *flags) defineTopNSort(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringP(flagSort, "", options.DefaultTopNSortOption, "Output the results in sorted order (restime or bytes)")
+}
+
 func (f *flags) defineReverse(cmd *cobra.Command) {
 	cmd.PersistentFlags().BoolP(flagReverse, "r", false, "Sort results in reverse order")
 }
@@ -143,7 +149,7 @@ func (f *flags) defineMatchingGroups(cmd *cobra.Command) {
 }
 
 func (f *flags) defineFilters(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringP(flagFilters, "f", "", "Only the logs are profiled that match the conditions")
+	cmd.PersistentFlags().StringP(flagFilters, "f", "", "Only the log_reader are profiled that match the conditions")
 }
 
 func (f *flags) definePositionFile(cmd *cobra.Command) {
@@ -376,12 +382,50 @@ func (f *flags) defineDiffSubCommandOptions(cmd *cobra.Command) {
 	f.definePage(cmd)
 }
 
+func (f *flags) defineTopNSubCommandOptions(cmd *cobra.Command) {
+	// overwrite and hidden => remove flag
+	cmd.LocalFlags().String(flagDump, "", "")
+	cmd.LocalFlags().MarkHidden(flagDump)
+	cmd.LocalFlags().String(flagLoad, "", "")
+	cmd.LocalFlags().MarkHidden(flagLoad)
+	cmd.LocalFlags().String(flagShowFooters, "", "")
+	cmd.LocalFlags().MarkHidden(flagShowFooters)
+	cmd.LocalFlags().String(flagLimit, "", "")
+	cmd.LocalFlags().MarkHidden(flagLimit)
+	cmd.LocalFlags().String(flagOutput, "", "")
+	cmd.LocalFlags().MarkHidden(flagOutput)
+	cmd.LocalFlags().String(flagQueryString, "", "")
+	cmd.LocalFlags().MarkHidden(flagQueryString)
+	cmd.LocalFlags().String(flagQueryStringIgnoreValues, "", "")
+	cmd.LocalFlags().MarkHidden(flagQueryStringIgnoreValues)
+	cmd.LocalFlags().String(flagMatchingGroups, "", "")
+	cmd.LocalFlags().MarkHidden(flagMatchingGroups)
+	cmd.LocalFlags().String(flagPercentiles, "", "")
+	cmd.LocalFlags().MarkHidden(flagPercentiles)
+
+	f.defineFile(cmd)
+	f.defineFormat(cmd)
+	f.defineTopNSort(cmd)
+	f.defineReverse(cmd)
+	f.defineNoHeaders(cmd)
+	f.defineLocation(cmd)
+	f.defineDecodeUri(cmd)
+	f.defineFilters(cmd)
+	f.definePositionFile(cmd)
+	f.defineNoSavePositionFile(cmd)
+	f.definePage(cmd)
+}
+
 func (f *flags) bindFlags(cmd *cobra.Command) {
 	viper.BindPFlag("file", cmd.PersistentFlags().Lookup(flagFile))
 	viper.BindPFlag("dump", cmd.PersistentFlags().Lookup(flagDump))
 	viper.BindPFlag("load", cmd.PersistentFlags().Lookup(flagLoad))
-	viper.BindPFlag("sort", cmd.PersistentFlags().Lookup(flagSort))
-	viper.BindPFlag("reverse", cmd.PersistentFlags().Lookup(flagReverse))
+
+	if !strings.Contains(cmd.Name(), "topN") {
+		viper.BindPFlag("sort", cmd.PersistentFlags().Lookup(flagSort))
+		viper.BindPFlag("reverse", cmd.PersistentFlags().Lookup(flagReverse))
+	}
+
 	viper.BindPFlag("query_string", cmd.PersistentFlags().Lookup(flagQueryString))
 	viper.BindPFlag("query_string_ignore_values", cmd.PersistentFlags().Lookup(flagQueryStringIgnoreValues))
 	viper.BindPFlag("decode_uri", cmd.PersistentFlags().Lookup(flagDecodeUri))
@@ -430,6 +474,12 @@ func (f *flags) bindFlags(cmd *cobra.Command) {
 
 	// count
 	viper.BindPFlag("count.keys", cmd.PersistentFlags().Lookup(flagCountKeys))
+
+	// topN
+	if strings.Contains(cmd.Name(), "topN") {
+		viper.BindPFlag("topN.sort", cmd.PersistentFlags().Lookup(flagSort))
+		viper.BindPFlag("topN.reverse", cmd.PersistentFlags().Lookup(flagReverse))
+	}
 }
 
 func (f *flags) createOptionsFromConfig(cmd *cobra.Command) (*options.Options, error) {
@@ -887,6 +937,36 @@ func (f *flags) setDiffSubCommandOptions(cmd *cobra.Command, opts *options.Optio
 	return f.setOptions(cmd, opts, _flags)
 }
 
+func (f *flags) setTopNSubCommandOptions(cmd *cobra.Command, opts *options.Options) (*options.Options, error) {
+	_flags := []string{
+		flagFile,
+		flagFormat,
+		flagReverse,
+		flagNoHeaders,
+		flagLocation,
+		flagDecodeUri,
+		flagFilters,
+		flagPositionFile,
+		flagNoSavePositionFile,
+		flagPage,
+	}
+
+	sort, err := cmd.PersistentFlags().GetString(flagSort)
+	if err != nil {
+		return nil, err
+	}
+	opts = options.SetOptions(opts, options.TopNSort(sort))
+
+	reverse, err := cmd.PersistentFlags().GetBool(flagReverse)
+	if err != nil {
+		return nil, err
+	}
+	opts = options.SetOptions(opts, options.TopNReverse(reverse))
+
+	return f.setOptions(cmd, opts, _flags)
+}
+
+// alp json
 func (f *flags) createJSONOptions(cmd *cobra.Command) (*options.Options, error) {
 	if f.config != "" {
 		f.bindFlags(cmd)
@@ -901,6 +981,7 @@ func (f *flags) createJSONOptions(cmd *cobra.Command) (*options.Options, error) 
 	return f.setJSONOptions(cmd, opts)
 }
 
+// alp json diff
 func (f *flags) createJSONDiffOptions(cmd *cobra.Command) (*options.Options, error) {
 	if f.config != "" {
 		f.bindFlags(cmd)
@@ -915,6 +996,22 @@ func (f *flags) createJSONDiffOptions(cmd *cobra.Command) (*options.Options, err
 	return f.setJSONOptions(cmd, opts)
 }
 
+// alp json topN
+func (f *flags) createJSONTopNOptions(cmd *cobra.Command) (*options.Options, error) {
+	if f.config != "" {
+		f.bindFlags(cmd)
+		return f.createOptionsFromConfig(cmd)
+	}
+
+	opts, err := f.setTopNSubCommandOptions(cmd, options.NewOptions())
+	if err != nil {
+		return nil, err
+	}
+
+	return f.setJSONOptions(cmd, opts)
+}
+
+// alp ltsv
 func (f *flags) createLTSVOptions(cmd *cobra.Command) (*options.Options, error) {
 	if f.config != "" {
 		f.bindFlags(cmd)
@@ -929,6 +1026,7 @@ func (f *flags) createLTSVOptions(cmd *cobra.Command) (*options.Options, error) 
 	return f.setLTSVOptions(cmd, opts)
 }
 
+// alp ltsv diff
 func (f *flags) createLTSVDiffOptions(cmd *cobra.Command) (*options.Options, error) {
 	if f.config != "" {
 		f.bindFlags(cmd)
@@ -943,6 +1041,22 @@ func (f *flags) createLTSVDiffOptions(cmd *cobra.Command) (*options.Options, err
 	return f.setLTSVOptions(cmd, opts)
 }
 
+// alp ltsv topN
+func (f *flags) createLTSVTopNOptions(cmd *cobra.Command) (*options.Options, error) {
+	if f.config != "" {
+		f.bindFlags(cmd)
+		return f.createOptionsFromConfig(cmd)
+	}
+
+	opts, err := f.setTopNSubCommandOptions(cmd, options.NewOptions())
+	if err != nil {
+		return nil, err
+	}
+
+	return f.setLTSVOptions(cmd, opts)
+}
+
+// alp regexp
 func (f *flags) createRegexpOptions(cmd *cobra.Command) (*options.Options, error) {
 	if f.config != "" {
 		f.bindFlags(cmd)
@@ -957,6 +1071,7 @@ func (f *flags) createRegexpOptions(cmd *cobra.Command) (*options.Options, error
 	return f.setRegexpOptions(cmd, opts)
 }
 
+// alp regexp diff
 func (f *flags) createRegexpDiffOptions(cmd *cobra.Command) (*options.Options, error) {
 	if f.config != "" {
 		f.bindFlags(cmd)
@@ -971,6 +1086,22 @@ func (f *flags) createRegexpDiffOptions(cmd *cobra.Command) (*options.Options, e
 	return f.setRegexpOptions(cmd, opts)
 }
 
+// alp regexp topN
+func (f *flags) createRegexpTopNOptions(cmd *cobra.Command) (*options.Options, error) {
+	if f.config != "" {
+		f.bindFlags(cmd)
+		return f.createOptionsFromConfig(cmd)
+	}
+
+	opts, err := f.setTopNSubCommandOptions(cmd, options.NewOptions())
+	if err != nil {
+		return nil, err
+	}
+
+	return f.setRegexpOptions(cmd, opts)
+}
+
+// alp pcap
 func (f *flags) createPcapOptions(cmd *cobra.Command) (*options.Options, error) {
 	if f.config != "" {
 		f.bindFlags(cmd)
@@ -985,6 +1116,7 @@ func (f *flags) createPcapOptions(cmd *cobra.Command) (*options.Options, error) 
 	return f.setPcapOptions(cmd, opts)
 }
 
+// alp pcap diff
 func (f *flags) createPcapDiffOptions(cmd *cobra.Command) (*options.Options, error) {
 	if f.config != "" {
 		f.bindFlags(cmd)
@@ -999,6 +1131,22 @@ func (f *flags) createPcapDiffOptions(cmd *cobra.Command) (*options.Options, err
 	return f.setPcapOptions(cmd, opts)
 }
 
+// alp pcap topN
+func (f *flags) createPcapTopNOptions(cmd *cobra.Command) (*options.Options, error) {
+	if f.config != "" {
+		f.bindFlags(cmd)
+		return f.createOptionsFromConfig(cmd)
+	}
+
+	opts, err := f.setTopNSubCommandOptions(cmd, options.NewOptions())
+	if err != nil {
+		return nil, err
+	}
+
+	return f.setPcapOptions(cmd, opts)
+}
+
+// alp count
 func (f *flags) createCountOptions(cmd *cobra.Command) (*options.Options, error) {
 	if f.config != "" {
 		f.bindFlags(cmd)
@@ -1018,6 +1166,7 @@ func (f *flags) createCountOptions(cmd *cobra.Command) (*options.Options, error)
 	return f.setCountOptions(cmd, opts)
 }
 
+// alp diff
 func (f *flags) createDiffOptions(cmd *cobra.Command) (*options.Options, error) {
 	if f.config != "" {
 		f.bindFlags(cmd)
