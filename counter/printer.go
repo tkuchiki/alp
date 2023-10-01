@@ -3,6 +3,9 @@ package counter
 import (
 	"fmt"
 	"io"
+	"strings"
+
+	"github.com/tkuchiki/alp/html"
 
 	"github.com/olekukonko/tablewriter"
 )
@@ -31,10 +34,11 @@ func NewPrintOptions(noHeaders, showFooters bool, paginationLimit int) *PrintOpt
 	}
 }
 
-func NewPrinter(w io.Writer) *Printer {
+func NewPrinter(w io.Writer, format string, printOptions *PrintOptions) *Printer {
 	return &Printer{
-		format: "table",
-		writer: w,
+		format:       format,
+		writer:       w,
+		printOptions: printOptions,
 	}
 }
 
@@ -43,14 +47,14 @@ func (p *Printer) Print(groups *groups) {
 	switch p.format {
 	case "table":
 		p.printTable(groups)
-		/*case "md", "markdown":
-			p.printMarkdown(groups)
-		case "tsv":
-			p.printTSV(groups)
-		case "csv":
-			p.printCSV(groups)
-		case "html":
-			p.printHTML(groups)*/
+	case "md", "markdown":
+		p.printMarkdown(groups)
+	case "tsv":
+		p.printTSV(groups)
+	case "csv":
+		p.printCSV(groups)
+	case "html":
+		p.printHTML(groups)
 	}
 }
 
@@ -76,130 +80,69 @@ func (p *Printer) printTable(groups *groups) {
 		table.Append(data)
 	}
 
-	/*
-		if p.printOptions.showFooters {
-			var footer []string
-			if hsTo == nil {
-				footer = p.GenerateFooter(hsFrom.CountAll())
-			} else {
-				footer = p.GenerateFooterWithDiff(hsFrom.CountAll(), hsTo.CountAll())
-			}
-			table.SetFooter(footer)
-			table.SetFooterAlignment(tablewriter.ALIGN_LEFT)
-		}*/
-
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
 	table.Render()
 }
 
-/*
-func (p *Printer) printMarkdown(groups) {
+func (p *Printer) printMarkdown(groups *groups) {
 	table := tablewriter.NewWriter(p.writer)
-	table.SetHeader(p.headers)
+	var headers []string
+	headers = append(headers, defaultSumHeader)
+	headers = append(headers, groups.keys...)
+
+	table.SetHeader(headers)
 	table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
 	table.SetCenterSeparator("|")
-	if hsTo == nil {
-		for _, s := range hsFrom.stats {
-			data := p.GenerateLine(s, false)
-			table.Append(data)
-		}
-	} else {
-		for _, to := range hsTo.stats {
-			from := findHTTPStatFrom(hsFrom, to)
 
-			var data []string
-			if from == nil {
-				data = p.GenerateLine(to, false)
-			} else {
-				data = p.GenerateLineWithDiff(from, to, false)
-			}
-			table.Append(data)
-		}
-	}
-
-	if p.printOptions.showFooters {
-		var footer []string
-		if hsTo == nil {
-			footer = p.GenerateFooter(hsFrom.CountAll())
-		} else {
-			footer = p.GenerateFooterWithDiff(hsFrom.CountAll(), hsTo.CountAll())
-		}
-		table.Append(footer)
+	for _, group := range groups.groups {
+		data := p.generateLine(groups.keys, group)
+		table.Append(data)
 	}
 
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
 	table.Render()
 }
 
-func (p *Printer) printTSV(groups) {
+func (p *Printer) printTSV(groups *groups) {
+	var headers []string
+	headers = append(headers, defaultSumHeader)
+	headers = append(headers, groups.keys...)
+
 	if !p.printOptions.noHeaders {
-		fmt.Println(strings.Join(p.headers, "\t"))
+		fmt.Println(strings.Join(headers, "\t"))
 	}
 
-	var data []string
-	if hsTo == nil {
-		for _, s := range hsFrom.stats {
-			data = p.GenerateLine(s, false)
-			fmt.Println(strings.Join(data, "\t"))
-		}
-	} else {
-		for _, to := range hsTo.stats {
-			from := findHTTPStatFrom(hsFrom, to)
-
-			if from == nil {
-				data = p.GenerateLine(to, false)
-			} else {
-				data = p.GenerateLineWithDiff(from, to, false)
-			}
-			fmt.Println(strings.Join(data, "\t"))
-		}
+	for _, group := range groups.groups {
+		data := p.generateLine(groups.keys, group)
+		fmt.Println(strings.Join(data, "\t"))
 	}
 }
 
-func (p *Printer) printCSV(groups) {
+func (p *Printer) printCSV(groups *groups) {
+	var headers []string
+	headers = append(headers, defaultSumHeader)
+	headers = append(headers, groups.keys...)
+
 	if !p.printOptions.noHeaders {
-		fmt.Println(strings.Join(p.headers, ","))
+		fmt.Println(strings.Join(headers, ","))
 	}
 
-	var data []string
-	if hsTo == nil {
-		for _, s := range hsFrom.stats {
-			data = p.GenerateLine(s, true)
-			fmt.Println(strings.Join(data, ","))
-		}
-	} else {
-		for _, to := range hsTo.stats {
-			from := findHTTPStatFrom(hsFrom, to)
-
-			if from == nil {
-				data = p.GenerateLine(to, false)
-			} else {
-				data = p.GenerateLineWithDiff(from, to, false)
-			}
-			fmt.Println(strings.Join(data, ","))
-		}
+	for _, group := range groups.groups {
+		data := p.generateLine(groups.keys, group)
+		fmt.Println(strings.Join(data, ","))
 	}
 }
 
-func (p *Printer) printHTML(groups) {
+func (p *Printer) printHTML(groups *groups) {
+	var headers []string
+	headers = append(headers, defaultSumHeader)
+	headers = append(headers, groups.keys...)
+
 	var data [][]string
-
-	if hsTo == nil {
-		for _, s := range hsFrom.stats {
-			data = append(data, p.GenerateLine(s, true))
-		}
-	} else {
-		for _, to := range hsTo.stats {
-			from := findHTTPStatFrom(hsFrom, to)
-
-			if from == nil {
-				data = append(data, p.GenerateLine(to, false))
-			} else {
-				data = append(data, p.GenerateLineWithDiff(from, to, false))
-			}
-		}
+	for _, group := range groups.groups {
+		data = append(data, p.generateLine(groups.keys, group))
 	}
-	content, _ := html.RenderTableWithGridJS("alp", p.headers, data, p.printOptions.paginationLimit)
+
+	content, _ := html.RenderTableWithGridJS("alp", headers, data, p.printOptions.paginationLimit)
 	fmt.Println(content)
 }
-*/

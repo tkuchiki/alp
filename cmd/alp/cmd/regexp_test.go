@@ -139,3 +139,29 @@ func TestRegexpTopNCmd(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestRegexpCountCmd(t *testing.T) {
+	keys := testutil.NewRegexpLogKeys()
+
+	regexpLog := testutil.RegexpLog()
+
+	tempFile, err := testutil.CreateTempDirAndFile(t.TempDir(), "test_regexp_count_cmd_temp_file", regexpLog)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	args := []string{"regexp", "count",
+		"--pattern", testutil.RegexpPattern(keys),
+		"--file", tempFile,
+		"--reverse",
+		"--keys", "ua",
+	}
+
+	command := NewCommand("test")
+	command.setArgs(args)
+
+	err = command.Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
+}

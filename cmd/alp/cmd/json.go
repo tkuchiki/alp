@@ -3,6 +3,8 @@ package cmd
 import (
 	"os"
 
+	"github.com/tkuchiki/alp/counter"
+
 	"github.com/tkuchiki/alp/log_reader"
 
 	"github.com/spf13/cobra"
@@ -144,4 +146,35 @@ func newJsonTopNCmd(flags *flags) *cobra.Command {
 	jsonTopNCmd.InheritedFlags().SortFlags = false
 
 	return jsonTopNCmd
+}
+
+func newJsonCountCmd(flags *flags) *cobra.Command {
+	jsonCountCmd := newCountSubCmd()
+	jsonCountCmd.RunE = func(cmd *cobra.Command, args []string) error {
+		opts, err := flags.createJSONCountOptions(cmd)
+		if err != nil {
+			return err
+		}
+
+		counter := counter.NewCounter(os.Stdout, os.Stderr, opts)
+
+		f, err := counter.Open(opts.File)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		parser := newJsonParser(opts, f)
+
+		return runCount(counter, parser, opts)
+	}
+
+	flags.defineCountSubCommandOptions(jsonCountCmd)
+	flags.defineJSONOptions(jsonCountCmd)
+
+	jsonCountCmd.Flags().SortFlags = false
+	jsonCountCmd.PersistentFlags().SortFlags = false
+	jsonCountCmd.InheritedFlags().SortFlags = false
+
+	return jsonCountCmd
 }

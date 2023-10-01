@@ -332,12 +332,6 @@ func (f *flags) definePcapOptions(cmd *cobra.Command) {
 	f.definePcapPcapServerPort(cmd)
 }
 
-func (f *flags) defineCountOptions(cmd *cobra.Command) {
-	f.defineFile(cmd)
-	f.defineReverse(cmd)
-	f.defineCountKeys(cmd)
-}
-
 func (f *flags) defineDiffOptions(cmd *cobra.Command) {
 	f.defineFormat(cmd)
 	f.defineSort(cmd)
@@ -414,6 +408,47 @@ func (f *flags) defineTopNSubCommandOptions(cmd *cobra.Command) {
 	f.definePositionFile(cmd)
 	f.defineNoSavePositionFile(cmd)
 	f.definePage(cmd)
+}
+
+func (f *flags) defineCountSubCommandOptions(cmd *cobra.Command) {
+	// overwrite and hidden => remove flag
+	cmd.LocalFlags().String(flagDump, "", "")
+	cmd.LocalFlags().MarkHidden(flagDump)
+	cmd.LocalFlags().String(flagLoad, "", "")
+	cmd.LocalFlags().MarkHidden(flagLoad)
+	cmd.LocalFlags().String(flagSort, "", "")
+	cmd.LocalFlags().MarkHidden(flagSort)
+	cmd.LocalFlags().String(flagShowFooters, "", "")
+	cmd.LocalFlags().MarkHidden(flagShowFooters)
+	cmd.LocalFlags().String(flagLimit, "", "")
+	cmd.LocalFlags().MarkHidden(flagLimit)
+	cmd.LocalFlags().String(flagOutput, "", "")
+	cmd.LocalFlags().MarkHidden(flagOutput)
+	cmd.LocalFlags().String(flagQueryString, "", "")
+	cmd.LocalFlags().MarkHidden(flagQueryString)
+	cmd.LocalFlags().String(flagQueryStringIgnoreValues, "", "")
+	cmd.LocalFlags().MarkHidden(flagQueryStringIgnoreValues)
+	cmd.LocalFlags().String(flagLocation, "", "")
+	cmd.LocalFlags().MarkHidden(flagLocation)
+	cmd.LocalFlags().String(flagDecodeUri, "", "")
+	cmd.LocalFlags().MarkHidden(flagDecodeUri)
+	cmd.LocalFlags().String(flagMatchingGroups, "", "")
+	cmd.LocalFlags().MarkHidden(flagMatchingGroups)
+	cmd.LocalFlags().String(flagFilters, "", "")
+	cmd.LocalFlags().MarkHidden(flagFilters)
+	cmd.LocalFlags().String(flagPositionFile, "", "")
+	cmd.LocalFlags().MarkHidden(flagPositionFile)
+	cmd.LocalFlags().String(flagNoSavePositionFile, "", "")
+	cmd.LocalFlags().MarkHidden(flagNoSavePositionFile)
+	cmd.LocalFlags().String(flagPercentiles, "", "")
+	cmd.LocalFlags().MarkHidden(flagPercentiles)
+
+	f.defineFile(cmd)
+	f.defineReverse(cmd)
+	f.defineFormat(cmd)
+	f.defineNoHeaders(cmd)
+	f.definePage(cmd)
+	f.defineCountKeys(cmd)
 }
 
 func (f *flags) bindFlags(cmd *cobra.Command) {
@@ -878,17 +913,6 @@ func (f *flags) setPcapOptions(cmd *cobra.Command, opts *options.Options) (*opti
 	), nil
 }
 
-func (f *flags) setCountOptions(cmd *cobra.Command, opts *options.Options) (*options.Options, error) {
-	keys, err := cmd.PersistentFlags().GetString(flagCountKeys)
-	if err != nil {
-		return nil, err
-	}
-
-	return options.SetOptions(opts,
-		options.CountKeys(helpers.SplitCSV(keys)),
-	), nil
-}
-
 func (f *flags) setDiffOptions(cmd *cobra.Command, opts *options.Options) (*options.Options, error) {
 	_flags := []string{
 		flagFormat,
@@ -966,6 +990,27 @@ func (f *flags) setTopNSubCommandOptions(cmd *cobra.Command, opts *options.Optio
 	return f.setOptions(cmd, opts, _flags)
 }
 
+func (f *flags) setCountSubCommandOptions(cmd *cobra.Command, opts *options.Options) (*options.Options, error) {
+	keys, err := cmd.PersistentFlags().GetString(flagCountKeys)
+	if err != nil {
+		return nil, err
+	}
+
+	opts = options.SetOptions(opts,
+		options.CountKeys(helpers.SplitCSV(keys)),
+	)
+
+	_flags := []string{
+		flagFile,
+		flagFormat,
+		flagReverse,
+		flagNoHeaders,
+		flagPage,
+	}
+
+	return f.setOptions(cmd, opts, _flags)
+}
+
 // alp json
 func (f *flags) createJSONOptions(cmd *cobra.Command) (*options.Options, error) {
 	if f.config != "" {
@@ -1004,6 +1049,21 @@ func (f *flags) createJSONTopNOptions(cmd *cobra.Command) (*options.Options, err
 	}
 
 	opts, err := f.setTopNSubCommandOptions(cmd, options.NewOptions())
+	if err != nil {
+		return nil, err
+	}
+
+	return f.setJSONOptions(cmd, opts)
+}
+
+// alp json count
+func (f *flags) createJSONCountOptions(cmd *cobra.Command) (*options.Options, error) {
+	if f.config != "" {
+		f.bindFlags(cmd)
+		return f.createOptionsFromConfig(cmd)
+	}
+
+	opts, err := f.setCountSubCommandOptions(cmd, options.NewOptions())
 	if err != nil {
 		return nil, err
 	}
@@ -1056,6 +1116,21 @@ func (f *flags) createLTSVTopNOptions(cmd *cobra.Command) (*options.Options, err
 	return f.setLTSVOptions(cmd, opts)
 }
 
+// alp ltsv count
+func (f *flags) createLTSVCountOptions(cmd *cobra.Command) (*options.Options, error) {
+	if f.config != "" {
+		f.bindFlags(cmd)
+		return f.createOptionsFromConfig(cmd)
+	}
+
+	opts, err := f.setCountSubCommandOptions(cmd, options.NewOptions())
+	if err != nil {
+		return nil, err
+	}
+
+	return f.setLTSVOptions(cmd, opts)
+}
+
 // alp regexp
 func (f *flags) createRegexpOptions(cmd *cobra.Command) (*options.Options, error) {
 	if f.config != "" {
@@ -1094,6 +1169,21 @@ func (f *flags) createRegexpTopNOptions(cmd *cobra.Command) (*options.Options, e
 	}
 
 	opts, err := f.setTopNSubCommandOptions(cmd, options.NewOptions())
+	if err != nil {
+		return nil, err
+	}
+
+	return f.setRegexpOptions(cmd, opts)
+}
+
+// alp regexp count
+func (f *flags) createRegexpCountOptions(cmd *cobra.Command) (*options.Options, error) {
+	if f.config != "" {
+		f.bindFlags(cmd)
+		return f.createOptionsFromConfig(cmd)
+	}
+
+	opts, err := f.setCountSubCommandOptions(cmd, options.NewOptions())
 	if err != nil {
 		return nil, err
 	}
@@ -1144,26 +1234,6 @@ func (f *flags) createPcapTopNOptions(cmd *cobra.Command) (*options.Options, err
 	}
 
 	return f.setPcapOptions(cmd, opts)
-}
-
-// alp count
-func (f *flags) createCountOptions(cmd *cobra.Command) (*options.Options, error) {
-	if f.config != "" {
-		f.bindFlags(cmd)
-		return f.createOptionsFromConfig(cmd)
-	}
-
-	flags := []string{
-		flagFile,
-		flagReverse,
-	}
-
-	opts, err := f.setOptions(cmd, options.NewOptions(), flags)
-	if err != nil {
-		return nil, err
-	}
-
-	return f.setCountOptions(cmd, opts)
 }
 
 // alp diff

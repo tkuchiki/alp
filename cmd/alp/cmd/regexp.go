@@ -3,6 +3,8 @@ package cmd
 import (
 	"os"
 
+	"github.com/tkuchiki/alp/counter"
+
 	"github.com/tkuchiki/alp/log_reader"
 
 	"github.com/spf13/cobra"
@@ -155,4 +157,38 @@ func newRegexpTopNCmd(flags *flags) *cobra.Command {
 	regexpTopNCmd.InheritedFlags().SortFlags = false
 
 	return regexpTopNCmd
+}
+
+func newRegexpCountCmd(flags *flags) *cobra.Command {
+	regexpCountCmd := newCountSubCmd()
+	regexpCountCmd.RunE = func(cmd *cobra.Command, args []string) error {
+		opts, err := flags.createRegexpCountOptions(cmd)
+		if err != nil {
+			return err
+		}
+
+		counter := counter.NewCounter(os.Stdout, os.Stderr, opts)
+
+		f, err := counter.Open(opts.File)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		parser, err := newRegexpParser(opts, f)
+		if err != nil {
+			return err
+		}
+
+		return runCount(counter, parser, opts)
+	}
+
+	flags.defineCountSubCommandOptions(regexpCountCmd)
+	flags.defineRegexpOptions(regexpCountCmd)
+
+	regexpCountCmd.Flags().SortFlags = false
+	regexpCountCmd.PersistentFlags().SortFlags = false
+	regexpCountCmd.InheritedFlags().SortFlags = false
+
+	return regexpCountCmd
 }
