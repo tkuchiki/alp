@@ -20,6 +20,8 @@ type Command struct {
 	jsonDiffCmd *cobra.Command
 	// alp json topN
 	jsonTopNCmd *cobra.Command
+	// alp json count
+	jsonCountCmd *cobra.Command
 
 	// alp ltsv
 	ltsvCmd *cobra.Command
@@ -27,6 +29,8 @@ type Command struct {
 	ltsvDiffCmd *cobra.Command
 	// alp ltsv topN
 	ltsvTopNCmd *cobra.Command
+	// alp ltsv count
+	ltsvCountCmd *cobra.Command
 
 	// alp regexp
 	regexpCmd *cobra.Command
@@ -34,6 +38,8 @@ type Command struct {
 	regexpDiffCmd *cobra.Command
 	// alp regexp topN
 	regexpTopNCmd *cobra.Command
+	// alp regexp count
+	regexpCountCmd *cobra.Command
 
 	// alp pcap
 	pcapCmd *cobra.Command
@@ -62,6 +68,9 @@ func NewCommand(version string) *Command {
 	// alp ltsv topN
 	command.ltsvTopNCmd = newLTSVTopNCmd(command.flags)
 	command.ltsvCmd.AddCommand(command.ltsvTopNCmd)
+	// alp ltsv count
+	command.ltsvCountCmd = newLTSVCountCmd(command.flags)
+	command.ltsvCmd.AddCommand(command.ltsvCountCmd)
 
 	// alp json
 	command.jsonCmd = newJSONCmd(command.flags)
@@ -72,6 +81,9 @@ func NewCommand(version string) *Command {
 	// alp json topN
 	command.jsonTopNCmd = newJsonTopNCmd(command.flags)
 	command.jsonCmd.AddCommand(command.jsonTopNCmd)
+	// alp json count
+	command.jsonCountCmd = newJsonCountCmd(command.flags)
+	command.jsonCmd.AddCommand(command.jsonCountCmd)
 
 	// alp regexp
 	command.regexpCmd = newRegexpCmd(command.flags)
@@ -82,6 +94,9 @@ func NewCommand(version string) *Command {
 	// alp regexp topN
 	command.regexpTopNCmd = newRegexpTopNCmd(command.flags)
 	command.regexpCmd.AddCommand(command.regexpTopNCmd)
+	// alp regexp count
+	command.regexpCountCmd = newRegexpCountCmd(command.flags)
+	command.regexpCmd.AddCommand(command.regexpCountCmd)
 
 	// alp pcap
 	command.pcapCmd = newPcapCmd(command.flags)
@@ -96,10 +111,6 @@ func NewCommand(version string) *Command {
 	// alp diff
 	command.diffCmd = newDiffCmd(command.flags)
 	command.rootCmd.AddCommand(command.diffCmd)
-
-	// alp count
-	command.countCmd = newCountCmd(command.flags)
-	command.rootCmd.AddCommand(command.countCmd)
 
 	return command
 }

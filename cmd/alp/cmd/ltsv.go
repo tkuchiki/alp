@@ -3,6 +3,8 @@ package cmd
 import (
 	"os"
 
+	"github.com/tkuchiki/alp/counter"
+
 	"github.com/tkuchiki/alp/log_reader"
 
 	"github.com/spf13/cobra"
@@ -145,4 +147,35 @@ func newLTSVTopNCmd(flags *flags) *cobra.Command {
 	ltsvTopNCmd.InheritedFlags().SortFlags = false
 
 	return ltsvTopNCmd
+}
+
+func newLTSVCountCmd(flags *flags) *cobra.Command {
+	ltsvCountCmd := newCountSubCmd()
+	ltsvCountCmd.RunE = func(cmd *cobra.Command, args []string) error {
+		opts, err := flags.createLTSVCountOptions(cmd)
+		if err != nil {
+			return err
+		}
+
+		counter := counter.NewCounter(os.Stdout, os.Stderr, opts)
+
+		f, err := counter.Open(opts.File)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		parser := newLTSVParser(opts, f)
+
+		return runCount(counter, parser, opts)
+	}
+
+	flags.defineCountSubCommandOptions(ltsvCountCmd)
+	flags.defineLTSVOptions(ltsvCountCmd)
+
+	ltsvCountCmd.Flags().SortFlags = false
+	ltsvCountCmd.PersistentFlags().SortFlags = false
+	ltsvCountCmd.InheritedFlags().SortFlags = false
+
+	return ltsvCountCmd
 }

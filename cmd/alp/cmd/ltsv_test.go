@@ -147,3 +147,28 @@ func TestLTSVTopNCmd(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestLTSVCountCmd(t *testing.T) {
+	keys := testutil.NewLTSVLogKeys()
+
+	ltsvLog := testutil.LTSVLog(keys)
+
+	tempFile, err := testutil.CreateTempDirAndFile(t.TempDir(), "test_ltsv_count_cmd_temp_file", ltsvLog)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	args := []string{"ltsv", "count",
+		"--file", tempFile,
+		"--reverse",
+		"--keys", "ua",
+	}
+
+	command := NewCommand("test")
+	command.setArgs(args)
+
+	err = command.Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
+}

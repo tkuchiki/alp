@@ -7,6 +7,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/tkuchiki/alp/options"
+
 	"github.com/tkuchiki/alp/errors"
 	"github.com/tkuchiki/alp/parsers"
 )
@@ -18,17 +20,18 @@ type Counter struct {
 	parser    parsers.Parser
 	groups    *groups
 	printer   *Printer
-	reverse   bool
+	options   *options.Options
 }
 
-func NewCounter(outw, errw io.Writer, reverse bool) *Counter {
+func NewCounter(outw, errw io.Writer, opts *options.Options) *Counter {
+	printOptions := NewPrintOptions(opts.NoHeaders, false, opts.PaginationLimit)
 	return &Counter{
 		outWriter: outw,
 		errWriter: errw,
 		inReader:  os.Stdin,
-		printer:   NewPrinter(outw),
+		printer:   NewPrinter(outw, opts.Format, printOptions),
 		groups:    newGroups(),
-		reverse:   reverse,
+		options:   opts,
 	}
 }
 
@@ -94,7 +97,7 @@ Loop:
 }
 
 func (c *Counter) Sort() {
-	if c.reverse {
+	if c.options.Reverse {
 		sort.Slice(c.groups.groups, func(i, j int) bool {
 			return c.groups.groups[i].count > c.groups.groups[j].count
 		})
