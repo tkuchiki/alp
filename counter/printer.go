@@ -1,13 +1,14 @@
 package counter
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
 
-	"github.com/tkuchiki/alp/html"
-
 	"github.com/olekukonko/tablewriter"
+	"github.com/tkuchiki/alp/convert"
+	"github.com/tkuchiki/alp/html"
 )
 
 const (
@@ -55,6 +56,8 @@ func (p *Printer) Print(groups *groups) {
 		p.printCSV(groups)
 	case "html":
 		p.printHTML(groups)
+	case "json":
+		p.printJSON(groups)
 	}
 }
 
@@ -145,4 +148,22 @@ func (p *Printer) printHTML(groups *groups) {
 
 	content, _ := html.RenderTableWithGridJS("alp", headers, data, p.printOptions.paginationLimit)
 	fmt.Println(content)
+}
+
+func (p *Printer) printJSON(groups *groups) {
+	var headers []string
+	headers = append(headers, defaultSumHeader)
+	headers = append(headers, groups.keys...)
+
+	var data [][]string
+	data = append(data, headers)
+
+	for _, group := range groups.groups {
+		data = append(data, p.generateLine(groups.keys, group))
+	}
+
+	i := convert.ToJSONValues(data)
+	b, _ := json.Marshal(i)
+
+	fmt.Println(string(b))
 }

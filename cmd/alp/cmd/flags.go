@@ -97,7 +97,7 @@ func (f *flags) defineLoad(cmd *cobra.Command) {
 }
 
 func (f *flags) defineFormat(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringP(flagFormat, "", options.DefaultFormatOption, "The output format (table, markdown, tsv, csv and html)")
+	cmd.PersistentFlags().StringP(flagFormat, "", options.DefaultFormatOption, "The output format (table, markdown, tsv, csv, html, and json)")
 }
 
 func (f *flags) defineSort(cmd *cobra.Command) {

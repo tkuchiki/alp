@@ -1,11 +1,13 @@
 package stats
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/tkuchiki/alp/convert"
 	"github.com/tkuchiki/alp/helpers"
 	"github.com/tkuchiki/alp/html"
 )
@@ -389,6 +391,8 @@ func (p *Printer) Print(hs, hsTo *HTTPStats) {
 		p.printCSV(hs, hsTo)
 	case "html":
 		p.printHTML(hs, hsTo)
+	case "json":
+		p.printJSON(hs, hsTo)
 	}
 }
 
@@ -550,4 +554,31 @@ func (p *Printer) printHTML(hsFrom, hsTo *HTTPStats) {
 	}
 	content, _ := html.RenderTableWithGridJS("alp", p.headers, data, p.printOptions.paginationLimit)
 	fmt.Println(content)
+}
+
+func (p *Printer) printJSON(hsFrom, hsTo *HTTPStats) {
+	var data [][]string
+
+	data = append(data, p.keywords)
+
+	if hsTo == nil {
+		for _, s := range hsFrom.stats {
+			data = append(data, p.GenerateLine(s, true))
+		}
+	} else {
+		for _, to := range hsTo.stats {
+			from := findHTTPStatFrom(hsFrom, to)
+
+			if from == nil {
+				data = append(data, p.GenerateLine(to, false))
+			} else {
+				data = append(data, p.GenerateLineWithDiff(from, to, false))
+			}
+		}
+	}
+
+	i := convert.ToJSONValues(data)
+	b, _ := json.Marshal(i)
+
+	fmt.Println(string(b))
 }

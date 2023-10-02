@@ -1,11 +1,13 @@
 package log_reader
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/tkuchiki/alp/convert"
 	"github.com/tkuchiki/alp/html"
 )
 
@@ -153,6 +155,8 @@ func (p *Printer) Print(logs []*AccessLog) {
 		p.printCSV(logs)
 	case "html":
 		p.printHTML(logs)
+	case "json":
+		p.printJSON(logs)
 	}
 }
 
@@ -220,4 +224,18 @@ func (p *Printer) printHTML(logs []*AccessLog) {
 
 	content, _ := html.RenderTableWithGridJS("alp", p.headers, data, p.printOptions.paginationLimit)
 	fmt.Println(content)
+}
+
+func (p *Printer) printJSON(logs []*AccessLog) {
+	var data [][]string
+	data = append(data, headerKeys)
+
+	for _, l := range logs {
+		data = append(data, p.GenerateLine(l, true))
+	}
+
+	i := convert.ToJSONValues(data)
+	b, _ := json.Marshal(i)
+
+	fmt.Println(string(b))
 }
