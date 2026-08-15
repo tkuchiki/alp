@@ -5,7 +5,7 @@ import (
 
 	"github.com/antonmedv/expr"
 	"github.com/antonmedv/expr/vm"
-	"github.com/tkuchiki/alp/parsers"
+	httpv1 "github.com/tkuchiki/logschema/http/v1"
 	"github.com/tkuchiki/parsetime"
 )
 
@@ -17,7 +17,7 @@ type ExpEval struct {
 type ExpEvalEnv struct {
 	Uri                              string
 	Method                           string
-	Time                             string
+	Time                             time.Time
 	ResponseTime                     float64
 	BodyBytes                        float64
 	Status                           int
@@ -27,214 +27,57 @@ type ExpEvalEnv struct {
 	TimeStringGreaterThanOrEqualTime func(l time.Time, r string) bool
 	TimeStringLessThanTime           func(l time.Time, r string) bool
 	TimeStringLessThanOrEqualTime    func(l time.Time, r string) bool
-	StringTimeEqualTime              func(l string, r time.Time) bool
-	StringTimeNotEqualTime           func(l string, r time.Time) bool
-	StringTimeGreaterThanTime        func(l string, r time.Time) bool
-	StringTimeGreaterThanOrEqualTime func(l string, r time.Time) bool
-	StringTimeLessThanTime           func(l string, r time.Time) bool
-	StringTimeLessThanOrEqualTime    func(l string, r time.Time) bool
+	TimeEqualTime                    func(l, r time.Time) bool
+	TimeNotEqualTime                 func(l, r time.Time) bool
+	TimeGreaterThanTime              func(l, r time.Time) bool
+	TimeGreaterThanOrEqualTime       func(l, r time.Time) bool
+	TimeLessThanTime                 func(l, r time.Time) bool
+	TimeLessThanOrEqualTime          func(l, r time.Time) bool
 	TimeAgo                          func(s string) time.Time
-	BetweenTime                      func(t, start, end string) bool
+	BetweenTime                      func(t time.Time, start, end string) bool
 }
 
-var parseTime parsetime.ParseTime
-
-// =
-func TimeStringEqualTime(l time.Time, r string) bool {
-	t, err := parseTime.Parse(r)
-	if err != nil {
-		panic(err)
-	}
-
-	return l.Equal(t)
-}
-
-// !=
-func TimeStringNotEqualTime(l time.Time, r string) bool {
-	t, err := parseTime.Parse(r)
-	if err != nil {
-		panic(err)
-	}
-
-	return !l.Equal(t)
-}
-
-// >
-func TimeStringGreaterThanTime(l time.Time, r string) bool {
-	t, err := parseTime.Parse(r)
-	if err != nil {
-		panic(err)
-	}
-
-	return l.After(t)
-}
-
-// >=
-func TimeStringGreaterThanOrEqualTime(l time.Time, r string) bool {
-	t, err := parseTime.Parse(r)
-	if err != nil {
-		panic(err)
-	}
-
-	return l.After(t) || l.Equal(t)
-}
-
-// <
-func TimeStringLessThanTime(l time.Time, r string) bool {
-	t, err := parseTime.Parse(r)
-	if err != nil {
-		panic(err)
-	}
-
-	return l.Before(t)
-}
-
-// <=
-func TimeStringLessThanOrEqualTime(l time.Time, r string) bool {
-	t, err := parseTime.Parse(r)
-	if err != nil {
-		panic(err)
-	}
-
-	return l.Before(t) || l.Equal(t)
-}
-
-// =
-func StringTimeEqualTime(l string, r time.Time) bool {
-	t, err := parseTime.Parse(l)
-	if err != nil {
-		panic(err)
-	}
-
-	return t.Equal(r)
-}
-
-// !=
-func StringTimeNotEqualTime(l string, r time.Time) bool {
-	t, err := parseTime.Parse(l)
-	if err != nil {
-		panic(err)
-	}
-
-	return !t.Equal(r)
-}
-
-// >
-func StringTimeGreaterThanTime(l string, r time.Time) bool {
-	t, err := parseTime.Parse(l)
-	if err != nil {
-		panic(err)
-	}
-
-	return t.After(r)
-}
-
-// >=
-func StringTimeGreaterThanOrEqualTime(l string, r time.Time) bool {
-	t, err := parseTime.Parse(l)
-	if err != nil {
-		panic(err)
-	}
-
-	return t.After(r) || t.Equal(r)
-}
-
-// <
-func StringTimeLessThanTime(l string, r time.Time) bool {
-	t, err := parseTime.Parse(l)
-	if err != nil {
-		panic(err)
-	}
-
-	return t.Before(r)
-}
-
-// <=
-func StringTimeLessThanOrEqualTime(l string, r time.Time) bool {
-	t, err := parseTime.Parse(l)
-	if err != nil {
-		panic(err)
-	}
-
-	return t.Before(r) || t.Equal(r)
-}
-
-func TimeAgo(s string) time.Time {
-	d, err := time.ParseDuration(s)
-	if err != nil {
-		panic(err)
-	}
-
-	return time.Now().Add(-1 * d)
-}
-
-func BetweenTime(t, start, end string) bool {
-	val, err := parseTime.Parse(t)
-	if err != nil {
-		panic(err)
-	}
-
-	st, err := parseTime.Parse(start)
-	if err != nil {
-		panic(err)
-	}
-
-	et, err := parseTime.Parse(end)
-	if err != nil {
-		panic(err)
-	}
-
-	return st.UnixNano() <= val.UnixNano() && val.UnixNano() <= et.UnixNano()
-}
-
-func NewExpEval(input string, pt parsetime.ParseTime) (*ExpEval, error) {
+func NewExpEval(input string, parseTime parsetime.ParseTime) (*ExpEval, error) {
 	program, err := expr.Compile(input, expr.Env(&ExpEvalEnv{}), expr.AsBool(),
-		expr.Operator("=", "TimeStringEqualTime"),
-		expr.Operator("!=", "TimeStringNotEqualTime"),
-		expr.Operator(">", "TimeStringGreaterThanTime"),
-		expr.Operator(">=", "TimeStringGreaterThanOrEqualTime"),
-		expr.Operator("<", "TimeStringLessThanTime"),
-		expr.Operator("<=", "TimeStringLessThanOrEqualTime"),
-		expr.Operator("=", "StringTimeEqualTime"),
-		expr.Operator("!=", "StringTimeNotEqualTime"),
-		expr.Operator(">", "StringTimeGreaterThanTime"),
-		expr.Operator(">=", "StringTimeGreaterThanOrEqualTime"),
-		expr.Operator("<", "StringTimeLessThanTime"),
-		expr.Operator("<=", "StringTimeLessThanOrEqualTime"),
+		expr.Operator("==", "TimeStringEqualTime", "TimeEqualTime"),
+		expr.Operator("!=", "TimeStringNotEqualTime", "TimeNotEqualTime"),
+		expr.Operator(">", "TimeStringGreaterThanTime", "TimeGreaterThanTime"),
+		expr.Operator(">=", "TimeStringGreaterThanOrEqualTime", "TimeGreaterThanOrEqualTime"),
+		expr.Operator("<", "TimeStringLessThanTime", "TimeLessThanTime"),
+		expr.Operator("<=", "TimeStringLessThanOrEqualTime", "TimeLessThanOrEqualTime"),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	parseTime = pt
-
 	return &ExpEval{
-		program: program,
+		program:   program,
+		parseTime: parseTime,
 	}, nil
 }
 
-func (ee *ExpEval) Run(stat *parsers.ParsedHTTPStat) (bool, error) {
+func (ee *ExpEval) Run(request *httpv1.Request) (bool, error) {
 	env := &ExpEvalEnv{
-		Uri:                              stat.Uri,
-		Method:                           stat.Method,
-		Time:                             stat.Time,
-		ResponseTime:                     stat.ResponseTime,
-		BodyBytes:                        stat.BodyBytes,
-		Status:                           stat.Status,
-		TimeStringEqualTime:              TimeStringEqualTime,
-		TimeStringNotEqualTime:           TimeStringNotEqualTime,
-		TimeStringGreaterThanTime:        TimeStringGreaterThanTime,
-		TimeStringGreaterThanOrEqualTime: TimeStringGreaterThanOrEqualTime,
-		TimeStringLessThanTime:           TimeStringLessThanTime,
-		TimeStringLessThanOrEqualTime:    TimeStringLessThanOrEqualTime,
-		StringTimeEqualTime:              StringTimeEqualTime,
-		StringTimeNotEqualTime:           StringTimeNotEqualTime,
-		StringTimeGreaterThanTime:        StringTimeGreaterThanTime,
-		StringTimeGreaterThanOrEqualTime: StringTimeGreaterThanOrEqualTime,
-		StringTimeLessThanTime:           StringTimeLessThanTime,
-		StringTimeLessThanOrEqualTime:    StringTimeLessThanOrEqualTime,
-		TimeAgo:                          TimeAgo,
-		BetweenTime:                      BetweenTime,
+		Uri:                              request.Data.URLReference(),
+		Method:                           request.Data.Method,
+		Time:                             eventTime(request),
+		ResponseTime:                     float64(request.DurationNano) / float64(time.Second),
+		BodyBytes:                        responseBodySize(request),
+		Status:                           statusCode(request),
+		TimeStringEqualTime:              ee.timeStringEqual,
+		TimeStringNotEqualTime:           ee.timeStringNotEqual,
+		TimeStringGreaterThanTime:        ee.timeStringGreaterThan,
+		TimeStringGreaterThanOrEqualTime: ee.timeStringGreaterThanOrEqual,
+		TimeStringLessThanTime:           ee.timeStringLessThan,
+		TimeStringLessThanOrEqualTime:    ee.timeStringLessThanOrEqual,
+		TimeEqualTime:                    timeEqual,
+		TimeNotEqualTime:                 timeNotEqual,
+		TimeGreaterThanTime:              timeGreaterThan,
+		TimeGreaterThanOrEqualTime:       timeGreaterThanOrEqual,
+		TimeLessThanTime:                 timeLessThan,
+		TimeLessThanOrEqualTime:          timeLessThanOrEqual,
+		TimeAgo:                          timeAgo,
+		BetweenTime:                      ee.betweenTime,
 	}
 
 	output, err := expr.Run(ee.program, env)
@@ -243,4 +86,105 @@ func (ee *ExpEval) Run(stat *parsers.ParsedHTTPStat) (bool, error) {
 	}
 
 	return output.(bool), nil
+}
+
+func eventTime(request *httpv1.Request) time.Time {
+	if request.TimeUnixNano == nil {
+		return time.Time{}
+	}
+
+	return time.Unix(0, int64(*request.TimeUnixNano))
+}
+
+func responseBodySize(request *httpv1.Request) float64 {
+	if request.Data.ResponseBodySizeBytes == nil {
+		return -1
+	}
+
+	return float64(*request.Data.ResponseBodySizeBytes)
+}
+
+func statusCode(request *httpv1.Request) int {
+	if request.Data.StatusCode == nil {
+		return 0
+	}
+
+	return *request.Data.StatusCode
+}
+
+func (ee *ExpEval) parse(value string) time.Time {
+	parsed, err := ee.parseTime.Parse(value)
+	if err != nil {
+		panic(err)
+	}
+
+	return parsed
+}
+
+func (ee *ExpEval) timeStringEqual(left time.Time, right string) bool {
+	return left.Equal(ee.parse(right))
+}
+
+func (ee *ExpEval) timeStringNotEqual(left time.Time, right string) bool {
+	return !left.Equal(ee.parse(right))
+}
+
+func (ee *ExpEval) timeStringGreaterThan(left time.Time, right string) bool {
+	return left.After(ee.parse(right))
+}
+
+func (ee *ExpEval) timeStringGreaterThanOrEqual(left time.Time, right string) bool {
+	parsed := ee.parse(right)
+
+	return left.After(parsed) || left.Equal(parsed)
+}
+
+func (ee *ExpEval) timeStringLessThan(left time.Time, right string) bool {
+	return left.Before(ee.parse(right))
+}
+
+func (ee *ExpEval) timeStringLessThanOrEqual(left time.Time, right string) bool {
+	parsed := ee.parse(right)
+
+	return left.Before(parsed) || left.Equal(parsed)
+}
+
+func timeEqual(left, right time.Time) bool {
+	return left.Equal(right)
+}
+
+func timeNotEqual(left, right time.Time) bool {
+	return !left.Equal(right)
+}
+
+func timeGreaterThan(left, right time.Time) bool {
+	return left.After(right)
+}
+
+func timeGreaterThanOrEqual(left, right time.Time) bool {
+	return left.After(right) || left.Equal(right)
+}
+
+func timeLessThan(left, right time.Time) bool {
+	return left.Before(right)
+}
+
+func timeLessThanOrEqual(left, right time.Time) bool {
+	return left.Before(right) || left.Equal(right)
+}
+
+func timeAgo(value string) time.Time {
+	duration, err := time.ParseDuration(value)
+	if err != nil {
+		panic(err)
+	}
+
+	return time.Now().Add(-duration)
+}
+
+func (ee *ExpEval) betweenTime(value time.Time, start, end string) bool {
+	startTime := ee.parse(start)
+	endTime := ee.parse(end)
+
+	return !value.Before(startTime) && !value.After(endTime)
 }

@@ -5,7 +5,7 @@ import (
 
 	"github.com/tkuchiki/alp/errors"
 	"github.com/tkuchiki/alp/options"
-	"github.com/tkuchiki/alp/parsers"
+	httpv1 "github.com/tkuchiki/logschema/http/v1"
 	"github.com/tkuchiki/parsetime"
 )
 
@@ -43,20 +43,16 @@ func (f *Filter) Init() error {
 }
 
 func (f *Filter) isEnable() bool {
-	if f.expeval != nil {
-		return true
-	}
-
-	return false
+	return f.expeval != nil
 }
 
-func (f *Filter) Do(stat *parsers.ParsedHTTPStat) error {
+func (f *Filter) Do(record *httpv1.Request) error {
 	if !f.isEnable() {
 		return nil
 	}
 
 	if f.expeval != nil {
-		matched, err := f.expeval.Run(stat)
+		matched, err := f.expeval.Run(record)
 		if err != nil {
 			return err
 		}

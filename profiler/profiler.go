@@ -174,9 +174,9 @@ Loop:
 			continue Loop
 		}
 
-		sts.Set(s.Uri, s.Method, s.Status, s.ResponseTime, s.BodyBytes, 0)
+		sts.Observe(s)
 
-		if sts.CountUris() > p.options.Limit {
+		if sts.CountURIs() > p.options.Limit {
 			return nil, fmt.Errorf("Too many URI's (%d or less)", p.options.Limit)
 		}
 	}

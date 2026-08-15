@@ -149,7 +149,7 @@ func (f *flags) defineMatchingGroups(cmd *cobra.Command) {
 }
 
 func (f *flags) defineFilters(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringP(flagFilters, "f", "", "Only the log_reader are profiled that match the conditions")
+	cmd.PersistentFlags().StringP(flagFilters, "f", "", "Only the logs are profiled that match the conditions")
 }
 
 func (f *flags) definePositionFile(cmd *cobra.Command) {
@@ -474,7 +474,7 @@ func (f *flags) bindFlags(cmd *cobra.Command) {
 	viper.BindPFlag("nosave_pos", cmd.PersistentFlags().Lookup(flagNoSavePositionFile))
 	viper.BindPFlag("location", cmd.PersistentFlags().Lookup(flagLocation))
 	viper.BindPFlag("output", cmd.PersistentFlags().Lookup(flagOutput))
-	viper.BindPFlag("pagenation_limit", cmd.PersistentFlags().Lookup(flagPage))
+	viper.BindPFlag("pagination_limit", cmd.PersistentFlags().Lookup(flagPage))
 
 	// json
 	viper.BindPFlag("json.uri_key", cmd.PersistentFlags().Lookup(flagJSONUriKey))

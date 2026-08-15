@@ -21,6 +21,8 @@ import (
 	"github.com/google/gopacket/pcapgo"
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
+	corev1 "github.com/tkuchiki/logschema/core/v1"
+	httpv1 "github.com/tkuchiki/logschema/http/v1"
 )
 
 const (
@@ -73,8 +75,8 @@ func NewPcapParser(r io.Reader, rawServerIPs []string, serverPort uint16, query,
 	}, nil
 }
 
-func (j *PcapParser) Parse() (*ParsedHTTPStat, error) {
-	res := <-j.resCh
+func (p *PcapParser) Parse() (*httpv1.Request, error) {
+	res := <-p.resCh
 	if res == nil {
 		return nil, io.EOF
 	}
@@ -91,22 +93,37 @@ func (j *PcapParser) Parse() (*ParsedHTTPStat, error) {
 	}
 	resTime := resTimestamp.Sub(reqTimestamp)
 
-	uri := normalizeURL(req.URL, j.queryString, j.qsIgnoreValues)
+	u := normalizeURL(req.URL, p.queryString, p.qsIgnoreValues)
 
 	resBodyBytes := res.ContentLength
-	stat := NewParsedHTTPStat(uri, req.Method, reqTimestamp.Format(time.RFC3339), math.Abs(resTime.Seconds()), float64(resBodyBytes), res.StatusCode)
-	return stat, nil
+	record, err := newHTTPRequest(
+		u,
+		req.Method,
+		nil,
+		math.Abs(resTime.Seconds()),
+		float64(resBodyBytes),
+		res.StatusCode,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	eventTime := corev1.DecimalInt64(reqTimestamp.UnixNano())
+	record.TimeUnixNano = &eventTime
+
+	return record, nil
 }
 
-func (j *PcapParser) ReadBytes() int {
+func (p *PcapParser) ReadBytes() int {
 	return 0
 }
 
-func (j *PcapParser) SetReadBytes(n int) {
+func (p *PcapParser) SetReadBytes(n int) {
 	// not supported
 }
 
-func (j *PcapParser) Seek(n int) error {
+func (p *PcapParser) Seek(n int) error {
 	return errors.New("not supported")
 }
 

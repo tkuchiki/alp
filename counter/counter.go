@@ -1,9 +1,11 @@
 package counter
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -72,19 +74,20 @@ Loop:
 			return err
 		}
 
-		entries := make([]string, len(keys))
+		entries := make([]string, 0, len(keys))
 		group := newGroup()
 		for _, key := range keys {
-			val, ok := s.Entries[key]
+			value, ok := s.Data.Attributes[key]
 			if !ok {
 				continue Loop
 			}
+			val := fmt.Sprint(value)
 			entries = append(entries, val)
 			group.values[key] = val
 		}
 
-		concatenatedKey := strings.Join(entries, "_")
-		idx := c.groups.hints.loadOrStore(concatenatedKey)
+		concatenatedKey := groupKey(entries)
+		idx := c.groups.index.loadOrStore(concatenatedKey)
 
 		if idx >= len(c.groups.groups) {
 			c.groups.groups = append(c.groups.groups, group)
@@ -94,6 +97,17 @@ Loop:
 	}
 
 	return nil
+}
+
+func groupKey(entries []string) string {
+	var key strings.Builder
+	for _, entry := range entries {
+		key.WriteString(strconv.Itoa(len(entry)))
+		key.WriteByte(':')
+		key.WriteString(entry)
+	}
+
+	return key.String()
 }
 
 func (c *Counter) Sort() {
@@ -124,39 +138,39 @@ func (c *Counter) CountAndPrint(keys []string) error {
 	return nil
 }
 
-type hints struct {
+type groupIndex struct {
 	values map[string]int
 	len    int
-	mu     sync.RWMutex
+	mu     sync.Mutex
 }
 
-func newHints() *hints {
-	return &hints{
+func newGroupIndex() *groupIndex {
+	return &groupIndex{
 		values: make(map[string]int),
 	}
 }
 
-func (h *hints) loadOrStore(key string) int {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	_, ok := h.values[key]
+func (index *groupIndex) loadOrStore(key string) int {
+	index.mu.Lock()
+	defer index.mu.Unlock()
+	_, ok := index.values[key]
 	if !ok {
-		h.values[key] = h.len
-		h.len++
+		index.values[key] = index.len
+		index.len++
 	}
 
-	return h.values[key]
+	return index.values[key]
 }
 
 type groups struct {
 	keys   []string
 	groups []*group
-	hints  *hints
+	index  *groupIndex
 }
 
 func newGroups() *groups {
 	return &groups{
-		hints: newHints(),
+		index: newGroupIndex(),
 	}
 }
 

@@ -3,31 +3,25 @@ package parsers
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
+	"math"
 	"net/url"
+	"time"
 
 	"github.com/tkuchiki/alp/errors"
 	"github.com/tkuchiki/alp/helpers"
+	corev1 "github.com/tkuchiki/logschema/core/v1"
+	httpv1 "github.com/tkuchiki/logschema/http/v1"
+	"github.com/tkuchiki/parsetime"
 )
 
 type Parser interface {
-	Parse() (*ParsedHTTPStat, error)
+	Parse() (*httpv1.Request, error)
 	ReadBytes() int
 	SetReadBytes(n int)
 	Seek(n int) error
 }
-
-type ParsedHTTPStat struct {
-	Uri          string
-	Method       string
-	Time         string
-	ResponseTime float64
-	BodyBytes    float64
-	Status       int
-	Entries      LogEntries
-}
-
-type LogEntries map[string]string
 
 type statKeys struct {
 	uri          string
@@ -129,9 +123,9 @@ func readline(reader *bufio.Reader) ([]byte, int, error) {
 		if _err != io.EOF && _err != nil {
 			return []byte{}, 0, err
 		}
-		trimedLine := bytes.TrimRight(line, "\r\n")
-		if len(trimedLine) > 0 {
-			b = append(b, trimedLine...)
+		trimmedLine := bytes.TrimRight(line, "\r\n")
+		if len(trimmedLine) > 0 {
+			b = append(b, trimmedLine...)
 		} else {
 			err = errors.SkipReadLineErr
 		}
@@ -147,26 +141,23 @@ func readline(reader *bufio.Reader) ([]byte, int, error) {
 	return b, i, err
 }
 
-func NewParsedHTTPStat(uri, method, time string, resTime, bodyBytes float64, status int) *ParsedHTTPStat {
-	return &ParsedHTTPStat{
-		Uri:          uri,
-		Method:       method,
-		Time:         time,
-		ResponseTime: resTime,
-		BodyBytes:    bodyBytes,
-		Status:       status,
-	}
-}
-
-func toStats(parsedValue map[string]string, keys *statKeys, strictMode, queryString, qsIgnoreValues bool) (*ParsedHTTPStat, error) {
+func toHTTPRecord(
+	parsedValue map[string]string,
+	attributes corev1.Attributes,
+	keys *statKeys,
+	strictMode bool,
+	queryString bool,
+	qsIgnoreValues bool,
+	parseTime parsetime.ParseTime,
+) (*httpv1.Request, error) {
 	u, err := url.Parse(parsedValue[keys.uri])
 	if err != nil {
 		return nil, errSkipReadLine(strictMode, err)
 	}
 
-	uri := normalizeURL(u, queryString, qsIgnoreValues)
-	if uri == "" {
-		return nil, errSkipReadLine(strictMode, err)
+	normalizedURL := normalizeURL(u, queryString, qsIgnoreValues)
+	if normalizedURL.String() == "" {
+		return nil, errSkipReadLine(strictMode, fmt.Errorf("URI must not be empty"))
 	}
 
 	resTime, err := helpers.StringToFloat64(parsedValue[keys.responseTime])
@@ -188,20 +179,35 @@ func toStats(parsedValue map[string]string, keys *statKeys, strictMode, queryStr
 	}
 
 	method := parsedValue[keys.method]
-	timestr := parsedValue[keys.time]
 
-	return NewParsedHTTPStat(uri, method, timestr, resTime, bodyBytes, status), nil
-}
+	var eventTime *corev1.DecimalInt64
+	if rawTime := parsedValue[keys.time]; rawTime != "" {
+		parsedTime, err := parseTime.Parse(rawTime)
+		if err != nil {
+			return nil, errSkipReadLine(strictMode, err)
+		}
 
-func normalizeURL(src *url.URL, queryString, qsIgnoreValues bool) string {
-	if src.RawQuery == "" {
-		return src.String()
+		unixNano := corev1.DecimalInt64(parsedTime.UnixNano())
+		eventTime = &unixNano
 	}
 
-	u := *src // basic clone
+	record, err := newHTTPRequest(normalizedURL, method, eventTime, resTime, bodyBytes, status, attributes)
+	if err != nil {
+		return nil, errSkipReadLine(strictMode, err)
+	}
+
+	return record, nil
+}
+
+func normalizeURL(src *url.URL, queryString, qsIgnoreValues bool) *url.URL {
+	u := *src
+	if src.RawQuery == "" {
+		return &u
+	}
+
 	if !queryString {
 		u.RawQuery = ""
-		return u.String()
+		return &u
 	}
 
 	if qsIgnoreValues {
@@ -213,7 +219,111 @@ func normalizeURL(src *url.URL, queryString, qsIgnoreValues bool) string {
 	} else {
 		u.RawQuery = u.Query().Encode() // re-encode to sort queries
 	}
-	return u.String()
+
+	return &u
+}
+
+func newHTTPRequest(
+	u *url.URL,
+	method string,
+	eventTime *corev1.DecimalInt64,
+	responseTimeSeconds float64,
+	responseBodySize float64,
+	statusCode int,
+	attributes corev1.Attributes,
+) (*httpv1.Request, error) {
+	durationNano, err := secondsToDurationNano(responseTimeSeconds)
+	if err != nil {
+		return nil, err
+	}
+
+	var bodySizeBytes *corev1.DecimalUint64
+	if responseBodySize != -1 {
+		converted, err := floatToUint64(responseBodySize, "response body size")
+		if err != nil {
+			return nil, err
+		}
+
+		bodySizeBytes = &converted
+	}
+
+	data := requestDataFromURL(u)
+	data.Method = method
+	data.StatusCode = &statusCode
+	data.ResponseBodySizeBytes = bodySizeBytes
+	data.Attributes = attributes
+
+	request, err := httpv1.NewRequest(
+		durationNano,
+		corev1.Source{Kind: corev1.SourceOther},
+		data,
+	)
+	if err != nil {
+		return nil, err
+	}
+	request.TimeUnixNano = eventTime
+
+	return &request, nil
+}
+
+func requestDataFromURL(u *url.URL) httpv1.RequestData {
+	path := u.EscapedPath()
+	if u.Opaque != "" && u.Host == "" {
+		path = u.Scheme + ":" + u.Opaque
+	}
+	if path == "" && u.Host != "" {
+		path = "/"
+	}
+
+	data := httpv1.RequestData{URLPath: path}
+	if u.Host != "" {
+		data.URLAuthority = stringPointer(u.Host)
+		if u.Scheme != "" {
+			data.URLScheme = stringPointer(u.Scheme)
+		}
+	}
+	if u.RawQuery != "" || u.ForceQuery {
+		data.URLQuery = stringPointer(u.RawQuery)
+	}
+
+	return data
+}
+
+func secondsToDurationNano(seconds float64) (corev1.DecimalUint64, error) {
+	if math.IsNaN(seconds) || math.IsInf(seconds, 0) || seconds < 0 {
+		return 0, fmt.Errorf("response time must be a finite non-negative number")
+	}
+
+	nanoseconds := math.Round(seconds * float64(time.Second))
+	if nanoseconds >= math.Exp2(64) {
+		return 0, fmt.Errorf("response time exceeds the LogSchema duration range")
+	}
+
+	return corev1.DecimalUint64(uint64(nanoseconds)), nil
+}
+
+func floatToUint64(value float64, field string) (corev1.DecimalUint64, error) {
+	if math.IsNaN(value) || math.IsInf(value, 0) || value < 0 || math.Trunc(value) != value {
+		return 0, fmt.Errorf("%s must be a finite non-negative integer", field)
+	}
+	if value >= math.Exp2(64) {
+		return 0, fmt.Errorf("%s exceeds the LogSchema uint64 range", field)
+	}
+
+	return corev1.DecimalUint64(uint64(value)), nil
+}
+
+func stringPointer(value string) *string {
+	return &value
+}
+
+func attributesFromStrings(values map[string]string) corev1.Attributes {
+	attributes := make(corev1.Attributes, len(values))
+	for key, value := range values {
+		attributes[key] = value
+	}
+
+	return attributes
 }
 
 func errSkipReadLine(strictMode bool, err error) error {

@@ -16,8 +16,8 @@ import (
 func newLTSVCmd(flags *flags) *cobra.Command {
 	var ltsvCmd = &cobra.Command{
 		Use:   "ltsv",
-		Short: "Profile the log_reader for LTSV",
-		Long:  `Profile the log_reader for LTSV`,
+		Short: "Profile the logs for LTSV",
+		Long:  `Profile the logs for LTSV`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts, err := flags.createLTSVOptions(cmd)
 			if err != nil {
@@ -36,7 +36,10 @@ func newLTSVCmd(flags *flags) *cobra.Command {
 			}
 			defer f.Close()
 
-			parser := newLTSVParser(opts, f)
+			parser, err := newLTSVParser(opts, f)
+			if err != nil {
+				return err
+			}
 
 			err = prof.Run(flags.sortOptions, parser, nil)
 
@@ -54,12 +57,12 @@ func newLTSVCmd(flags *flags) *cobra.Command {
 	return ltsvCmd
 }
 
-func newLTSVParser(opts *options.Options, f *os.File) parsers.Parser {
+func newLTSVParser(opts *options.Options, f *os.File) (parsers.Parser, error) {
 	label := parsers.NewLTSVLabel(opts.LTSV.UriLabel, opts.LTSV.MethodLabel, opts.LTSV.TimeLabel,
 		opts.LTSV.ApptimeLabel, opts.LTSV.ReqtimeLabel, opts.LTSV.SizeLabel, opts.LTSV.StatusLabel,
 	)
 
-	return parsers.NewLTSVParser(f, label, opts.QueryString, opts.QueryStringIgnoreValues)
+	return parsers.NewLTSVParser(f, label, opts.QueryString, opts.QueryStringIgnoreValues, opts.Location)
 }
 
 func newLTSVDiffCmd(flags *flags) *cobra.Command {
@@ -84,7 +87,10 @@ func newLTSVDiffCmd(flags *flags) *cobra.Command {
 		}
 		defer fromf.Close()
 
-		fromParser := newLTSVParser(opts, fromf)
+		fromParser, err := newLTSVParser(opts, fromf)
+		if err != nil {
+			return err
+		}
 
 		toProf := profiler.NewProfiler(os.Stdout, os.Stderr, opts)
 		toProf.DisableLoad()
@@ -95,7 +101,10 @@ func newLTSVDiffCmd(flags *flags) *cobra.Command {
 		}
 		defer tof.Close()
 
-		toParser := newLTSVParser(opts, tof)
+		toParser, err := newLTSVParser(opts, tof)
+		if err != nil {
+			return err
+		}
 
 		return runDiff(flags.sortOptions,
 			fromProf, fromParser,
@@ -134,7 +143,10 @@ func newLTSVTopNCmd(flags *flags) *cobra.Command {
 		}
 		defer f.Close()
 
-		parser := newLTSVParser(opts, f)
+		parser, err := newLTSVParser(opts, f)
+		if err != nil {
+			return err
+		}
 
 		return runTopN(logReader, parser)
 	}
@@ -165,7 +177,10 @@ func newLTSVCountCmd(flags *flags) *cobra.Command {
 		}
 		defer f.Close()
 
-		parser := newLTSVParser(opts, f)
+		parser, err := newLTSVParser(opts, f)
+		if err != nil {
+			return err
+		}
 
 		return runCount(counter, parser, opts)
 	}

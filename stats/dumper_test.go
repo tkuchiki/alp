@@ -5,14 +5,27 @@ import (
 	"testing"
 
 	godiff "github.com/kylelemons/godebug/diff"
+	corev1 "github.com/tkuchiki/logschema/core/v1"
+	httpv1 "github.com/tkuchiki/logschema/http/v1"
 )
 
 func TestDumpStats(t *testing.T) {
 	got := new(bytes.Buffer)
 	stats := NewHTTPStats(true, false, false)
-	stats.Set("/foo/bar", "POST", 200, 0.057, 12, 0)
+	status := 200
+	bodySize := corev1.DecimalUint64(12)
+	record, err := httpv1.NewRequest(57_000_000, corev1.Source{Kind: corev1.SourceOther}, httpv1.RequestData{
+		Method:                "POST",
+		URLPath:               "/foo/bar",
+		StatusCode:            &status,
+		ResponseBodySizeBytes: &bodySize,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	stats.Observe(&record)
 
-	err := stats.DumpStats(got)
+	err = stats.DumpStats(got)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,15 +46,15 @@ func TestDumpStats(t *testing.T) {
     percentiles:
     - 0.057
   request_body_bytes:
-    max: 12
-    min: 12
-    sum: 12
-    usepercentile: false
-    percentiles: []
-  response_body_bytes:
     max: 0
     min: 0
     sum: 0
+    usepercentile: false
+    percentiles: []
+  response_body_bytes:
+    max: 12
+    min: 12
+    sum: 12
     usepercentile: false
     percentiles: []
   time: ""
