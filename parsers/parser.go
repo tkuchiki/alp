@@ -16,6 +16,8 @@ import (
 	"github.com/tkuchiki/parsetime"
 )
 
+const originalTimeAttribute = "alp.time.original"
+
 type Parser interface {
 	Parse() (*httpv1.Request, error)
 	ReadBytes() int
@@ -180,8 +182,9 @@ func toHTTPRecord(
 
 	method := parsedValue[keys.method]
 
+	rawTime := parsedValue[keys.time]
 	var eventTime *corev1.DecimalInt64
-	if rawTime := parsedValue[keys.time]; rawTime != "" {
+	if rawTime != "" {
 		parsedTime, err := parseTime.Parse(rawTime)
 		if err != nil {
 			return nil, errSkipReadLine(strictMode, err)
@@ -195,8 +198,31 @@ func toHTTPRecord(
 	if err != nil {
 		return nil, errSkipReadLine(strictMode, err)
 	}
+	setOriginalTime(record, rawTime)
 
 	return record, nil
+}
+
+// OriginalTime returns the producer-preserved timestamp representation used by
+// ALP's raw-entry views.
+func OriginalTime(request *httpv1.Request) string {
+	value, ok := request.Data.Attributes[originalTimeAttribute].(string)
+	if !ok {
+		return ""
+	}
+
+	return value
+}
+
+func setOriginalTime(request *httpv1.Request, value string) {
+	if value == "" {
+		return
+	}
+	if request.Data.Attributes == nil {
+		request.Data.Attributes = make(corev1.Attributes)
+	}
+
+	request.Data.Attributes[originalTimeAttribute] = value
 }
 
 func normalizeURL(src *url.URL, queryString, qsIgnoreValues bool) *url.URL {

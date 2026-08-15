@@ -14,6 +14,7 @@ import (
 	"github.com/tkuchiki/alp/parsers"
 	"github.com/tkuchiki/alp/stats"
 	corev1 "github.com/tkuchiki/logschema/core/v1"
+	httpv1 "github.com/tkuchiki/logschema/http/v1"
 )
 
 type AccessLog struct {
@@ -172,7 +173,7 @@ Loop:
 		a.Append(
 			s.Data.URLReference(),
 			s.Data.Method,
-			formatEventTime(s.TimeUnixNano),
+			displayEventTime(s),
 			float64(s.DurationNano)/float64(time.Second),
 			responseBodySize(s.Data.ResponseBodySizeBytes),
 			statusCode(s.Data.StatusCode),
@@ -190,6 +191,14 @@ Loop:
 	err = a.Sort(a.options.TopN.Sort, a.options.TopN.Reverse)
 
 	return err
+}
+
+func displayEventTime(request *httpv1.Request) string {
+	if original := parsers.OriginalTime(request); original != "" {
+		return original
+	}
+
+	return formatEventTime(request.TimeUnixNano)
 }
 
 func formatEventTime(value *corev1.DecimalInt64) string {

@@ -27,6 +27,12 @@ type ExpEvalEnv struct {
 	TimeStringGreaterThanOrEqualTime func(l time.Time, r string) bool
 	TimeStringLessThanTime           func(l time.Time, r string) bool
 	TimeStringLessThanOrEqualTime    func(l time.Time, r string) bool
+	StringTimeEqualTime              func(l string, r time.Time) bool
+	StringTimeNotEqualTime           func(l string, r time.Time) bool
+	StringTimeGreaterThanTime        func(l string, r time.Time) bool
+	StringTimeGreaterThanOrEqualTime func(l string, r time.Time) bool
+	StringTimeLessThanTime           func(l string, r time.Time) bool
+	StringTimeLessThanOrEqualTime    func(l string, r time.Time) bool
 	TimeEqualTime                    func(l, r time.Time) bool
 	TimeNotEqualTime                 func(l, r time.Time) bool
 	TimeGreaterThanTime              func(l, r time.Time) bool
@@ -39,12 +45,12 @@ type ExpEvalEnv struct {
 
 func NewExpEval(input string, parseTime parsetime.ParseTime) (*ExpEval, error) {
 	program, err := expr.Compile(input, expr.Env(&ExpEvalEnv{}), expr.AsBool(),
-		expr.Operator("==", "TimeStringEqualTime", "TimeEqualTime"),
-		expr.Operator("!=", "TimeStringNotEqualTime", "TimeNotEqualTime"),
-		expr.Operator(">", "TimeStringGreaterThanTime", "TimeGreaterThanTime"),
-		expr.Operator(">=", "TimeStringGreaterThanOrEqualTime", "TimeGreaterThanOrEqualTime"),
-		expr.Operator("<", "TimeStringLessThanTime", "TimeLessThanTime"),
-		expr.Operator("<=", "TimeStringLessThanOrEqualTime", "TimeLessThanOrEqualTime"),
+		expr.Operator("==", "TimeStringEqualTime", "StringTimeEqualTime", "TimeEqualTime"),
+		expr.Operator("!=", "TimeStringNotEqualTime", "StringTimeNotEqualTime", "TimeNotEqualTime"),
+		expr.Operator(">", "TimeStringGreaterThanTime", "StringTimeGreaterThanTime", "TimeGreaterThanTime"),
+		expr.Operator(">=", "TimeStringGreaterThanOrEqualTime", "StringTimeGreaterThanOrEqualTime", "TimeGreaterThanOrEqualTime"),
+		expr.Operator("<", "TimeStringLessThanTime", "StringTimeLessThanTime", "TimeLessThanTime"),
+		expr.Operator("<=", "TimeStringLessThanOrEqualTime", "StringTimeLessThanOrEqualTime", "TimeLessThanOrEqualTime"),
 	)
 	if err != nil {
 		return nil, err
@@ -70,6 +76,12 @@ func (ee *ExpEval) Run(request *httpv1.Request) (bool, error) {
 		TimeStringGreaterThanOrEqualTime: ee.timeStringGreaterThanOrEqual,
 		TimeStringLessThanTime:           ee.timeStringLessThan,
 		TimeStringLessThanOrEqualTime:    ee.timeStringLessThanOrEqual,
+		StringTimeEqualTime:              ee.stringTimeEqual,
+		StringTimeNotEqualTime:           ee.stringTimeNotEqual,
+		StringTimeGreaterThanTime:        ee.stringTimeGreaterThan,
+		StringTimeGreaterThanOrEqualTime: ee.stringTimeGreaterThanOrEqual,
+		StringTimeLessThanTime:           ee.stringTimeLessThan,
+		StringTimeLessThanOrEqualTime:    ee.stringTimeLessThanOrEqual,
 		TimeEqualTime:                    timeEqual,
 		TimeNotEqualTime:                 timeNotEqual,
 		TimeGreaterThanTime:              timeGreaterThan,
@@ -147,6 +159,30 @@ func (ee *ExpEval) timeStringLessThanOrEqual(left time.Time, right string) bool 
 	parsed := ee.parse(right)
 
 	return left.Before(parsed) || left.Equal(parsed)
+}
+
+func (ee *ExpEval) stringTimeEqual(left string, right time.Time) bool {
+	return ee.timeStringEqual(right, left)
+}
+
+func (ee *ExpEval) stringTimeNotEqual(left string, right time.Time) bool {
+	return ee.timeStringNotEqual(right, left)
+}
+
+func (ee *ExpEval) stringTimeGreaterThan(left string, right time.Time) bool {
+	return ee.timeStringLessThan(right, left)
+}
+
+func (ee *ExpEval) stringTimeGreaterThanOrEqual(left string, right time.Time) bool {
+	return ee.timeStringLessThanOrEqual(right, left)
+}
+
+func (ee *ExpEval) stringTimeLessThan(left string, right time.Time) bool {
+	return ee.timeStringGreaterThan(right, left)
+}
+
+func (ee *ExpEval) stringTimeLessThanOrEqual(left string, right time.Time) bool {
+	return ee.timeStringGreaterThanOrEqual(right, left)
 }
 
 func timeEqual(left, right time.Time) bool {

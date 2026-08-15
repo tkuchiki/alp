@@ -52,6 +52,9 @@ func TestJSONParserReturnsLogSchemaRecord(t *testing.T) {
 	if got, want := *record.Data.StatusCode, 200; got != want {
 		t.Fatalf("status = %d, want %d", got, want)
 	}
+	if got, want := OriginalTime(record), "2015-09-06T05:58:05+09:00"; got != want {
+		t.Fatalf("original time = %q, want %q", got, want)
+	}
 	if got, ok := record.Data.Attributes["ua"]; !ok || got != "UA1" {
 		t.Fatalf("ua attribute = %q, %v", got, ok)
 	}
@@ -63,6 +66,22 @@ func TestJSONParserReturnsLogSchemaRecord(t *testing.T) {
 	}
 	if _, ok := record.Data.Attributes["nullable"]; ok {
 		t.Fatal("null attribute was not omitted")
+	}
+}
+
+func TestOriginalTimePreservesUnusualInput(t *testing.T) {
+	const input = `{"time":"not-a-time","method":"GET","uri":"/","status":200,"body_bytes":1,"response_time":0.001}`
+	parser, err := NewJSONParser(strings.NewReader(input), NewJSONKeys("", "", "", "", "", "", ""), false, false, "Local")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	record, err := parser.Parse()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := OriginalTime(record), "not-a-time"; got != want {
+		t.Fatalf("original time = %q, want %q", got, want)
 	}
 }
 

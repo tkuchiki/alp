@@ -13,8 +13,30 @@ func (hs *HTTPStats) LoadStats(r io.Reader) error {
 	}
 
 	var stats []*HTTPStat
-	err = yaml.Unmarshal(buf, &stats)
+	if err := yaml.Unmarshal(buf, &stats); err != nil {
+		return err
+	}
+	for _, stat := range stats {
+		migrateLegacyBodyBytes(stat)
+	}
 	hs.stats = stats
 
-	return err
+	return nil
+}
+
+func migrateLegacyBodyBytes(stat *HTTPStat) {
+	if hasFloatStatsData(stat.ResponseBodyBytes) || !hasFloatStatsData(stat.RequestBodyBytes) {
+		return
+	}
+
+	// Historical ALP dumps stored parsed response sizes in request_body_bytes.
+	stat.RequestBodyBytes, stat.ResponseBodyBytes = stat.ResponseBodyBytes, stat.RequestBodyBytes
+}
+
+func hasFloatStatsData(stats *floatStats) bool {
+	if stats == nil {
+		return false
+	}
+
+	return stats.Max != 0 || stats.Min != 0 || stats.Sum != 0 || len(stats.Percentiles) != 0
 }

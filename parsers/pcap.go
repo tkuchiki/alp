@@ -111,6 +111,7 @@ func (p *PcapParser) Parse() (*httpv1.Request, error) {
 
 	eventTime := corev1.DecimalInt64(reqTimestamp.UnixNano())
 	record.TimeUnixNano = &eventTime
+	setOriginalTime(record, reqTimestamp.Format(time.RFC3339))
 
 	return record, nil
 }
