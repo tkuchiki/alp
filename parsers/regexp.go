@@ -5,6 +5,9 @@ import (
 	"errors"
 	"io"
 	"regexp"
+
+	httpv1 "github.com/tkuchiki/logschema/http/v1"
+	"github.com/tkuchiki/parsetime"
 )
 
 type RegexpParser struct {
@@ -15,6 +18,7 @@ type RegexpParser struct {
 	qsIgnoreValues bool
 	re             *regexp.Regexp
 	readBytes      int
+	parseTime      parsetime.ParseTime
 }
 
 var errPatternNotMatched = errors.New("pattern not matched")
@@ -31,8 +35,12 @@ func NewSubexpNames(uri, method, time, responseTime, requestTime, size, status s
 	)
 }
 
-func NewRegexpParser(r io.Reader, expr string, names *statKeys, query, qsIgnoreValues bool) (Parser, error) {
+func NewRegexpParser(r io.Reader, expr string, names *statKeys, query, qsIgnoreValues bool, location string) (Parser, error) {
 	re, err := regexp.Compile(expr)
+	if err != nil {
+		return nil, err
+	}
+	parseTime, err := parsetime.NewParseTime(location)
 	if err != nil {
 		return nil, err
 	}
@@ -43,10 +51,11 @@ func NewRegexpParser(r io.Reader, expr string, names *statKeys, query, qsIgnoreV
 		subexpNames:    names,
 		queryString:    query,
 		qsIgnoreValues: qsIgnoreValues,
+		parseTime:      parseTime,
 	}, nil
 }
 
-func (rp *RegexpParser) Parse() (*ParsedHTTPStat, error) {
+func (rp *RegexpParser) Parse() (*httpv1.Request, error) {
 	b, i, err := readline(rp.reader)
 	if len(b) == 0 && err != nil {
 		return nil, err
@@ -67,17 +76,9 @@ func (rp *RegexpParser) Parse() (*ParsedHTTPStat, error) {
 		parsedValue[names[i]] = groups[i]
 	}
 
-	parsedHTTPStat, err := toStats(parsedValue, rp.subexpNames, rp.strictMode, rp.queryString, rp.qsIgnoreValues)
-	if err != nil {
-		return nil, err
-	}
+	attributes := attributesFromStrings(parsedValue)
 
-	logEntries := make(LogEntries)
-	logEntries = parsedValue
-
-	parsedHTTPStat.Entries = logEntries
-
-	return parsedHTTPStat, nil
+	return toHTTPRecord(parsedValue, attributes, rp.subexpNames, rp.strictMode, rp.queryString, rp.qsIgnoreValues, rp.parseTime)
 }
 
 func (rp *RegexpParser) ReadBytes() int {

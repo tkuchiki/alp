@@ -1,45 +1,52 @@
 package stats
 
 import (
+	stderrors "errors"
 	"fmt"
 	"math"
 	"net/url"
 	"regexp"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/tkuchiki/alp/errors"
 	"github.com/tkuchiki/alp/helpers"
 	"github.com/tkuchiki/alp/options"
-	"github.com/tkuchiki/alp/parsers"
+	httpv1 "github.com/tkuchiki/logschema/http/v1"
 )
 
-type hints struct {
-	values map[string]int
+type httpStatKey struct {
+	method string
+	uri    string
+}
+
+type httpStatIndex struct {
+	values map[httpStatKey]int
 	len    int
-	mu     sync.RWMutex
+	mu     sync.Mutex
 }
 
-func newHints() *hints {
-	return &hints{
-		values: make(map[string]int),
+func newHTTPStatIndex() *httpStatIndex {
+	return &httpStatIndex{
+		values: make(map[httpStatKey]int),
 	}
 }
 
-func (h *hints) loadOrStore(key string) int {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	_, ok := h.values[key]
+func (index *httpStatIndex) loadOrStore(key httpStatKey) int {
+	index.mu.Lock()
+	defer index.mu.Unlock()
+	_, ok := index.values[key]
 	if !ok {
-		h.values[key] = h.len
-		h.len++
+		index.values[key] = index.len
+		index.len++
 	}
 
-	return h.values[key]
+	return index.values[key]
 }
 
 type HTTPStats struct {
-	hints                          *hints
+	index                          *httpStatIndex
 	stats                          httpStats
 	useResponseTimePercentile      bool
 	useRequestBodyBytesPercentile  bool
@@ -52,14 +59,16 @@ type HTTPStats struct {
 
 func NewHTTPStats(useResTimePercentile, useRequestBodyBytesPercentile, useResponseBodyBytesPercentile bool) *HTTPStats {
 	return &HTTPStats{
-		hints:                          newHints(),
+		index:                          newHTTPStatIndex(),
 		stats:                          make([]*HTTPStat, 0),
 		useResponseTimePercentile:      useResTimePercentile,
+		useRequestBodyBytesPercentile:  useRequestBodyBytesPercentile,
 		useResponseBodyBytesPercentile: useResponseBodyBytesPercentile,
 	}
 }
 
-func (hs *HTTPStats) Set(uri, method string, status int, restime, resBodyBytes, reqBodyBytes float64) {
+func (hs *HTTPStats) Observe(request *httpv1.Request) {
+	uri := request.Data.URLReference()
 	if len(hs.uriMatchingGroups) > 0 {
 		for _, re := range hs.uriMatchingGroups {
 			if ok := re.Match([]byte(uri)); ok {
@@ -70,23 +79,22 @@ func (hs *HTTPStats) Set(uri, method string, status int, restime, resBodyBytes, 
 		}
 	}
 
-	key := fmt.Sprintf("%s_%s", method, uri)
-
-	idx := hs.hints.loadOrStore(key)
+	key := httpStatKey{method: request.Data.Method, uri: uri}
+	idx := hs.index.loadOrStore(key)
 
 	if idx >= len(hs.stats) {
-		hs.stats = append(hs.stats, newHTTPStat(uri, method, hs.useResponseTimePercentile, hs.useRequestBodyBytesPercentile, hs.useResponseBodyBytesPercentile))
+		hs.stats = append(hs.stats, newHTTPStat(uri, request.Data.Method, hs.useResponseTimePercentile, hs.useRequestBodyBytesPercentile, hs.useResponseBodyBytesPercentile))
 	}
 
-	hs.stats[idx].Set(status, restime, resBodyBytes, reqBodyBytes)
+	hs.stats[idx].Observe(request)
 }
 
 func (hs *HTTPStats) Stats() []*HTTPStat {
 	return hs.stats
 }
 
-func (hs *HTTPStats) CountUris() int {
-	return hs.hints.len
+func (hs *HTTPStats) CountURIs() int {
+	return hs.index.len
 }
 
 func (hs *HTTPStats) SetOptions(options *options.Options) {
@@ -113,11 +121,13 @@ func (hs *HTTPStats) InitFilter(options *options.Options) error {
 	return hs.filter.Init()
 }
 
-func (hs *HTTPStats) DoFilter(pstat *parsers.ParsedHTTPStat) (bool, error) {
-	err := hs.filter.Do(pstat)
-	if err == errors.SkipReadLineErr {
-		return false, nil
-	} else if err != nil {
+func (hs *HTTPStats) DoFilter(record *httpv1.Request) (bool, error) {
+	err := hs.filter.Do(record)
+	if err != nil {
+		if stderrors.Is(err, errors.SkipReadLineErr) {
+			return false, nil
+		}
+
 		return false, err
 	}
 
@@ -144,17 +154,17 @@ func (hs *HTTPStats) SortWithOptions() {
 }
 
 type HTTPStat struct {
-	Uri               string        `yaml:"uri"`
-	Cnt               int           `yaml:"count"`
-	Status1xx         int           `yaml:"status1xx"`
-	Status2xx         int           `yaml:"status2xx"`
-	Status3xx         int           `yaml:"status3xx"`
-	Status4xx         int           `yaml:"status4xx"`
-	Status5xx         int           `yaml:"status5xx"`
-	Method            string        `yaml:"method"`
-	ResponseTime      *responseTime `yaml:"response_time"`
-	RequestBodyBytes  *bodyBytes    `yaml:"request_body_bytes"`
-	ResponseBodyBytes *bodyBytes    `yaml:"response_body_bytes"`
+	Uri               string      `yaml:"uri"`
+	Cnt               int         `yaml:"count"`
+	Status1xx         int         `yaml:"status1xx"`
+	Status2xx         int         `yaml:"status2xx"`
+	Status3xx         int         `yaml:"status3xx"`
+	Status4xx         int         `yaml:"status4xx"`
+	Status5xx         int         `yaml:"status5xx"`
+	Method            string      `yaml:"method"`
+	ResponseTime      *floatStats `yaml:"response_time"`
+	RequestBodyBytes  *floatStats `yaml:"request_body_bytes"`
+	ResponseBodyBytes *floatStats `yaml:"response_body_bytes"`
 	Time              string
 }
 
@@ -164,18 +174,25 @@ func newHTTPStat(uri, method string, useResTimePercentile, useRequestBodyBytesPe
 	return &HTTPStat{
 		Uri:               uri,
 		Method:            method,
-		ResponseTime:      newResponseTime(useResTimePercentile),
-		RequestBodyBytes:  newBodyBytes(useRequestBodyBytesPercentile),
-		ResponseBodyBytes: newBodyBytes(useResponseBodyBytesPercentile),
+		ResponseTime:      newFloatStats(useResTimePercentile),
+		RequestBodyBytes:  newFloatStats(useRequestBodyBytesPercentile),
+		ResponseBodyBytes: newFloatStats(useResponseBodyBytesPercentile),
 	}
 }
 
-func (hs *HTTPStat) Set(status int, restime, reqBodyBytes, resBodyBytes float64) {
+func (hs *HTTPStat) Observe(request *httpv1.Request) {
 	hs.Cnt++
-	hs.setStatus(status)
-	hs.ResponseTime.Set(restime)
-	hs.RequestBodyBytes.Set(reqBodyBytes)
-	hs.ResponseBodyBytes.Set(resBodyBytes)
+	if request.Data.StatusCode != nil {
+		hs.setStatus(*request.Data.StatusCode)
+	}
+
+	hs.ResponseTime.Set(float64(request.DurationNano) / float64(time.Second))
+	if request.Data.RequestBodySizeBytes != nil {
+		hs.RequestBodyBytes.Set(float64(*request.Data.RequestBodySizeBytes))
+	}
+	if request.Data.ResponseBodySizeBytes != nil {
+		hs.ResponseBodyBytes.Set(float64(*request.Data.ResponseBodySizeBytes))
+	}
 }
 
 func (hs *HTTPStat) setStatus(status int) {
@@ -265,7 +282,6 @@ func (hs *HTTPStat) StddevResponseTime() float64 {
 	return hs.ResponseTime.Stddev(hs.Cnt)
 }
 
-// request
 func (hs *HTTPStat) MaxRequestBodyBytes() float64 {
 	return hs.RequestBodyBytes.Max
 }
@@ -290,29 +306,28 @@ func (hs *HTTPStat) StddevRequestBodyBytes() float64 {
 	return hs.RequestBodyBytes.Stddev(hs.Cnt)
 }
 
-// response
 func (hs *HTTPStat) MaxResponseBodyBytes() float64 {
-	return hs.RequestBodyBytes.Max
+	return hs.ResponseBodyBytes.Max
 }
 
 func (hs *HTTPStat) MinResponseBodyBytes() float64 {
-	return hs.RequestBodyBytes.Min
+	return hs.ResponseBodyBytes.Min
 }
 
 func (hs *HTTPStat) SumResponseBodyBytes() float64 {
-	return hs.RequestBodyBytes.Sum
+	return hs.ResponseBodyBytes.Sum
 }
 
 func (hs *HTTPStat) AvgResponseBodyBytes() float64 {
-	return hs.RequestBodyBytes.Avg(hs.Cnt)
+	return hs.ResponseBodyBytes.Avg(hs.Cnt)
 }
 
 func (hs *HTTPStat) PNResponseBodyBytes(n int) float64 {
-	return hs.RequestBodyBytes.PN(hs.Cnt, n)
+	return hs.ResponseBodyBytes.PN(hs.Cnt, n)
 }
 
 func (hs *HTTPStat) StddevResponseBodyBytes() float64 {
-	return hs.RequestBodyBytes.Stddev(hs.Cnt)
+	return hs.ResponseBodyBytes.Stddev(hs.Cnt)
 }
 
 func percentRank(n int, pi int) int {
@@ -332,136 +347,99 @@ func percentRank(n int, pi int) int {
 	return pos - 1
 }
 
-type responseTime struct {
+type floatStats struct {
 	Max           float64 `yaml:"max"`
 	Min           float64 `yaml:"min"`
 	Sum           float64 `yaml:"sum"`
 	UsePercentile bool
 	Percentiles   []float64 `yaml:"percentiles"`
+
+	// SampleCount is a pointer to distinguish legacy dumps from new dumps with
+	// zero samples.
+	SampleCount *int `yaml:"sample_count,omitempty"`
 }
 
-func newResponseTime(usePercentile bool) *responseTime {
-	return &responseTime{
+func newFloatStats(usePercentile bool) *floatStats {
+	sampleCount := 0
+
+	return &floatStats{
 		UsePercentile: usePercentile,
 		Percentiles:   make([]float64, 0),
+		SampleCount:   &sampleCount,
 	}
 }
 
-func (res *responseTime) Set(val float64) {
-	if res.Max < val {
-		res.Max = val
+func (stats *floatStats) Set(val float64) {
+	if stats.SampleCount == nil {
+		sampleCount := 0
+		stats.SampleCount = &sampleCount
+	}
+	(*stats.SampleCount)++
+
+	if stats.Max < val {
+		stats.Max = val
 	}
 
-	if res.Min >= val || res.Min == 0 {
-		res.Min = val
+	if *stats.SampleCount == 1 || stats.Min > val {
+		stats.Min = val
 	}
 
-	res.Sum += val
+	stats.Sum += val
 
-	if res.UsePercentile {
-		res.Percentiles = append(res.Percentiles, val)
+	if stats.UsePercentile {
+		stats.Percentiles = append(stats.Percentiles, val)
 	}
 }
 
-func (res *responseTime) Avg(cnt int) float64 {
-	return res.Sum / float64(cnt)
+func (stats *floatStats) Avg(fallbackCount int) float64 {
+	cnt := stats.sampleCount(fallbackCount)
+	if cnt == 0 {
+		return 0
+	}
+
+	return stats.Sum / float64(cnt)
 }
 
-func (res *responseTime) PN(cnt, n int) float64 {
-	if !res.UsePercentile {
+func (stats *floatStats) PN(_ int, n int) float64 {
+	if !stats.UsePercentile || len(stats.Percentiles) == 0 {
 		return 0.0
 	}
 
-	plen := percentRank(cnt, n)
-	res.Sort()
-	return res.Percentiles[plen]
+	plen := percentRank(len(stats.Percentiles), n)
+	stats.Sort()
+	return stats.Percentiles[plen]
 }
 
-func (res *responseTime) Stddev(cnt int) float64 {
-	if !res.UsePercentile {
+func (stats *floatStats) Stddev(fallbackCount int) float64 {
+	if !stats.UsePercentile {
 		return 0.0
+	}
+	cnt := stats.sampleCount(fallbackCount)
+	if cnt == 0 {
+		return 0
 	}
 
 	var stdd float64
-	avg := res.Avg(cnt)
+	avg := stats.Avg(fallbackCount)
 	n := float64(cnt)
 
-	for _, v := range res.Percentiles {
+	for _, v := range stats.Percentiles {
 		stdd += (v - avg) * (v - avg)
 	}
 
 	return math.Sqrt(stdd / n)
 }
 
-func (res *responseTime) Sort() {
-	sort.Slice(res.Percentiles, func(i, j int) bool {
-		return res.Percentiles[i] < res.Percentiles[j]
+func (stats *floatStats) Sort() {
+	sort.Slice(stats.Percentiles, func(i, j int) bool {
+		return stats.Percentiles[i] < stats.Percentiles[j]
 	})
 }
 
-type bodyBytes struct {
-	Max           float64 `yaml:"max"`
-	Min           float64 `yaml:"min"`
-	Sum           float64 `yaml:"sum"`
-	UsePercentile bool
-	Percentiles   []float64 `yaml:"percentiles"`
-}
-
-func newBodyBytes(usePercentile bool) *bodyBytes {
-	return &bodyBytes{
-		UsePercentile: usePercentile,
-		Percentiles:   make([]float64, 0),
-	}
-}
-
-func (body *bodyBytes) Set(val float64) {
-	if body.Max < val {
-		body.Max = val
+func (stats *floatStats) sampleCount(fallback int) int {
+	if stats.SampleCount != nil {
+		return *stats.SampleCount
 	}
 
-	if body.Min >= val || body.Min == 0.0 {
-		body.Min = val
-	}
-
-	body.Sum += val
-
-	if body.UsePercentile {
-		body.Percentiles = append(body.Percentiles, val)
-	}
-}
-
-func (body *bodyBytes) Avg(cnt int) float64 {
-	return body.Sum / float64(cnt)
-}
-
-func (body *bodyBytes) PN(cnt, n int) float64 {
-	if !body.UsePercentile {
-		return 0.0
-	}
-
-	plen := percentRank(cnt, n)
-	body.Sort()
-	return body.Percentiles[plen]
-}
-
-func (body *bodyBytes) Stddev(cnt int) float64 {
-	if !body.UsePercentile {
-		return 0.0
-	}
-
-	var stdd float64
-	avg := body.Avg(cnt)
-	n := float64(cnt)
-
-	for _, v := range body.Percentiles {
-		stdd += (v - avg) * (v - avg)
-	}
-
-	return math.Sqrt(stdd / n)
-}
-
-func (body *bodyBytes) Sort() {
-	sort.Slice(body.Percentiles, func(i, j int) bool {
-		return body.Percentiles[i] < body.Percentiles[j]
-	})
+	return fallback
 }

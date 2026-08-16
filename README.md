@@ -319,7 +319,10 @@ access-log:
 
 ## json
 
-- Parse a log with one JSON per line
+- Parses newline-delimited JSON access logs. Each non-empty line must contain
+  exactly one JSON object; an object cannot span multiple lines.
+- Trailing whitespace is allowed. A second JSON value or any non-whitespace
+  data after the object is rejected instead of being silently ignored.
 - By default, the following keys are parsed:
     - `time`
         - datetime

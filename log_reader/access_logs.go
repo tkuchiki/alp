@@ -6,12 +6,15 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"time"
 
 	"github.com/tkuchiki/alp/errors"
 	"github.com/tkuchiki/alp/helpers"
 	"github.com/tkuchiki/alp/options"
 	"github.com/tkuchiki/alp/parsers"
 	"github.com/tkuchiki/alp/stats"
+	corev1 "github.com/tkuchiki/logschema/core/v1"
+	httpv1 "github.com/tkuchiki/logschema/http/v1"
 )
 
 type AccessLog struct {
@@ -167,7 +170,14 @@ Loop:
 			continue Loop
 		}
 
-		a.Append(s.Uri, s.Method, s.Time, s.ResponseTime, s.BodyBytes, s.Status)
+		a.Append(
+			s.Data.URLReference(),
+			s.Data.Method,
+			displayEventTime(s),
+			float64(s.DurationNano)/float64(time.Second),
+			responseBodySize(s.Data.ResponseBodySizeBytes),
+			statusCode(s.Data.StatusCode),
+		)
 	}
 
 	if !a.options.NoSavePos && a.options.PosFile != "" {
@@ -181,6 +191,38 @@ Loop:
 	err = a.Sort(a.options.TopN.Sort, a.options.TopN.Reverse)
 
 	return err
+}
+
+func displayEventTime(request *httpv1.Request) string {
+	if original := parsers.OriginalTime(request); original != "" {
+		return original
+	}
+
+	return formatEventTime(request.TimeUnixNano)
+}
+
+func formatEventTime(value *corev1.DecimalInt64) string {
+	if value == nil {
+		return ""
+	}
+
+	return time.Unix(0, int64(*value)).Format(time.RFC3339Nano)
+}
+
+func responseBodySize(value *corev1.DecimalUint64) float64 {
+	if value == nil {
+		return -1
+	}
+
+	return float64(*value)
+}
+
+func statusCode(value *int) int {
+	if value == nil {
+		return 0
+	}
+
+	return *value
 }
 
 func (a *AccessLogReader) Print() {

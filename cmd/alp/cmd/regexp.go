@@ -16,8 +16,8 @@ import (
 func newRegexpCmd(flags *flags) *cobra.Command {
 	var regexpCmd = &cobra.Command{
 		Use:   "regexp",
-		Short: "Profile the log_reader that match a regular expression",
-		Long:  `Profile the log_reader that match a regular expression`,
+		Short: "Profile the logs that match a regular expression",
+		Long:  `Profile the logs that match a regular expression`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts, err := flags.createRegexpOptions(cmd)
 			if err != nil {
@@ -60,7 +60,7 @@ func newRegexpCmd(flags *flags) *cobra.Command {
 func newRegexpParser(opts *options.Options, f *os.File) (parsers.Parser, error) {
 	names := parsers.NewSubexpNames(opts.Regexp.UriSubexp, opts.Regexp.MethodSubexp, opts.Regexp.TimeSubexp,
 		opts.Regexp.ResponseTimeSubexp, opts.Regexp.RequestTimeSubexp, opts.Regexp.BodyBytesSubexp, opts.Regexp.StatusSubexp)
-	return parsers.NewRegexpParser(f, opts.Regexp.Pattern, names, opts.QueryString, opts.QueryStringIgnoreValues)
+	return parsers.NewRegexpParser(f, opts.Regexp.Pattern, names, opts.QueryString, opts.QueryStringIgnoreValues, opts.Location)
 }
 
 func newRegexpDiffCmd(flags *flags) *cobra.Command {

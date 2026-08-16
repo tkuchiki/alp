@@ -2,9 +2,14 @@ package parsers
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
+
+	corev1 "github.com/tkuchiki/logschema/core/v1"
+	httpv1 "github.com/tkuchiki/logschema/http/v1"
+	"github.com/tkuchiki/parsetime"
 )
 
 type JSONParser struct {
@@ -14,6 +19,7 @@ type JSONParser struct {
 	queryString    bool
 	qsIgnoreValues bool
 	readBytes      int
+	parseTime      parsetime.ParseTime
 }
 
 func NewJSONKeys(uri, method, time, responseTime, requestTime, size, status string) *statKeys {
@@ -28,16 +34,22 @@ func NewJSONKeys(uri, method, time, responseTime, requestTime, size, status stri
 	)
 }
 
-func NewJSONParser(r io.Reader, keys *statKeys, query, qsIgnoreValues bool) Parser {
+func NewJSONParser(r io.Reader, keys *statKeys, query, qsIgnoreValues bool, location string) (Parser, error) {
+	parseTime, err := parsetime.NewParseTime(location)
+	if err != nil {
+		return nil, err
+	}
+
 	return &JSONParser{
 		reader:         bufio.NewReader(r),
 		keys:           keys,
 		queryString:    query,
 		qsIgnoreValues: qsIgnoreValues,
-	}
+		parseTime:      parseTime,
+	}, nil
 }
 
-func (j *JSONParser) Parse() (*ParsedHTTPStat, error) {
+func (j *JSONParser) Parse() (*httpv1.Request, error) {
 	b, i, err := readline(j.reader)
 	if len(b) == 0 && err != nil {
 		return nil, err
@@ -45,13 +57,23 @@ func (j *JSONParser) Parse() (*ParsedHTTPStat, error) {
 	j.readBytes += i
 
 	var tmp map[string]interface{}
-	err = json.Unmarshal(b, &tmp)
+	decoder := json.NewDecoder(bytes.NewReader(b))
+	decoder.UseNumber()
+	err = decoder.Decode(&tmp)
 	if err != nil {
 		return nil, err
 	}
 
-	keys := make([]string, 6)
-	keys = []string{
+	var trailing any
+	if err := decoder.Decode(&trailing); err != io.EOF {
+		if err == nil {
+			return nil, fmt.Errorf("multiple JSON values are not allowed")
+		}
+
+		return nil, fmt.Errorf("decode trailing JSON: %w", err)
+	}
+
+	keys := []string{
 		j.keys.uri,
 		j.keys.method,
 		j.keys.time,
@@ -70,19 +92,43 @@ func (j *JSONParser) Parse() (*ParsedHTTPStat, error) {
 		parsedValue[key] = fmt.Sprintf("%v", val)
 	}
 
-	parsedHTTPStat, err := toStats(parsedValue, j.keys, j.strictMode, j.queryString, j.qsIgnoreValues)
-	if err != nil {
-		return nil, err
-	}
-
-	logEntries := make(LogEntries)
+	attributes := make(corev1.Attributes, len(tmp))
 	for key, val := range tmp {
-		logEntries[key] = fmt.Sprintf("%v", val)
+		if val == nil {
+			continue
+		}
+
+		attributes[key] = jsonAttributeValue(val)
 	}
 
-	parsedHTTPStat.Entries = logEntries
+	return toHTTPRecord(parsedValue, attributes, j.keys, j.strictMode, j.queryString, j.qsIgnoreValues, j.parseTime)
+}
 
-	return parsedHTTPStat, nil
+func jsonAttributeValue(value any) any {
+	switch value := value.(type) {
+	case map[string]any:
+		return jsonString(value)
+	case []any:
+		for _, item := range value {
+			switch item.(type) {
+			case nil, map[string]any, []any:
+				return jsonString(value)
+			}
+		}
+
+		return value
+	default:
+		return value
+	}
+}
+
+func jsonString(value any) string {
+	encoded, err := json.Marshal(value)
+	if err != nil {
+		return fmt.Sprint(value)
+	}
+
+	return string(encoded)
 }
 
 func (j *JSONParser) ReadBytes() int {

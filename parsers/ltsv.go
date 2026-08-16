@@ -5,6 +5,8 @@ import (
 	"io"
 
 	"github.com/Songmu/go-ltsv"
+	httpv1 "github.com/tkuchiki/logschema/http/v1"
+	"github.com/tkuchiki/parsetime"
 )
 
 type LTSVParser struct {
@@ -14,6 +16,7 @@ type LTSVParser struct {
 	queryString    bool
 	qsIgnoreValues bool
 	readBytes      int
+	parseTime      parsetime.ParseTime
 }
 
 func NewLTSVLabel(uri, method, time, responseTime, requestTime, size, status string) *statKeys {
@@ -28,16 +31,22 @@ func NewLTSVLabel(uri, method, time, responseTime, requestTime, size, status str
 	)
 }
 
-func NewLTSVParser(r io.Reader, l *statKeys, query, qsIgnoreValues bool) Parser {
+func NewLTSVParser(r io.Reader, l *statKeys, query, qsIgnoreValues bool, location string) (Parser, error) {
+	parseTime, err := parsetime.NewParseTime(location)
+	if err != nil {
+		return nil, err
+	}
+
 	return &LTSVParser{
 		reader:         bufio.NewReader(r),
 		label:          l,
 		queryString:    query,
 		qsIgnoreValues: qsIgnoreValues,
-	}
+		parseTime:      parseTime,
+	}, nil
 }
 
-func (l *LTSVParser) Parse() (*ParsedHTTPStat, error) {
+func (l *LTSVParser) Parse() (*httpv1.Request, error) {
 	b, i, err := readline(l.reader)
 	if len(b) == 0 && err != nil {
 		return nil, err
@@ -45,22 +54,13 @@ func (l *LTSVParser) Parse() (*ParsedHTTPStat, error) {
 	l.readBytes += i
 
 	parsedValue := make(map[string]string, 0)
-	err2 := ltsv.Unmarshal(b, &parsedValue)
-	if err2 != nil && l.strictMode {
+	if err := ltsv.Unmarshal(b, &parsedValue); err != nil && l.strictMode {
 		return nil, err
 	}
 
-	parsedHTTPStat, err := toStats(parsedValue, l.label, l.strictMode, l.queryString, l.qsIgnoreValues)
-	if err != nil {
-		return nil, err
-	}
+	attributes := attributesFromStrings(parsedValue)
 
-	logEntries := make(LogEntries)
-	logEntries = parsedValue
-
-	parsedHTTPStat.Entries = logEntries
-
-	return parsedHTTPStat, nil
+	return toHTTPRecord(parsedValue, attributes, l.label, l.strictMode, l.queryString, l.qsIgnoreValues, l.parseTime)
 }
 
 func (l *LTSVParser) ReadBytes() int {

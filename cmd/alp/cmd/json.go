@@ -16,8 +16,8 @@ import (
 func newJSONCmd(flags *flags) *cobra.Command {
 	var jsonCmd = &cobra.Command{
 		Use:   "json",
-		Short: "Profile the log_reader for JSON",
-		Long:  `Profile the log_reader for JSON`,
+		Short: "Profile the logs for JSON",
+		Long:  `Profile the logs for JSON`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts, err := flags.createJSONOptions(cmd)
 			if err != nil {
@@ -36,7 +36,10 @@ func newJSONCmd(flags *flags) *cobra.Command {
 			}
 			defer f.Close()
 
-			parser := newJsonParser(opts, f)
+			parser, err := newJSONParser(opts, f)
+			if err != nil {
+				return err
+			}
 
 			err = prof.Run(flags.sortOptions, parser, nil)
 
@@ -54,11 +57,11 @@ func newJSONCmd(flags *flags) *cobra.Command {
 	return jsonCmd
 }
 
-func newJsonParser(opts *options.Options, f *os.File) parsers.Parser {
+func newJSONParser(opts *options.Options, f *os.File) (parsers.Parser, error) {
 	keys := parsers.NewJSONKeys(opts.JSON.UriKey, opts.JSON.MethodKey, opts.JSON.TimeKey,
 		opts.JSON.ResponseTimeKey, opts.JSON.RequestTimeKey, opts.JSON.BodyBytesKey, opts.JSON.StatusKey)
 
-	return parsers.NewJSONParser(f, keys, opts.QueryString, opts.QueryStringIgnoreValues)
+	return parsers.NewJSONParser(f, keys, opts.QueryString, opts.QueryStringIgnoreValues, opts.Location)
 }
 
 func newJsonDiffCmd(flags *flags) *cobra.Command {
@@ -83,7 +86,10 @@ func newJsonDiffCmd(flags *flags) *cobra.Command {
 		}
 		defer fromf.Close()
 
-		fromParser := newJsonParser(opts, fromf)
+		fromParser, err := newJSONParser(opts, fromf)
+		if err != nil {
+			return err
+		}
 
 		toProf := profiler.NewProfiler(os.Stdout, os.Stderr, opts)
 		toProf.DisableLoad()
@@ -94,7 +100,10 @@ func newJsonDiffCmd(flags *flags) *cobra.Command {
 		}
 		defer tof.Close()
 
-		toParser := newJsonParser(opts, tof)
+		toParser, err := newJSONParser(opts, tof)
+		if err != nil {
+			return err
+		}
 
 		return runDiff(flags.sortOptions,
 			fromProf, fromParser,
@@ -133,7 +142,10 @@ func newJsonTopNCmd(flags *flags) *cobra.Command {
 		}
 		defer f.Close()
 
-		parser := newJsonParser(opts, f)
+		parser, err := newJSONParser(opts, f)
+		if err != nil {
+			return err
+		}
 
 		return runTopN(logReader, parser)
 	}
@@ -164,7 +176,10 @@ func newJsonCountCmd(flags *flags) *cobra.Command {
 		}
 		defer f.Close()
 
-		parser := newJsonParser(opts, f)
+		parser, err := newJSONParser(opts, f)
+		if err != nil {
+			return err
+		}
 
 		return runCount(counter, parser, opts)
 	}

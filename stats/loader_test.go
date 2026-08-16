@@ -61,13 +61,19 @@ func TestLoadStats(t *testing.T) {
 	}
 
 	bodyMax := float64(12)
-	if bodyMax != s[0].RequestBodyBytes.Max {
-		t.Errorf(`request body bytes max want: %f, got: %f`, bodyMax, s[0].RequestBodyBytes.Max)
+	if bodyMax != s[0].ResponseBodyBytes.Max {
+		t.Errorf(`response body bytes max want: %f, got: %f`, bodyMax, s[0].ResponseBodyBytes.Max)
+	}
+	if s[0].RequestBodyBytes.Max != 0 {
+		t.Errorf(`request body bytes max want: 0, got: %f`, s[0].RequestBodyBytes.Max)
 	}
 
 	restimeMax := float64(0.057)
 	if restimeMax != s[0].ResponseTime.Max {
 		t.Errorf(`response time max want: %f, got: %f`, restimeMax, s[0].ResponseTime.Max)
+	}
+	if s[0].ResponseTime.SampleCount == nil || *s[0].ResponseTime.SampleCount != s[0].Cnt {
+		t.Errorf("legacy response time sample count = %v, want %d", s[0].ResponseTime.SampleCount, s[0].Cnt)
 	}
 
 	status1xx := 0
