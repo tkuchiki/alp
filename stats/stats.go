@@ -353,26 +353,34 @@ type floatStats struct {
 	Sum           float64 `yaml:"sum"`
 	UsePercentile bool
 	Percentiles   []float64 `yaml:"percentiles"`
-	count         int
-	tracksCount   bool
+
+	// SampleCount is a pointer to distinguish legacy dumps from new dumps with
+	// zero samples.
+	SampleCount *int `yaml:"sample_count,omitempty"`
 }
 
 func newFloatStats(usePercentile bool) *floatStats {
+	sampleCount := 0
+
 	return &floatStats{
 		UsePercentile: usePercentile,
 		Percentiles:   make([]float64, 0),
-		tracksCount:   true,
+		SampleCount:   &sampleCount,
 	}
 }
 
 func (stats *floatStats) Set(val float64) {
-	stats.count++
+	if stats.SampleCount == nil {
+		sampleCount := 0
+		stats.SampleCount = &sampleCount
+	}
+	(*stats.SampleCount)++
 
 	if stats.Max < val {
 		stats.Max = val
 	}
 
-	if stats.count == 1 || stats.Min > val {
+	if *stats.SampleCount == 1 || stats.Min > val {
 		stats.Min = val
 	}
 
@@ -429,8 +437,8 @@ func (stats *floatStats) Sort() {
 }
 
 func (stats *floatStats) sampleCount(fallback int) int {
-	if stats.tracksCount {
-		return stats.count
+	if stats.SampleCount != nil {
+		return *stats.SampleCount
 	}
 
 	return fallback

@@ -45,18 +45,21 @@ func TestDumpStats(t *testing.T) {
     usepercentile: true
     percentiles:
     - 0.057
+    sample_count: 1
   request_body_bytes:
     max: 0
     min: 0
     sum: 0
     usepercentile: false
     percentiles: []
+    sample_count: 0
   response_body_bytes:
     max: 12
     min: 12
     sum: 12
     usepercentile: false
     percentiles: []
+    sample_count: 1
   time: ""
 `)
 

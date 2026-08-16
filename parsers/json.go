@@ -64,6 +64,15 @@ func (j *JSONParser) Parse() (*httpv1.Request, error) {
 		return nil, err
 	}
 
+	var trailing any
+	if err := decoder.Decode(&trailing); err != io.EOF {
+		if err == nil {
+			return nil, fmt.Errorf("multiple JSON values are not allowed")
+		}
+
+		return nil, fmt.Errorf("decode trailing JSON: %w", err)
+	}
+
 	keys := []string{
 		j.keys.uri,
 		j.keys.method,

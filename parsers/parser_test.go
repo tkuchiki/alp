@@ -85,6 +85,26 @@ func TestOriginalTimePreservesUnusualInput(t *testing.T) {
 	}
 }
 
+func TestJSONParserRejectsTrailingData(t *testing.T) {
+	tests := map[string]string{
+		"second value": `{"time":"2015-09-06T05:58:05+09:00","method":"GET","uri":"/","status":200,"body_bytes":1,"response_time":0.001} {}`,
+		"invalid data": `{"time":"2015-09-06T05:58:05+09:00","method":"GET","uri":"/","status":200,"body_bytes":1,"response_time":0.001} trailing`,
+	}
+
+	for name, input := range tests {
+		t.Run(name, func(t *testing.T) {
+			parser, err := NewJSONParser(strings.NewReader(input), NewJSONKeys("", "", "", "", "", "", ""), false, false, "Local")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if _, err := parser.Parse(); err == nil {
+				t.Fatal("JSON parser accepted trailing data")
+			}
+		})
+	}
+}
+
 func TestHTTPRequestNetworkPathReference(t *testing.T) {
 	u, err := url.Parse("//example.com/assets/app.js")
 	if err != nil {

@@ -1,8 +1,12 @@
 package stats
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
+
+	corev1 "github.com/tkuchiki/logschema/core/v1"
+	httpv1 "github.com/tkuchiki/logschema/http/v1"
 )
 
 func Test_percentRank(t *testing.T) {
@@ -69,5 +73,47 @@ func TestNewHTTPStatsKeepsRequestBodyPercentileOption(t *testing.T) {
 
 	if !stats.useRequestBodyBytesPercentile {
 		t.Fatal("request body percentile option was not enabled")
+	}
+}
+
+func TestHTTPStatsDumpPreservesMissingMetricSampleCount(t *testing.T) {
+	status := 200
+	bodySize := corev1.DecimalUint64(10)
+	withBody, err := httpv1.NewRequest(100_000_000, corev1.Source{Kind: corev1.SourceOther}, httpv1.RequestData{
+		Method:                "GET",
+		URLPath:               "/mixed",
+		StatusCode:            &status,
+		ResponseBodySizeBytes: &bodySize,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	withoutBody, err := httpv1.NewRequest(200_000_000, corev1.Source{Kind: corev1.SourceOther}, httpv1.RequestData{
+		Method:     "GET",
+		URLPath:    "/mixed",
+		StatusCode: &status,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	before := NewHTTPStats(false, false, false)
+	before.Observe(&withBody)
+	before.Observe(&withoutBody)
+
+	var dump bytes.Buffer
+	if err := before.DumpStats(&dump); err != nil {
+		t.Fatal(err)
+	}
+	after := NewHTTPStats(false, false, false)
+	if err := after.LoadStats(&dump); err != nil {
+		t.Fatal(err)
+	}
+
+	if got, want := before.Stats()[0].AvgResponseBodyBytes(), float64(10); got != want {
+		t.Fatalf("average before dump = %v, want %v", got, want)
+	}
+	if got, want := after.Stats()[0].AvgResponseBodyBytes(), float64(10); got != want {
+		t.Fatalf("average after load = %v, want %v", got, want)
 	}
 }

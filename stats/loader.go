@@ -18,10 +18,26 @@ func (hs *HTTPStats) LoadStats(r io.Reader) error {
 	}
 	for _, stat := range stats {
 		migrateLegacyBodyBytes(stat)
+		restoreLegacySampleCounts(stat)
 	}
+
 	hs.stats = stats
 
 	return nil
+}
+
+func restoreLegacySampleCounts(stat *HTTPStat) {
+	restoreLegacySampleCount(stat.ResponseTime, stat.Cnt)
+	restoreLegacySampleCount(stat.RequestBodyBytes, stat.Cnt)
+	restoreLegacySampleCount(stat.ResponseBodyBytes, stat.Cnt)
+}
+
+func restoreLegacySampleCount(stats *floatStats, fallback int) {
+	if stats == nil || stats.SampleCount != nil {
+		return
+	}
+
+	stats.SampleCount = &fallback
 }
 
 func migrateLegacyBodyBytes(stat *HTTPStat) {

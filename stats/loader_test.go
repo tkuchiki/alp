@@ -72,6 +72,9 @@ func TestLoadStats(t *testing.T) {
 	if restimeMax != s[0].ResponseTime.Max {
 		t.Errorf(`response time max want: %f, got: %f`, restimeMax, s[0].ResponseTime.Max)
 	}
+	if s[0].ResponseTime.SampleCount == nil || *s[0].ResponseTime.SampleCount != s[0].Cnt {
+		t.Errorf("legacy response time sample count = %v, want %d", s[0].ResponseTime.SampleCount, s[0].Cnt)
+	}
 
 	status1xx := 0
 	if status1xx != s[0].Status1xx {
