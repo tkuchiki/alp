@@ -195,7 +195,7 @@ func (p *Printer) GenerateLine(s *HTTPStat, quoteUri bool) []string {
 	keyLen := len(p.keywords)
 	line := make([]string, 0, keyLen)
 
-	for i := 0; i < keyLen; i++ {
+	for i := range keyLen {
 		switch p.keywords[i] {
 		case "count":
 			line = append(line, s.StrCount())
@@ -261,7 +261,7 @@ func (p *Printer) GenerateLineWithDiff(from, to *HTTPStat, quoteUri bool) []stri
 
 	differ := NewDiffer(from, to)
 
-	for i := 0; i < keyLen; i++ {
+	for i := range keyLen {
 		switch p.keywords[i] {
 		case "count":
 			line = append(line, formattedLineWithDiff(to.StrCount(), differ.DiffCnt()))
@@ -318,7 +318,7 @@ func (p *Printer) GenerateFooter(counts map[string]int) []string {
 	keyLen := len(p.keywords)
 	line := make([]string, 0, keyLen)
 
-	for i := 0; i < keyLen; i++ {
+	for i := range keyLen {
 		switch p.keywords[i] {
 		case "count":
 			line = append(line, fmt.Sprint(counts["count"]))
@@ -345,7 +345,7 @@ func (p *Printer) GenerateFooterWithDiff(countsFrom, countsTo map[string]int) []
 	line := make([]string, 0, keyLen)
 	counts := DiffCountAll(countsFrom, countsTo)
 
-	for i := 0; i < keyLen; i++ {
+	for i := range keyLen {
 		switch p.keywords[i] {
 		case "count":
 			line = append(line, formattedLineWithDiff(fmt.Sprint(countsTo["count"]), counts["count"]))

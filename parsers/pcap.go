@@ -132,16 +132,16 @@ type pcapHttpStreamStat struct {
 	waiting atomic.Value
 	cond    *sync.Cond
 
-	doingReqCount int64
-	doingResCount int64
+	doingReqCount atomic.Int64
+	doingResCount atomic.Int64
 }
 
 func (s *pcapHttpStreamStat) startReq() {
-	atomic.AddInt64(&s.doingReqCount, 1)
+	s.doingReqCount.Add(1)
 }
 
 func (s *pcapHttpStreamStat) completeReq() {
-	n := atomic.AddInt64(&s.doingReqCount, -1)
+	n := s.doingReqCount.Add(-1)
 	if n == 0 {
 		waiting := s.waiting.Load().(bool)
 		if waiting {
@@ -151,11 +151,11 @@ func (s *pcapHttpStreamStat) completeReq() {
 }
 
 func (s *pcapHttpStreamStat) startRes() {
-	atomic.AddInt64(&s.doingResCount, 1)
+	s.doingResCount.Add(1)
 }
 
 func (s *pcapHttpStreamStat) completeRes() {
-	n := atomic.AddInt64(&s.doingResCount, -1)
+	n := s.doingResCount.Add(-1)
 	if n == 0 {
 		waiting := s.waiting.Load().(bool)
 		if waiting {
@@ -167,7 +167,7 @@ func (s *pcapHttpStreamStat) completeRes() {
 func (s *pcapHttpStreamStat) waitForCompleteAll() {
 	s.waiting.Store(true)
 	s.cond.L.Lock()
-	for atomic.LoadInt64(&s.doingReqCount) > 0 || atomic.LoadInt64(&s.doingResCount) > 0 {
+	for s.doingReqCount.Load() > 0 || s.doingResCount.Load() > 0 {
 		s.cond.Wait()
 	}
 	s.cond.L.Unlock()
