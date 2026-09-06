@@ -105,7 +105,7 @@ func (p *Printer) GenerateLine(l *AccessLog, quoteUri bool) []string {
 
 	line = append(line, fmt.Sprint(p.rank))
 
-	for i := 0; i < keyLen; i++ {
+	for i := range keyLen {
 		switch p.headerKeys[i] {
 		case "uri":
 			uri := l.UriWithOptions(p.printOptions.decodeUri)

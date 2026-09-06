@@ -229,11 +229,7 @@ func (a *AccessLogReader) Print() {
 	var n int
 	numOfLogs := len(a.logs)
 
-	if a.numOfTopN > numOfLogs {
-		n = numOfLogs
-	} else {
-		n = a.numOfTopN
-	}
+	n = min(a.numOfTopN, numOfLogs)
 
 	a.printer.Print(a.logs[0:n])
 }

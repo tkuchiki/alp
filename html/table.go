@@ -59,9 +59,9 @@ func RenderTableWithGridJS(title string, columns []string, rows [][]string, pagi
 		return "", err
 	}
 
-	var columnValues [][]interface{}
+	var columnValues [][]any
 	for _, row := range rows {
-		var values []interface{}
+		var values []any
 		for _, col := range row {
 			vf, err := strconv.ParseFloat(col, 64)
 			if err == nil {
