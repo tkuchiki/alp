@@ -339,11 +339,6 @@ func floatToUint64(value float64, field string) (corev1.DecimalUint64, error) {
 	return corev1.DecimalUint64(uint64(value)), nil
 }
 
-//go:fix inline
-func stringPointer(value string) *string {
-	return new(value)
-}
-
 func attributesFromStrings(values map[string]string) corev1.Attributes {
 	attributes := make(corev1.Attributes, len(values))
 	for key, value := range values {
