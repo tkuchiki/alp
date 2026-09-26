@@ -7,6 +7,12 @@ alp はアクセスログ解析ツールです。
 
 # インストール
 
+### Go install
+
+```bash
+go install github.com/tkuchiki/alp@latest
+```
+
 ### バイナリ配布
 
 [ここ](https://github.com/tkuchiki/alp/releases)から任意のOS向けのバイナリをダウンロードすることができ、次のようにしてインストールすることが可能です。
