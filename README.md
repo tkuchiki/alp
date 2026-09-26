@@ -8,6 +8,12 @@ alp is Access Log Profiler
 
 # Installation
 
+### Go install
+
+```bash
+go install github.com/tkuchiki/alp@latest
+```
+
 ### Binary distribution
 
 You can pick your download [here](https://github.com/tkuchiki/alp/releases), and install it as follows:
