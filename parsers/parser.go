@@ -303,13 +303,13 @@ func requestDataFromURL(u *url.URL) httpv1.RequestData {
 
 	data := httpv1.RequestData{URLPath: path}
 	if u.Host != "" {
-		data.URLAuthority = stringPointer(u.Host)
+		data.URLAuthority = new(u.Host)
 		if u.Scheme != "" {
-			data.URLScheme = stringPointer(u.Scheme)
+			data.URLScheme = new(u.Scheme)
 		}
 	}
 	if u.RawQuery != "" || u.ForceQuery {
-		data.URLQuery = stringPointer(u.RawQuery)
+		data.URLQuery = new(u.RawQuery)
 	}
 
 	return data
@@ -337,10 +337,6 @@ func floatToUint64(value float64, field string) (corev1.DecimalUint64, error) {
 	}
 
 	return corev1.DecimalUint64(uint64(value)), nil
-}
-
-func stringPointer(value string) *string {
-	return &value
 }
 
 func attributesFromStrings(values map[string]string) corev1.Attributes {

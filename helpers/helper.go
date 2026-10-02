@@ -16,7 +16,7 @@ func CompileUriMatchingGroups(groups []string) ([]*regexp.Regexp, error) {
 		if err == nil {
 			if u.RawQuery != "" {
 				queries := make(map[string][]string)
-				for _, q := range strings.Split(u.RawQuery, "&") {
+				for q := range strings.SplitSeq(u.RawQuery, "&") {
 					item := strings.SplitN(q, "=", 2)
 					if len(item) > 0 {
 						if len(item) == 2 {

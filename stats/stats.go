@@ -6,7 +6,7 @@ import (
 	"math"
 	"net/url"
 	"regexp"
-	"sort"
+	"slices"
 	"sync"
 	"time"
 
@@ -431,9 +431,7 @@ func (stats *floatStats) Stddev(fallbackCount int) float64 {
 }
 
 func (stats *floatStats) Sort() {
-	sort.Slice(stats.Percentiles, func(i, j int) bool {
-		return stats.Percentiles[i] < stats.Percentiles[j]
-	})
+	slices.Sort(stats.Percentiles)
 }
 
 func (stats *floatStats) sampleCount(fallback int) int {

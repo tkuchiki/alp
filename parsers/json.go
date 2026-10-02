@@ -56,7 +56,7 @@ func (j *JSONParser) Parse() (*httpv1.Request, error) {
 	}
 	j.readBytes += i
 
-	var tmp map[string]interface{}
+	var tmp map[string]any
 	decoder := json.NewDecoder(bytes.NewReader(b))
 	decoder.UseNumber()
 	err = decoder.Decode(&tmp)

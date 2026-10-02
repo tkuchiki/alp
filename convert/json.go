@@ -2,10 +2,10 @@ package convert
 
 import "encoding/json"
 
-func ToJSONValues(data [][]string) [][]interface{} {
-	i := [][]interface{}{}
+func ToJSONValues(data [][]string) [][]any {
+	i := [][]any{}
 	for _, values := range data {
-		l := []interface{}{}
+		l := []any{}
 		for _, val := range values {
 			n := json.Number(val)
 
